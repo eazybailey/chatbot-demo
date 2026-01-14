@@ -48,9 +48,12 @@
       const [showOptions, setShowOptions] = useState(true);
       const messagesEndRef = useRef(null);
 
-      const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      };
+const scrollToBottom = () => {
+  // Only auto-scroll if not in an iframe
+  if (window.self === window.top) {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+};
 
       useEffect(() => {
         scrollToBottom();
