@@ -2,6 +2,8 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feel Understood - Self Assessment</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,72 +16,128 @@
   <div id="root"></div>
   <script type="text/babel">
     const App = () => {
-      const [started, setStarted] = React.useState(false);
-      const [answer, setAnswer] = React.useState(null);
+      const [step, setStep] = React.useState(-1);
+      const [responses, setResponses] = React.useState({});
       
-      if (!started) {
+      const questions = [
+        {
+          id: 'q1',
+          text: 'When you consider the totality of your relationships—family, friends, colleagues, intimate partners—how accurately would you say people understand who you fundamentally are?',
+          options: ['People see me with remarkable clarity', 'Most people understand the essential me', 'There's a noticeable gap between who I am and how I'm perceived', 'I'm frequently misunderstood in important ways', 'I feel profoundly unseen by those around me']
+        },
+        {
+          id: 'q2',
+          text: 'In conversations that matter to you, how often do you experience that satisfying moment when someone truly "gets" what you're trying to communicate?',
+          options: ['Almost always—it's a regular experience', 'Often enough that I count on it', 'Occasionally, but it feels special when it happens', 'Rarely—it's notable when someone understands', 'Almost never—I've largely stopped expecting it']
+        },
+        {
+          id: 'q3',
+          type: 'multi',
+          text: 'Which relationships in your life consistently provide you with a sense of being genuinely understood?',
+          sub: 'Select all where you regularly feel seen and comprehended',
+          options: ['Romantic partner or spouse', 'Parents or parental figures', 'Siblings', 'Close friends (in person)', 'Colleagues or work relationships', 'Online communities or virtual friendships', 'Therapist or counsellor', 'Extended family members', 'None of the above apply to me']
+        }
+      ];
+      
+      const handleAnswer = (qid, val) => {
+        setResponses({...responses, [qid]: val});
+      };
+      
+      const handleMulti = (qid, opt) => {
+        const curr = responses[qid] || [];
+        const has = curr.includes(opt);
+        const updated = has ? curr.filter(x => x !== opt) : [...curr, opt];
+        setResponses({...responses, [qid]: updated});
+      };
+      
+      // Intro
+      if (step === -1) {
         return (
-          <div style={{padding: '40px', maxWidth: '700px', margin: '0 auto', textAlign: 'center'}}>
-            <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '20px'}}>
-              The Understanding Gap
-            </h1>
-            <p style={{fontSize: '16px', marginBottom: '40px'}}>
-              A comprehensive self-assessment
-            </p>
-            <button 
-              onClick={() => setStarted(true)}
-              style={{
-                padding: '16px 36px',
-                backgroundColor: '#ffd21f',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
-            >
-              Begin Assessment
-            </button>
+          <div style={{minHeight: '100vh', padding: '40px 20px'}}>
+            <div style={{maxWidth: '700px', margin: '0 auto', textAlign: 'center'}}>
+              <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '12px'}}>The Understanding Gap</h1>
+              <p style={{fontSize: '18px', color: '#999b9b', marginBottom: '24px'}}>A comprehensive self-assessment</p>
+              <p style={{fontSize: '16px', lineHeight: 1.8, marginBottom: '40px', textAlign: 'left'}}>
+                Feeling understood is fundamental to human wellbeing. It shapes our relationships, influences our mental health, and forms the foundation of our sense of belonging. This assessment examines the gap between who you are and how others perceive you—revealing where understanding flourishes and where it fails.
+              </p>
+              <button onClick={() => setStep(0)} style={{padding: '16px 36px', backgroundColor: '#ffd21f', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer'}}>
+                Begin Assessment
+              </button>
+            </div>
           </div>
         );
       }
       
-      if (answer) {
+      // Results
+      if (step >= questions.length) {
         return (
-          <div style={{padding: '40px'}}>
-            <h2>You selected: {answer}</h2>
-            <button onClick={() => window.location.reload()}>Restart</button>
+          <div style={{minHeight: '100vh', padding: '40px 20px'}}>
+            <div style={{maxWidth: '900px', margin: '0 auto'}}>
+              <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '40px', textAlign: 'center'}}>Your Understanding Profile</h1>
+              <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px'}}>
+                <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px'}}>Assessment Complete</h2>
+                <p style={{fontSize: '16px', marginBottom: '20px'}}>You've completed {Object.keys(responses).length} questions. Detailed results coming soon.</p>
+                <button onClick={() => window.location.reload()} style={{padding: '16px 36px', backgroundColor: '#ffd21f', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer'}}>
+                  Retake Assessment
+                </button>
+              </div>
+            </div>
           </div>
         );
       }
+      
+      // Questions
+      const q = questions[step];
+      const prog = ((step + 1) / questions.length) * 100;
+      const canNext = responses[q.id] !== undefined;
       
       return (
-        <div style={{padding: '40px', maxWidth: '900px', margin: '0 auto'}}>
-          <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px'}}>
-            <h2 style={{fontSize: '22px', marginBottom: '36px'}}>
-              How accurately do people understand who you fundamentally are?
-            </h2>
+        <div style={{minHeight: '100vh', padding: '40px 20px'}}>
+          <div style={{maxWidth: '900px', margin: '0 auto'}}>
+            <div style={{height: '4px', backgroundColor: '#e5e5e5', marginBottom: '40px'}}>
+              <div style={{height: '100%', backgroundColor: '#ffd21f', width: prog + '%', transition: 'width 0.3s'}} />
+            </div>
             
-            {['Very accurately', 'Somewhat accurately', 'Not very accurately'].map(opt => (
-              <button
-                key={opt}
-                onClick={() => setAnswer(opt)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '18px 24px',
-                  marginBottom: '12px',
-                  backgroundColor: '#fff',
-                  border: '2px solid #e5e5e5',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  cursor: 'pointer'
-                }}
-              >
-                {opt}
+            <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px', marginBottom: '24px'}}>
+              <h2 style={{fontSize: '22px', fontWeight: 'bold', marginBottom: '12px'}}>{q.text}</h2>
+              {q.sub && <p style={{fontSize: '15px', color: '#999b9b', marginBottom: '36px', fontStyle: 'italic'}}>{q.sub}</p>}
+              
+              <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                {q.options.map(opt => {
+                  const isSel = q.type === 'multi' ? (responses[q.id] || []).includes(opt) : responses[q.id] === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => q.type === 'multi' ? handleMulti(q.id, opt) : handleAnswer(q.id, opt)}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '18px 24px',
+                        backgroundColor: isSel ? '#ffd21f' : '#fff',
+                        border: isSel ? '2px solid #121212' : '2px solid #e5e5e5',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        lineHeight: 1.5
+                      }}
+                    >
+                      {q.type === 'multi' && <span style={{marginRight: '12px'}}>{isSel ? '✓' : '○'}</span>}
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <button onClick={() => setStep(step - 1)} disabled={step === 0} style={{padding: '16px 36px', backgroundColor: '#fff', border: '2px solid #121212', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', opacity: step === 0 ? 0.5 : 1}}>
+                Previous
               </button>
-            ))}
+              <span style={{color: '#999b9b', fontSize: '14px'}}>Question {step + 1} of {questions.length}</span>
+              <button onClick={() => setStep(step + 1)} disabled={!canNext} style={{padding: '16px 36px', backgroundColor: '#ffd21f', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', opacity: canNext ? 1 : 0.5}}>
+                {step === questions.length - 1 ? 'View Results' : 'Next'}
+              </button>
+            </div>
           </div>
         </div>
       );
