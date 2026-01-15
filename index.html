@@ -8,158 +8,41 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #ffffff;
-      color: #121212;
-    }
-
-    .fade-in {
-      animation: fadeIn 0.5s ease-in;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #ffffff; color: #121212; }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
   <div id="root"></div>
-
   <script type="text/babel">
     const { useState } = React;
-
     const SelfAssessmentSurvey = () => {
       const [currentStep, setCurrentStep] = useState(0);
       const [responses, setResponses] = useState({});
       const [showResults, setShowResults] = useState(false);
 
       const questions = [
-        {
-          id: 'intro',
-          type: 'intro',
-          title: 'How well do you feel understood?',
-          subtitle: 'A self-assessment survey',
-          description: 'This survey will help you understand how well you feel understood by the people in your life, and identify areas where you might want to improve communication.',
-          buttonText: 'Start Assessment'
-        },
-        {
-          id: 'general',
-          type: 'scale',
-          question: 'Overall, how well understood do you feel by the people you share your life with?',
-          options: [
-            'Very well understood',
-            'Somewhat understood',
-            'Neutral',
-            'Somewhat misunderstood',
-            'Very misunderstood'
-          ]
-        },
-        {
-          id: 'who_understands',
-          type: 'multiple',
-          question: 'Who in your life understands you best?',
-          subtitle: 'Select all that apply',
-          options: [
-            'Partner/spouse',
-            'Family',
-            'Close friends',
-            'Colleagues',
-            'Online communities',
-            'No one'
-          ]
-        },
-        {
-          id: 'misunderstood_setting',
-          type: 'single',
-          question: 'In which setting do you feel most misunderstood or overlooked?',
-          options: [
-            'At work',
-            'At home',
-            'Socially',
-            'Online',
-            'Within my community'
-          ]
-        },
-        {
-          id: 'effects_positive',
-          type: 'multiple',
-          question: 'How does feeling understood affect you?',
-          subtitle: 'Select all that apply',
-          options: [
-            'I feel closer to the person',
-            'I feel we\'ve established a connection',
-            'I don\'t feel so alone with my thoughts',
-            'I am more likely to be open with them',
-            'It doesn\'t really affect me much'
-          ]
-        },
-        {
-          id: 'effects_negative',
-          type: 'multiple',
-          question: 'How does feeling misunderstood affect you?',
-          subtitle: 'Select all that apply',
-          options: [
-            'I feel undervalued',
-            'I feel disrespected',
-            'I don\'t feel like saying any more',
-            'I feel less close to the person',
-            'I feel angry',
-            'I feel like withdrawing',
-            'I doubt myself',
-            'I think they\'re not interested in me',
-            'It doesn\'t really affect me'
-          ]
-        },
-        {
-          id: 'values_beliefs',
-          type: 'rating',
-          question: 'How misunderstood do you feel about your values & beliefs?',
-          subtitle: 'Including your political views, spiritual beliefs, ethical principles, and life priorities',
-          scale: 10
-        },
-        {
-          id: 'personality',
-          type: 'rating',
-          question: 'How misunderstood do you feel about your personality & identity?',
-          subtitle: 'Including your outlook on life, emotional needs, communication style, and sense of humor',
-          scale: 10
-        },
-        {
-          id: 'preferences',
-          type: 'rating',
-          question: 'How misunderstood do you feel about your preferences & lifestyle?',
-          subtitle: 'Including your interests, tastes, social needs, and how you spend free time',
-          scale: 10
-        },
-        {
-          id: 'motivations',
-          type: 'rating',
-          question: 'How misunderstood do you feel about your motivations & aspirations?',
-          subtitle: 'Including your goals, ambitions, what motivates you daily, and need for creative expression',
-          scale: 10
-        },
-        {
-          id: 'challenges',
-          type: 'rating',
-          question: 'How misunderstood do you feel about your challenges & struggles?',
-          subtitle: 'Including mental health, physical health, past experiences, fears and anxieties',
-          scale: 10
-        }
+        { id: 'intro', type: 'intro', title: 'The Understanding Gap', subtitle: 'A comprehensive self-assessment', description: 'Feeling understood is fundamental to human wellbeing. It shapes our relationships, influences our mental health, and forms the foundation of our sense of belonging. This assessment examines the gap between who you are and how others perceive you—revealing where understanding flourishes and where it fails. Your responses will illuminate patterns in your communication and relationships that may be invisible to you in daily life.', buttonText: 'Begin Assessment' },
+        { id: 'general_understanding', type: 'scale', question: 'When you consider the totality of your relationships—family, friends, colleagues, intimate partners—how accurately would you say people understand who you fundamentally are?', options: ['People see me with remarkable clarity', 'Most people understand the essential me', 'There's a noticeable gap between who I am and how I'm perceived', 'I'm frequently misunderstood in important ways', 'I feel profoundly unseen by those around me'] },
+        { id: 'understanding_frequency', type: 'scale', question: 'In conversations that matter to you, how often do you experience that satisfying moment when someone truly "gets" what you're trying to communicate?', options: ['Almost always—it's a regular experience', 'Often enough that I count on it', 'Occasionally, but it feels special when it happens', 'Rarely—it's notable when someone understands', 'Almost never—I've largely stopped expecting it'] },
+        { id: 'support_network', type: 'multiple', question: 'Which relationships in your life consistently provide you with a sense of being genuinely understood?', subtitle: 'Select all where you regularly feel seen and comprehended', options: ['Romantic partner or spouse', 'Parents or parental figures', 'Siblings', 'Close friends (in person)', 'Colleagues or work relationships', 'Online communities or virtual friendships', 'Therapist or counsellor', 'Extended family members', 'None of the above apply to me'] },
+        { id: 'misunderstanding_context', type: 'single', question: 'In which domain of your life do you most acutely feel the absence of understanding—where the gap between your inner experience and others' perceptions feels widest?', options: ['Professional life—my capabilities and contributions go unrecognised', 'Home and family—those closest to me misread who I am', 'Social settings—friends don't grasp my perspective', 'Intimate relationships—my partner doesn't see the real me', 'Community or public contexts—I'm misunderstood by society at large', 'The gap feels relatively consistent across all domains'] },
+        { id: 'positive_impacts', type: 'multiple', question: 'When someone demonstrates genuine understanding of you, what shifts in your experience?', subtitle: 'Select all that resonate with your actual experience', options: ['I feel psychologically safer and more willing to be vulnerable', 'The relationship deepens—I feel genuinely connected', 'My self-doubt diminishes; I trust my own perceptions more', 'I experience relief from the isolation of being alone with my thoughts', 'I become more authentic and less self-monitoring', 'I feel valued and respected as a person', 'My stress and anxiety levels decrease noticeably', 'Honestly, it doesn't create significant change for me'] },
+        { id: 'negative_impacts', type: 'multiple', question: 'When you're misunderstood in ways that matter, what are the consequences in your inner life and behaviour?', subtitle: 'Select all that accurately describe your response', options: ['I withdraw emotionally and become less forthcoming', 'I question my own perceptions and experience self-doubt', 'I feel frustrated or angry at not being seen', 'The relationship loses intimacy and feels more superficial', 'I experience a sense of loneliness even when not alone', 'I feel disrespected or diminished as a person', 'My mental wellbeing deteriorates—increased anxiety or low mood', 'I become more defensive in future interactions', 'I actively distance myself from the relationship', 'It doesn't significantly impact me—I move on easily'] },
+        { id: 'identity_values', type: 'rating', question: 'Your values, beliefs, and worldview', subtitle: 'Consider how well others understand your political views, spiritual or religious beliefs, ethical principles, what truly matters to you, and how you make sense of the world. To what degree do you feel misunderstood in this dimension of your identity?', scale: 10 },
+        { id: 'identity_personality', type: 'rating', question: 'Your personality and emotional nature', subtitle: 'Think about whether people grasp your temperament, your emotional needs, how you process experiences, your sense of humour, what energises or drains you, and your characteristic way of engaging with life. How misunderstood do you feel here?', scale: 10 },
+        { id: 'identity_preferences', type: 'rating', question: 'Your preferences and lifestyle choices', subtitle: 'Reflect on how others perceive your interests, passions, aesthetic tastes, social needs (how much interaction you want and need), and how you choose to spend your time and energy. Rate your sense of being misunderstood in this area.', scale: 10 },
+        { id: 'identity_motivations', type: 'rating', question: 'Your aspirations and what drives you', subtitle: 'Consider whether people comprehend your ambitions, career goals, personal aspirations, what motivates you daily, your creative impulses, and what you're ultimately working toward in life. How misunderstood are you here?', scale: 10 },
+        { id: 'identity_struggles', type: 'rating', question: 'Your challenges, vulnerabilities, and inner struggles', subtitle: 'Think about how well others understand your mental health experiences, physical health challenges, past experiences that have shaped you, your fears and anxieties, and what you find genuinely difficult. Rate the degree of misunderstanding.', scale: 10 },
+        { id: 'identity_capabilities', type: 'rating', question: 'Your capabilities and potential', subtitle: 'Reflect on whether people accurately perceive your abilities, skills, intelligence, potential for growth, and what you're truly capable of contributing. How misunderstood do you feel in this dimension?', scale: 10 },
+        { id: 'communication_responsibility', type: 'scale', question: 'When you're not understood, where do you typically locate the responsibility?', subtitle: 'This reveals your implicit theory about how understanding works', options: ['Primarily my responsibility—I need to communicate more effectively', 'Mostly my responsibility, though context matters', 'Shared responsibility between both parties', 'Mostly the other person's responsibility to listen better', 'Primarily their responsibility—if they cared, they'd understand'] },
+        { id: 'understanding_expression', type: 'scale', question: 'When you don't feel understood in a conversation, how often do you explicitly name this—saying something like "I don't feel understood right now"?', options: ['Regularly—it's part of how I communicate', 'Sometimes, when it really matters', 'Rarely—only in specific relationships or circumstances', 'Almost never—it feels too vulnerable or confrontational', 'Never—I keep that feeling to myself'] },
+        { id: 'false_positives', type: 'scale', question: 'How often do you discover that someone you thought understood you actually held significant misconceptions about who you are or what you meant?', subtitle: 'This assesses your awareness of "false positives" in understanding', options: ['Very frequently—it's a recurring pattern', 'Fairly often—it happens regularly enough to notice', 'Occasionally—it surprises me when it occurs', 'Rarely—my sense of being understood is usually accurate', 'Almost never—people generally understand me as I perceive'] }
       ];
-
-      const handleResponse = (questionId, value) => {
-        setResponses(prev => ({
-          ...prev,
-          [questionId]: value
-        }));
+const handleResponse = (questionId, value) => {
+        setResponses(prev => ({ ...prev, [questionId]: value }));
       };
 
       const handleNext = () => {
@@ -171,205 +54,116 @@
       };
 
       const handlePrevious = () => {
-        if (currentStep > 0) {
-          setCurrentStep(currentStep - 1);
-        }
+        if (currentStep > 0) setCurrentStep(currentStep - 1);
       };
 
       const calculateResults = () => {
-        const misunderstoodScore = [
-          responses.values_beliefs || 0,
-          responses.personality || 0,
-          responses.preferences || 0,
-          responses.motivations || 0,
-          responses.challenges || 0
-        ].reduce((a, b) => a + b, 0) / 5;
+        const identityScores = [
+          responses.identity_values || 0,
+          responses.identity_personality || 0,
+          responses.identity_preferences || 0,
+          responses.identity_motivations || 0,
+          responses.identity_struggles || 0,
+          responses.identity_capabilities || 0
+        ];
+        const avgIdentityScore = identityScores.reduce((a, b) => a + b, 0) / 6;
+
+        const identityDimensions = [
+          { name: 'Values & Beliefs', score: responses.identity_values || 0 },
+          { name: 'Personality & Emotional Nature', score: responses.identity_personality || 0 },
+          { name: 'Preferences & Lifestyle', score: responses.identity_preferences || 0 },
+          { name: 'Aspirations & Motivations', score: responses.identity_motivations || 0 },
+          { name: 'Challenges & Vulnerabilities', score: responses.identity_struggles || 0 },
+          { name: 'Capabilities & Potential', score: responses.identity_capabilities || 0 }
+        ];
+        const mostMisunderstood = identityDimensions.sort((a, b) => b.score - a.score)[0];
+
+        const scoreMap = {
+          general: { 'People see me with remarkable clarity': 100, 'Most people understand the essential me': 75, 'There's a noticeable gap between who I am and how I'm perceived': 50, 'I'm frequently misunderstood in important ways': 25, 'I feel profoundly unseen by those around me': 0 },
+          frequency: { 'Almost always—it's a regular experience': 100, 'Often enough that I count on it': 75, 'Occasionally, but it feels special when it happens': 50, 'Rarely—it's notable when someone understands': 25, 'Almost never—I've largely stopped expecting it': 0 },
+          communication: { 'Primarily my responsibility—I need to communicate more effectively': 100, 'Mostly my responsibility, though context matters': 75, 'Shared responsibility between both parties': 50, 'Mostly the other person's responsibility to listen better': 25, 'Primarily their responsibility—if they cared, they'd understand': 0 },
+          expression: { 'Regularly—it's part of how I communicate': 100, 'Sometimes, when it really matters': 75, 'Rarely—only in specific relationships or circumstances': 50, 'Almost never—it feels too vulnerable or confrontational': 25, 'Never—I keep that feeling to myself': 0 },
+          awareness: { 'Very frequently—it's a recurring pattern': 0, 'Fairly often—it happens regularly enough to notice': 25, 'Occasionally—it surprises me when it occurs': 50, 'Rarely—my sense of being understood is usually accurate': 75, 'Almost never—people generally understand me as I perceive': 100 }
+        };
+
+        const generalScore = scoreMap.general[responses.general_understanding] || 50;
+        const frequencyScore = scoreMap.frequency[responses.understanding_frequency] || 50;
+        const overallQuality = (generalScore + frequencyScore) / 2;
+
+        const supportCount = (responses.support_network || []).filter(s => s !== 'None of the above apply to me').length;
+        const communicationScore = scoreMap.communication[responses.communication_responsibility] || 50;
+        const expressionScore = scoreMap.expression[responses.understanding_expression] || 50;
+        const awarenessScore = scoreMap.awareness[responses.false_positives] || 50;
+        const communicationEffectiveness = (communicationScore + expressionScore + awarenessScore) / 3;
+
+        const positiveImpacts = (responses.positive_impacts || []).length;
+        const negativeImpacts = (responses.negative_impacts || []).length;
+        const impactRatio = negativeImpacts > 0 ? positiveImpacts / negativeImpacts : positiveImpacts;
 
         return {
-          overallFeeling: responses.general,
-          misunderstoodScore: misunderstoodScore,
-          averageMisunderstoodScore: 5.2,
-          topSupporters: responses.who_understands || [],
-          challengingContext: responses.misunderstood_setting,
-          positiveEffects: (responses.effects_positive || []).length,
-          negativeEffects: (responses.effects_negative || []).length
+          overallQuality, avgIdentityScore, mostMisunderstood, supportCount,
+          communicationEffectiveness, positiveImpacts, negativeImpacts, impactRatio,
+          primaryContext: responses.misunderstanding_context,
+          identityDimensions: identityDimensions.sort((a, b) => b.score - a.score)
         };
       };
 
-      const styles = {
-        container: {
-          minHeight: '100vh',
-          backgroundColor: '#ffffff',
-          padding: '40px 20px'
+      const interpretations = {
+        overallQuality: {
+          high: "You experience a notably high quality of understanding in your relationships. This is psychologically protective and contributes significantly to wellbeing. Your challenge is maintaining this quality as relationships evolve and life circumstances change.",
+          moderate: "Your experience of being understood is mixed—sometimes present, sometimes absent. This variability itself can be destabilising. The question is whether you can identify patterns in when understanding occurs and deliberately cultivate those conditions.",
+          low: "You're experiencing a significant deficit in feeling understood. This chronic state has measurable effects on mental health and relationship quality. The encouraging news: understanding is a skill that can be learned and taught to others."
         },
-        content: {
-          maxWidth: '800px',
-          margin: '0 auto'
+        identity: {
+          high: "There's a substantial gap between who you are and how others perceive you across multiple dimensions of identity. This creates a persistent background sense of disconnection that's difficult to name but exhausting to live with.",
+          moderate: "Certain aspects of your identity are well-understood while others remain opaque to those around you. This selective misunderstanding can be confusing—people think they know you but miss crucial elements.",
+          low: "Others generally perceive you accurately across most dimensions of your identity. This alignment between inner experience and external perception creates psychological coherence and relationship stability."
         },
-        header: {
-          textAlign: 'center',
-          marginBottom: '48px'
-        },
-        title: {
-          fontSize: '36px',
-          fontWeight: 'bold',
-          color: '#121212',
-          marginBottom: '8px'
-        },
-        subtitle: {
-          fontSize: '18px',
-          color: '#999b9b',
-          marginBottom: '16px'
-        },
-        description: {
-          fontSize: '16px',
-          color: '#121212',
-          lineHeight: 1.6,
-          maxWidth: '600px',
-          margin: '0 auto'
-        },
-        questionCard: {
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e5e5',
-          borderRadius: '8px',
-          padding: '40px',
-          marginBottom: '24px'
-        },
-        questionText: {
-          fontSize: '24px',
-          fontWeight: 'bold',
-          color: '#121212',
-          marginBottom: '8px',
-          lineHeight: 1.4
-        },
-        questionSubtitle: {
-          fontSize: '14px',
-          color: '#999b9b',
-          marginBottom: '32px'
-        },
-        optionsContainer: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
-        },
-        optionButton: {
-          width: '100%',
-          textAlign: 'left',
-          padding: '16px 20px',
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e5e5',
-          borderRadius: '8px',
-          color: '#121212',
-          fontSize: '16px',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          fontFamily: 'Arial, Helvetica, sans-serif'
-        },
-        optionButtonSelected: {
-          backgroundColor: '#ffd21f',
-          borderColor: '#121212'
-        },
-        ratingContainer: {
-          display: 'flex',
-          gap: '8px',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        },
-        ratingButton: {
-          width: '60px',
-          height: '60px',
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e5e5',
-          borderRadius: '8px',
-          color: '#121212',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          fontFamily: 'Arial, Helvetica, sans-serif'
-        },
-        ratingButtonSelected: {
-          backgroundColor: '#ffd21f',
-          borderColor: '#121212'
-        },
-        ratingLabels: {
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '12px',
-          fontSize: '12px',
-          color: '#999b9b'
-        },
-        navigationContainer: {
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '32px'
-        },
-        button: {
-          padding: '14px 32px',
-          backgroundColor: '#ffd21f',
-          border: 'none',
-          borderRadius: '8px',
-          color: '#121212',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          fontFamily: 'Arial, Helvetica, sans-serif'
-        },
-        buttonSecondary: {
-          padding: '14px 32px',
-          backgroundColor: '#ffffff',
-          border: '2px solid #121212',
-          borderRadius: '8px',
-          color: '#121212',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          fontFamily: 'Arial, Helvetica, sans-serif'
-        },
-        progressBar: {
-          height: '4px',
-          backgroundColor: '#e5e5e5',
-          borderRadius: '2px',
-          marginBottom: '32px',
-          overflow: 'hidden'
-        },
-        progressFill: {
-          height: '100%',
-          backgroundColor: '#ffd21f',
-          transition: 'width 0.3s ease'
-        },
-        resultsCard: {
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e5e5',
-          borderRadius: '8px',
-          padding: '40px',
-          marginBottom: '24px'
-        },
-        resultTitle: {
-          fontSize: '20px',
-          fontWeight: 'bold',
-          color: '#121212',
-          marginBottom: '16px'
-        },
-        resultValue: {
-          fontSize: '48px',
-          fontWeight: 'bold',
-          color: '#ffd21f',
-          marginBottom: '8px'
-        },
-        resultCompare: {
-          fontSize: '14px',
-          color: '#999b9b',
-          marginBottom: '24px'
-        },
-        resultSection: {
-          marginBottom: '32px',
-          paddingBottom: '32px',
-          borderBottom: '1px solid #e5e5e5'
+        communication: {
+          high: "You demonstrate sophisticated awareness of how understanding works. You take appropriate responsibility for being understood, express when you're not, and remain alert to misunderstandings. These are learnable skills you've already mastered.",
+          moderate: "Your approach to communication shows some awareness of the dynamics of understanding, but there's room for development. Small shifts in how you communicate and advocate for your own understanding could yield significant improvements.",
+          low: "Your current communication patterns may inadvertently contribute to being misunderstood. This isn't a personal failing—most people never explicitly learn these skills. The five principles of the Understanding Charter offer a practical framework for development."
         }
+      };
+
+      const getInterpretation = (results) => ({
+        quality: results.overallQuality >= 65 ? 'high' : results.overallQuality >= 40 ? 'moderate' : 'low',
+        identity: results.avgIdentityScore >= 6.5 ? 'high' : results.avgIdentityScore >= 4 ? 'moderate' : 'low',
+        communication: results.communicationEffectiveness >= 70 ? 'high' : results.communicationEffectiveness >= 45 ? 'moderate' : 'low'
+      });
+const styles = {
+        container: { minHeight: '100vh', backgroundColor: '#ffffff', padding: '40px 20px' },
+        content: { maxWidth: '900px', margin: '0 auto' },
+        header: { textAlign: 'center', marginBottom: '48px' },
+        title: { fontSize: '36px', fontWeight: 'bold', color: '#121212', marginBottom: '12px', lineHeight: 1.2 },
+        subtitle: { fontSize: '18px', color: '#999b9b', marginBottom: '24px' },
+        description: { fontSize: '16px', color: '#121212', lineHeight: 1.8, maxWidth: '700px', margin: '0 auto', textAlign: 'left' },
+        questionCard: { backgroundColor: '#ffffff', border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px', marginBottom: '24px' },
+        questionText: { fontSize: '22px', fontWeight: 'bold', color: '#121212', marginBottom: '12px', lineHeight: 1.5 },
+        questionSubtitle: { fontSize: '15px', color: '#999b9b', marginBottom: '36px', lineHeight: 1.6, fontStyle: 'italic' },
+        optionsContainer: { display: 'flex', flexDirection: 'column', gap: '12px' },
+        optionButton: { width: '100%', textAlign: 'left', padding: '18px 24px', backgroundColor: '#ffffff', border: '2px solid #e5e5e5', borderRadius: '8px', color: '#121212', fontSize: '16px', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'Arial, Helvetica, sans-serif', lineHeight: 1.5 },
+        optionButtonSelected: { backgroundColor: '#ffd21f', borderColor: '#121212' },
+        ratingContainer: { display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '8px' },
+        ratingButton: { width: '64px', height: '64px', backgroundColor: '#ffffff', border: '2px solid #e5e5e5', borderRadius: '8px', color: '#121212', fontSize: '22px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'Arial, Helvetica, sans-serif' },
+        ratingButtonSelected: { backgroundColor: '#ffd21f', borderColor: '#121212' },
+        ratingLabels: { display: 'flex', justifyContent: 'space-between', marginTop: '16px', fontSize: '13px', color: '#999b9b' },
+        navigationContainer: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '40px' },
+        button: { padding: '16px 36px', backgroundColor: '#ffd21f', border: 'none', borderRadius: '8px', color: '#121212', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'Arial, Helvetica, sans-serif' },
+        buttonSecondary: { padding: '16px 36px', backgroundColor: '#ffffff', border: '2px solid #121212', borderRadius: '8px', color: '#121212', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'Arial, Helvetica, sans-serif' },
+        progressBar: { height: '4px', backgroundColor: '#e5e5e5', borderRadius: '2px', marginBottom: '40px', overflow: 'hidden' },
+        progressFill: { height: '100%', backgroundColor: '#ffd21f', transition: 'width 0.3s ease' },
+        resultsCard: { backgroundColor: '#ffffff', border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px', marginBottom: '24px' },
+        resultSection: { marginBottom: '48px', paddingBottom: '48px', borderBottom: '1px solid #e5e5e5' },
+        resultTitle: { fontSize: '24px', fontWeight: 'bold', color: '#121212', marginBottom: '20px' },
+        resultSubtitle: { fontSize: '18px', fontWeight: 'bold', color: '#121212', marginBottom: '12px', marginTop: '24px' },
+        resultValue: { fontSize: '56px', fontWeight: 'bold', color: '#ffd21f', marginBottom: '12px', lineHeight: 1 },
+        resultText: { fontSize: '16px', color: '#121212', lineHeight: 1.8, marginBottom: '16px' },
+        resultHighlight: { backgroundColor: '#f9f9f9', padding: '20px 24px', borderRadius: '6px', borderLeft: '4px solid #ffd21f', marginTop: '20px' },
+        dimensionBar: { marginBottom: '16px' },
+        dimensionLabel: { display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', color: '#121212' },
+        dimensionTrack: { height: '12px', backgroundColor: '#e5e5e5', borderRadius: '6px', overflow: 'hidden' },
+        dimensionFill: { height: '100%', backgroundColor: '#ffd21f', transition: 'width 0.5s ease' }
       };
 
       const currentQuestion = questions[currentStep];
@@ -378,67 +172,109 @@
 
       if (showResults) {
         const results = calculateResults();
-        
+        const interpretation = getInterpretation(results);
+        const interpretationText = {
+          overallQuality: interpretations.overallQuality[interpretation.quality],
+          identity: interpretations.identity[interpretation.identity],
+          communication: interpretations.communication[interpretation.communication]
+        };
+
         return (
           <div style={styles.container}>
             <div style={styles.content} className="fade-in">
               <div style={styles.header}>
-                <h1 style={styles.title}>Your Results</h1>
-                <p style={styles.subtitle}>Here's how you compare</p>
+                <h1 style={styles.title}>Your Understanding Profile</h1>
+                <p style={styles.subtitle}>A comprehensive analysis of how understood you feel</p>
               </div>
-
               <div style={styles.resultsCard}>
                 <div style={styles.resultSection}>
-                  <h2 style={styles.resultTitle}>Overall Misunderstood Score</h2>
-                  <div style={styles.resultValue}>{results.misunderstoodScore.toFixed(1)}/10</div>
-                  <p style={styles.resultCompare}>Average score: {results.averageMisunderstoodScore}/10</p>
-                  <p style={{color: '#121212', lineHeight: 1.6}}>
-                    {results.misunderstoodScore < results.averageMisunderstoodScore 
-                      ? "You feel more understood than the average person. That's wonderful! Continue nurturing these positive connections."
-                      : "You're experiencing more feelings of being misunderstood than average. This is an opportunity to improve communication in your relationships."}
-                  </p>
+                  <h2 style={styles.resultTitle}>Overall Understanding Quality</h2>
+                  <div style={styles.resultValue}>{Math.round(results.overallQuality)}%</div>
+                  <p style={styles.resultText}>{interpretationText.overallQuality}</p>
+                  {results.supportCount > 0 && (
+                    <div style={styles.resultHighlight}>
+                      <strong>Your Support Network:</strong> You identified {results.supportCount} relationship{results.supportCount !== 1 ? 's' : ''} where you feel genuinely understood. These are your psychological anchors—relationships that buffer against the stress of being misunderstood elsewhere.
+                    </div>
+                  )}
                 </div>
-
                 <div style={styles.resultSection}>
-                  <h2 style={styles.resultTitle}>Your Support Network</h2>
-                  <p style={{color: '#121212', marginBottom: '12px'}}>You feel most understood by:</p>
-                  <ul style={{listStyle: 'none', padding: 0}}>
-                    {results.topSupporters.map((supporter, i) => (
-                      <li key={i} style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#f5f5f5',
-                        marginBottom: '8px',
-                        borderRadius: '4px'
-                      }}>
-                        {supporter}
-                      </li>
-                    ))}
-                  </ul>
+                  <h2 style={styles.resultTitle}>Your Identity Misunderstanding Profile</h2>
+                  <div style={styles.resultValue}>{results.avgIdentityScore.toFixed(1)}/10</div>
+                  <p style={{...styles.resultText, marginBottom: '8px'}}>Average misunderstanding across identity dimensions</p>
+                  <p style={{fontSize: '14px', color: '#999b9b', marginBottom: '24px'}}>Population average: 5.2/10</p>
+                  <p style={styles.resultText}>{interpretationText.identity}</p>
+                  <h3 style={styles.resultSubtitle}>Where You Feel Most Misunderstood</h3>
+                  {results.identityDimensions.map((dim, i) => (
+                    <div key={i} style={styles.dimensionBar}>
+                      <div style={styles.dimensionLabel}>
+                        <span>{dim.name}</span>
+                        <span style={{fontWeight: 'bold'}}>{dim.score}/10</span>
+                      </div>
+                      <div style={styles.dimensionTrack}>
+                        <div style={{...styles.dimensionFill, width: `${(dim.score / 10) * 100}%`}} />
+                      </div>
+                    </div>
+                  ))}
+                  <div style={styles.resultHighlight}>
+                    <strong>Key Insight:</strong> Your {results.mostMisunderstood.name.toLowerCase()} is where the understanding gap is widest (scored {results.mostMisunderstood.score}/10). This dimension of your identity may be particularly complex, or you may not have found effective ways to communicate it yet.
+                  </div>
                 </div>
-
                 <div style={styles.resultSection}>
-                  <h2 style={styles.resultTitle}>Most Challenging Context</h2>
-                  <p style={{color: '#121212'}}>
-                    You feel most misunderstood: <strong>{results.challengingContext}</strong>
-                  </p>
+                  <h2 style={styles.resultTitle}>Communication Effectiveness</h2>
+                  <div style={styles.resultValue}>{Math.round(results.communicationEffectiveness)}%</div>
+                  <p style={styles.resultText}>{interpretationText.communication}</p>
                 </div>
+                <div style={styles.resultSection}>
+                  <h2 style={styles.resultTitle}>The Stakes: What Understanding Means to You</h2>
+                  <p style={styles.resultText}>
+                    You identified {results.positiveImpacts} positive effects when you feel understood and {results.negativeImpacts} negative consequences when you're misunderstood.
+                  </p>
+                  {results.impactRatio < 0.7 && (
+                    <p style={styles.resultText}>
+                      The disproportionate number of negative impacts you experience suggests that being misunderstood carries significant psychological weight for you. This makes it even more important to develop strategies for being understood more consistently.
+                    </p>
+                  )}
+                  {results.primaryContext && results.primaryContext !== 'The gap feels relatively consistent across all domains' && (
+                    <div style={styles.resultHighlight}>
+                      <strong>Context Matters:</strong> You feel most misunderstood {results.primaryContext.toLowerCase()}. Context-specific misunderstanding often reflects systemic communication barriers in that domain, not personal failings.
+                    </div>
+                  )}
+                </div>
+<div>
+                  <h2 style={styles.resultTitle}>Where to Focus Your Attention</h2>
+                  <p style={styles.resultText}>Based on your profile, here are high-leverage areas for improvement:</p>
+                  
+                  {results.communicationEffectiveness < 50 && (
+                    <div style={{...styles.resultHighlight, marginBottom: '16px'}}>
+                      <strong>1. Learn the fundamentals of being understood</strong><br/>
+                      Your communication patterns may inadvertently contribute to misunderstanding. The five principles in the Understanding Charter offer practical, evidence-based strategies you can implement immediately.
+                    </div>
+                  )}
 
-                <div>
-                  <h2 style={styles.resultTitle}>Impact Assessment</h2>
-                  <p style={{color: '#121212', marginBottom: '16px'}}>
-                    You identified {results.positiveEffects} positive effects of feeling understood and {results.negativeEffects} negative effects of feeling misunderstood.
-                  </p>
-                  <p style={{color: '#999b9b', fontSize: '14px', lineHeight: 1.6}}>
-                    Understanding these impacts is the first step toward improving communication in your relationships. Consider exploring our resources on how to feel more understood in your daily life.
-                  </p>
+                  {results.avgIdentityScore >= 6 && (
+                    <div style={{...styles.resultHighlight, marginBottom: '16px'}}>
+                      <strong>{results.communicationEffectiveness < 50 ? '2' : '1'}. Focus on your most misunderstood dimension</strong><br/>
+                      Your {results.mostMisunderstood.name.toLowerCase()} scored highest for misunderstanding. This is where targeted communication improvements will have the greatest impact on feeling understood.
+                    </div>
+                  )}
+
+                  {results.supportCount < 3 && (
+                    <div style={{...styles.resultHighlight, marginBottom: '16px'}}>
+                      <strong>{results.communicationEffectiveness < 50 && results.avgIdentityScore >= 6 ? '3' : results.communicationEffectiveness < 50 || results.avgIdentityScore >= 6 ? '2' : '1'}. Expand your support network</strong><br/>
+                      You have relatively few relationships where you feel genuinely understood. Deliberately cultivating even one or two additional understanding relationships can significantly improve psychological wellbeing.
+                    </div>
+                  )}
+
+                  {results.supportCount >= 3 && results.avgIdentityScore < 6 && results.communicationEffectiveness >= 50 && (
+                    <div style={{...styles.resultHighlight, marginBottom: '16px'}}>
+                      <strong>Maintain what's working</strong><br/>
+                      You're already experiencing relatively good understanding in your relationships. Your focus should be on sustaining these patterns as circumstances change and relationships evolve.
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <button 
-                onClick={() => window.location.reload()} 
-                style={styles.button}
-              >
-                Take Assessment Again
+              <button onClick={() => window.location.reload()} style={styles.button}>
+                Retake Assessment
               </button>
             </div>
           </div>
@@ -461,48 +297,21 @@
                   <p style={styles.subtitle}>{currentQuestion.subtitle}</p>
                   <p style={styles.description}>{currentQuestion.description}</p>
                 </div>
-                <div style={{textAlign: 'center'}}>
-                  <button onClick={handleNext} style={styles.button}>
-                    {currentQuestion.buttonText}
-                  </button>
+                <div style={{textAlign: 'center', marginTop: '40px'}}>
+                  <button onClick={handleNext} style={styles.button}>{currentQuestion.buttonText}</button>
                 </div>
               </>
             ) : (
               <>
                 <div style={styles.questionCard}>
                   <h2 style={styles.questionText}>{currentQuestion.question}</h2>
-                  {currentQuestion.subtitle && (
-                    <p style={styles.questionSubtitle}>{currentQuestion.subtitle}</p>
-                  )}
+                  {currentQuestion.subtitle && <p style={styles.questionSubtitle}>{currentQuestion.subtitle}</p>}
 
-                  {currentQuestion.type === 'single' && (
+                  {(currentQuestion.type === 'single' || currentQuestion.type === 'scale') && (
                     <div style={styles.optionsContainer}>
                       {currentQuestion.options.map((option, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleResponse(currentQuestion.id, option)}
-                          style={{
-                            ...styles.optionButton,
-                            ...(responses[currentQuestion.id] === option ? styles.optionButtonSelected : {})
-                          }}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {currentQuestion.type === 'scale' && (
-                    <div style={styles.optionsContainer}>
-                      {currentQuestion.options.map((option, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleResponse(currentQuestion.id, option)}
-                          style={{
-                            ...styles.optionButton,
-                            ...(responses[currentQuestion.id] === option ? styles.optionButtonSelected : {})
-                          }}
-                        >
+                        <button key={index} onClick={() => handleResponse(currentQuestion.id, option)}
+                          style={{...styles.optionButton, ...(responses[currentQuestion.id] === option ? styles.optionButtonSelected : {})}}>
                           {option}
                         </button>
                       ))}
@@ -514,20 +323,13 @@
                       {currentQuestion.options.map((option, index) => {
                         const selected = (responses[currentQuestion.id] || []).includes(option);
                         return (
-                          <button
-                            key={index}
+                          <button key={index}
                             onClick={() => {
                               const current = responses[currentQuestion.id] || [];
-                              const updated = selected
-                                ? current.filter(item => item !== option)
-                                : [...current, option];
+                              const updated = selected ? current.filter(item => item !== option) : [...current, option];
                               handleResponse(currentQuestion.id, updated);
                             }}
-                            style={{
-                              ...styles.optionButton,
-                              ...(selected ? styles.optionButtonSelected : {})
-                            }}
-                          >
+                            style={{...styles.optionButton, ...(selected ? styles.optionButtonSelected : {})}}>
                             <span style={{marginRight: '12px'}}>{selected ? '✓' : '○'}</span>
                             {option}
                           </button>
@@ -542,44 +344,30 @@
                         {[...Array(currentQuestion.scale)].map((_, index) => {
                           const value = index + 1;
                           return (
-                            <button
-                              key={value}
-                              onClick={() => handleResponse(currentQuestion.id, value)}
-                              style={{
-                                ...styles.ratingButton,
-                                ...(responses[currentQuestion.id] === value ? styles.ratingButtonSelected : {})
-                              }}
-                            >
+                            <button key={value} onClick={() => handleResponse(currentQuestion.id, value)}
+                              style={{...styles.ratingButton, ...(responses[currentQuestion.id] === value ? styles.ratingButtonSelected : {})}}>
                               {value}
                             </button>
                           );
                         })}
                       </div>
                       <div style={styles.ratingLabels}>
-                        <span>Not at all</span>
-                        <span>Extremely</span>
+                        <span>Not misunderstood at all</span>
+                        <span>Extremely misunderstood</span>
                       </div>
                     </>
                   )}
                 </div>
 
                 <div style={styles.navigationContainer}>
-                  <button 
-                    onClick={handlePrevious} 
-                    style={styles.buttonSecondary}
-                    disabled={currentStep === 0}
-                  >
+                  <button onClick={handlePrevious} style={styles.buttonSecondary} disabled={currentStep === 0}>
                     Previous
                   </button>
                   <span style={{color: '#999b9b', fontSize: '14px'}}>
                     Question {currentStep + 1} of {questions.length}
                   </span>
-                  <button 
-                    onClick={handleNext} 
-                    style={styles.button}
-                    disabled={!canProceed}
-                  >
-                    {currentStep === questions.length - 1 ? 'See Results' : 'Next'}
+                  <button onClick={handleNext} style={styles.button} disabled={!canProceed}>
+                    {currentStep === questions.length - 1 ? 'View Results' : 'Next'}
                   </button>
                 </div>
               </>
