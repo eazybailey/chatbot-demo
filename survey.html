@@ -7,52 +7,21 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; background: #ffffff; color: #121212; }
-  </style>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.2/babel.min.js"></script>
   <script type="text/babel">
-    const SurveyApp = () => {
-      const [step, setStep] = React.useState(0);
-      
+    function App() {
       return (
-        <div style={{padding: '40px', maxWidth: '900px', margin: '0 auto'}}>
-          <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '20px'}}>
-            The Understanding Gap
-          </h1>
-          <p style={{fontSize: '18px', color: '#999b9b', marginBottom: '40px'}}>
-            A comprehensive self-assessment
-          </p>
-          <div style={{backgroundColor: '#ffffff', border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px'}}>
-            <h2 style={{fontSize: '22px', marginBottom: '20px'}}>
-              Question {step + 1}
-            </h2>
-            <p>Testing survey structure...</p>
-            <button 
-              onClick={() => setStep(step + 1)}
-              style={{
-                marginTop: '20px',
-                padding: '16px 36px',
-                backgroundColor: '#ffd21f',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
-            >
-              Next
-            </button>
-          </div>
+        <div style={{padding: '40px'}}>
+          <h1>Survey Test</h1>
+          <p>If you see this, React is working!</p>
         </div>
       );
-    };
+    }
     
-    ReactDOM.render(<SurveyApp />, document.getElementById('root'));
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
