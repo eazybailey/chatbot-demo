@@ -7,15 +7,54 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #ffffff; color: #121212; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
     function App() {
+      const [started, setStarted] = React.useState(false);
+      
+      if (!started) {
+        return (
+          <div style={{minHeight: '100vh', padding: '40px 20px', backgroundColor: '#ffffff'}}>
+            <div style={{maxWidth: '700px', margin: '0 auto', textAlign: 'center'}}>
+              <h1 style={{fontSize: '36px', fontWeight: 'bold', color: '#121212', marginBottom: '12px'}}>
+                The Understanding Gap
+              </h1>
+              <p style={{fontSize: '18px', color: '#999b9b', marginBottom: '24px'}}>
+                A comprehensive self-assessment
+              </p>
+              <p style={{fontSize: '16px', color: '#121212', lineHeight: 1.8, textAlign: 'left', marginBottom: '40px'}}>
+                Feeling understood is fundamental to human wellbeing. It shapes our relationships, influences our mental health, and forms the foundation of our sense of belonging. This assessment examines the gap between who you are and how others perceive you—revealing where understanding flourishes and where it fails. Your responses will illuminate patterns in your communication and relationships that may be invisible to you in daily life.
+              </p>
+              <button 
+                onClick={() => setStarted(true)}
+                style={{
+                  padding: '16px 36px',
+                  backgroundColor: '#ffd21f',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#121212',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Begin Assessment
+              </button>
+            </div>
+          </div>
+        );
+      }
+      
       return (
         <div style={{padding: '40px'}}>
-          <h1>Survey Test</h1>
-          <p>If you see this, React is working!</p>
+          <h2>Survey questions will appear here...</h2>
+          <button onClick={() => setStarted(false)}>Back to intro</button>
         </div>
       );
     }
