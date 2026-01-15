@@ -22,20 +22,20 @@
       const questions = [
         {
           id: 'q1',
-          text: 'When you consider the totality of your relationships—family, friends, colleagues, intimate partners—how accurately would you say people understand who you fundamentally are?',
-          options: ['People see me with remarkable clarity', 'Most people understand the essential me', 'There's a noticeable gap between who I am and how I'm perceived', 'I'm frequently misunderstood in important ways', 'I feel profoundly unseen by those around me']
+          text: 'When you consider the totality of your relationships, how accurately would you say people understand who you fundamentally are?',
+          options: ['People see me with remarkable clarity', 'Most people understand the essential me', 'There is a noticeable gap between who I am and how I am perceived', 'I am frequently misunderstood in important ways', 'I feel profoundly unseen by those around me']
         },
         {
           id: 'q2',
-          text: 'In conversations that matter to you, how often do you experience that satisfying moment when someone truly "gets" what you're trying to communicate?',
-          options: ['Almost always—it's a regular experience', 'Often enough that I count on it', 'Occasionally, but it feels special when it happens', 'Rarely—it's notable when someone understands', 'Almost never—I've largely stopped expecting it']
+          text: 'In conversations that matter to you, how often do you experience that satisfying moment when someone truly gets what you are trying to communicate?',
+          options: ['Almost always', 'Often enough that I count on it', 'Occasionally but it feels special when it happens', 'Rarely', 'Almost never']
         },
         {
           id: 'q3',
           type: 'multi',
           text: 'Which relationships in your life consistently provide you with a sense of being genuinely understood?',
           sub: 'Select all where you regularly feel seen and comprehended',
-          options: ['Romantic partner or spouse', 'Parents or parental figures', 'Siblings', 'Close friends (in person)', 'Colleagues or work relationships', 'Online communities or virtual friendships', 'Therapist or counsellor', 'Extended family members', 'None of the above apply to me']
+          options: ['Romantic partner or spouse', 'Parents or parental figures', 'Siblings', 'Close friends', 'Colleagues or work relationships', 'Online communities', 'Therapist or counsellor', 'Extended family members', 'None of the above']
         }
       ];
       
@@ -50,7 +50,6 @@
         setResponses({...responses, [qid]: updated});
       };
       
-      // Intro
       if (step === -1) {
         return (
           <div style={{minHeight: '100vh', padding: '40px 20px'}}>
@@ -58,7 +57,7 @@
               <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '12px'}}>The Understanding Gap</h1>
               <p style={{fontSize: '18px', color: '#999b9b', marginBottom: '24px'}}>A comprehensive self-assessment</p>
               <p style={{fontSize: '16px', lineHeight: 1.8, marginBottom: '40px', textAlign: 'left'}}>
-                Feeling understood is fundamental to human wellbeing. It shapes our relationships, influences our mental health, and forms the foundation of our sense of belonging. This assessment examines the gap between who you are and how others perceive you—revealing where understanding flourishes and where it fails.
+                Feeling understood is fundamental to human wellbeing. This assessment examines the gap between who you are and how others perceive you.
               </p>
               <button onClick={() => setStep(0)} style={{padding: '16px 36px', backgroundColor: '#ffd21f', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer'}}>
                 Begin Assessment
@@ -68,7 +67,6 @@
         );
       }
       
-      // Results
       if (step >= questions.length) {
         return (
           <div style={{minHeight: '100vh', padding: '40px 20px'}}>
@@ -76,7 +74,7 @@
               <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '40px', textAlign: 'center'}}>Your Understanding Profile</h1>
               <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px'}}>
                 <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px'}}>Assessment Complete</h2>
-                <p style={{fontSize: '16px', marginBottom: '20px'}}>You've completed {Object.keys(responses).length} questions. Detailed results coming soon.</p>
+                <p style={{fontSize: '16px', marginBottom: '20px'}}>You completed {Object.keys(responses).length} questions.</p>
                 <button onClick={() => window.location.reload()} style={{padding: '16px 36px', backgroundColor: '#ffd21f', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer'}}>
                   Retake Assessment
                 </button>
@@ -86,7 +84,6 @@
         );
       }
       
-      // Questions
       const q = questions[step];
       const prog = ((step + 1) / questions.length) * 100;
       const canNext = responses[q.id] !== undefined;
