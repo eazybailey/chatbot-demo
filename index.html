@@ -3,11 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feeling Understood Chatbot</title>
+  <title>Feeling Understood</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #ffffff;
+      color: #121212;
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>
@@ -18,13 +30,13 @@
     const API_ENDPOINT = '/api/chat';
 
     const MessageCircle = () => (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
     );
 
     const Send = () => (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
         <line x1="22" y1="2" x2="11" y2="13"></line>
         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
       </svg>
@@ -48,12 +60,11 @@
       const [showOptions, setShowOptions] = useState(true);
       const messagesEndRef = useRef(null);
 
-const scrollToBottom = () => {
-  // Only auto-scroll if not in an iframe
-  if (window.self === window.top) {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }
-};
+      const scrollToBottom = () => {
+        if (window.self === window.top) {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
 
       useEffect(() => {
         scrollToBottom();
@@ -137,38 +148,239 @@ Remember: This is about helping people understand themselves better and practice
         }
       };
 
+      const styles = {
+        container: {
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          backgroundColor: '#ffffff',
+          fontFamily: 'Arial, Helvetica, sans-serif'
+        },
+        header: {
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e5e5e5',
+          padding: '20px 24px'
+        },
+        headerContent: {
+          maxWidth: '900px',
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px'
+        },
+        icon: {
+          width: '48px',
+          height: '48px',
+          backgroundColor: '#ffd21f',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#121212'
+        },
+        headerText: {
+          flex: 1
+        },
+        title: {
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#121212',
+          margin: 0,
+          lineHeight: 1.2
+        },
+        subtitle: {
+          fontSize: '14px',
+          color: '#999b9b',
+          margin: '4px 0 0 0'
+        },
+        messagesContainer: {
+          flex: 1,
+          overflowY: 'auto',
+          padding: '32px 24px',
+          backgroundColor: '#ffffff'
+        },
+        messagesInner: {
+          maxWidth: '900px',
+          margin: '0 auto'
+        },
+        messageRow: {
+          display: 'flex',
+          marginBottom: '24px'
+        },
+        messageRowUser: {
+          justifyContent: 'flex-end'
+        },
+        messageRowAssistant: {
+          justifyContent: 'flex-start'
+        },
+        messageBubble: {
+          maxWidth: '75%',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          lineHeight: 1.6
+        },
+        messageBubbleUser: {
+          backgroundColor: '#121212',
+          color: '#ffffff'
+        },
+        messageBubbleAssistant: {
+          backgroundColor: '#f5f5f5',
+          color: '#121212',
+          border: '1px solid #e5e5e5'
+        },
+        optionsContainer: {
+          marginTop: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        },
+        optionButton: {
+          width: '100%',
+          textAlign: 'left',
+          padding: '12px 16px',
+          backgroundColor: '#ffffff',
+          border: '2px solid #121212',
+          borderRadius: '4px',
+          color: '#121212',
+          fontSize: '14px',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          fontFamily: 'Arial, Helvetica, sans-serif'
+        },
+        loadingContainer: {
+          display: 'flex',
+          justifyContent: 'flex-start',
+          marginBottom: '24px'
+        },
+        loadingBubble: {
+          padding: '16px 20px',
+          borderRadius: '8px',
+          backgroundColor: '#f5f5f5',
+          border: '1px solid #e5e5e5'
+        },
+        loadingDots: {
+          display: 'flex',
+          gap: '6px'
+        },
+        loadingDot: {
+          width: '8px',
+          height: '8px',
+          backgroundColor: '#999b9b',
+          borderRadius: '50%',
+          animation: 'bounce 1.4s infinite ease-in-out'
+        },
+        inputContainer: {
+          backgroundColor: '#ffffff',
+          borderTop: '1px solid #e5e5e5',
+          padding: '20px 24px'
+        },
+        inputInner: {
+          maxWidth: '900px',
+          margin: '0 auto'
+        },
+        inputRow: {
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center'
+        },
+        input: {
+          flex: 1,
+          padding: '14px 18px',
+          border: '2px solid #e5e5e5',
+          borderRadius: '8px',
+          fontSize: '15px',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          color: '#121212',
+          outline: 'none'
+        },
+        sendButton: {
+          width: '52px',
+          height: '52px',
+          backgroundColor: '#ffd21f',
+          border: 'none',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          color: '#121212'
+        },
+        disclaimer: {
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#999b9b',
+          marginTop: '12px'
+        }
+      };
+
       return (
-        <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-green-50">
-          <div className="bg-white shadow-sm border-b border-gray-200 p-4">
-            <div className="max-w-4xl mx-auto flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-green-400 rounded-full flex items-center justify-center">
+        <div style={styles.container}>
+          <style>
+            {`
+              @keyframes bounce {
+                0%, 80%, 100% { transform: translateY(0); }
+                40% { transform: translateY(-8px); }
+              }
+              .loading-dot-1 { animation-delay: -0.32s; }
+              .loading-dot-2 { animation-delay: -0.16s; }
+              input:focus {
+                border-color: #ffd21f !important;
+              }
+              button:hover:not(:disabled) {
+                opacity: 0.9;
+                transform: translateY(-1px);
+              }
+              button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+              }
+              .option-button:hover {
+                backgroundColor: #ffd21f !important;
+              }
+            `}
+          </style>
+          
+          <div style={styles.header}>
+            <div style={styles.headerContent}>
+              <div style={styles.icon}>
                 <MessageCircle />
               </div>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-800">Feeling Understood</h1>
-                <p className="text-sm text-gray-500">A safe space for exploration</p>
+              <div style={styles.headerText}>
+                <h1 style={styles.title}>— I want to feel understood</h1>
+                <p style={styles.subtitle}>A safe space for exploration</p>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="max-w-4xl mx-auto space-y-6">
+          <div style={styles.messagesContainer}>
+            <div style={styles.messagesInner}>
               {messages.map((message, index) => (
-                <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-2xl ${
-                    message.role === 'user' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-white text-gray-800 shadow-sm'
-                  } rounded-2xl px-5 py-3`}>
-                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                <div 
+                  key={index} 
+                  style={{
+                    ...styles.messageRow,
+                    ...(message.role === 'user' ? styles.messageRowUser : styles.messageRowAssistant)
+                  }}
+                >
+                  <div 
+                    style={{
+                      ...styles.messageBubble,
+                      ...(message.role === 'user' ? styles.messageBubbleUser : styles.messageBubbleAssistant)
+                    }}
+                  >
+                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{message.content}</p>
                     
                     {message.options && showOptions && index === messages.length - 1 && (
-                      <div className="mt-4 space-y-2">
+                      <div style={styles.optionsContainer}>
                         {message.options.map((option, optIndex) => (
                           <button
                             key={optIndex}
                             onClick={() => handleOptionClick(option)}
-                            className="w-full text-left px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm"
+                            style={styles.optionButton}
+                            className="option-button"
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#ffd21f'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = '#ffffff'}
                           >
                             {option}
                           </button>
@@ -180,12 +392,12 @@ Remember: This is about helping people understand themselves better and practice
               ))}
               
               {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-white rounded-2xl px-5 py-3 shadow-sm">
-                    <div className="flex gap-2">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div style={styles.loadingContainer}>
+                  <div style={styles.loadingBubble}>
+                    <div style={styles.loadingDots}>
+                      <div style={{...styles.loadingDot}} className="loading-dot-1"></div>
+                      <div style={{...styles.loadingDot}} className="loading-dot-2"></div>
+                      <div style={{...styles.loadingDot}}></div>
                     </div>
                   </div>
                 </div>
@@ -195,27 +407,27 @@ Remember: This is about helping people understand themselves better and practice
             </div>
           </div>
 
-          <div className="bg-white border-t border-gray-200 p-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex gap-2">
+          <div style={styles.inputContainer}>
+            <div style={styles.inputInner}>
+              <div style={styles.inputRow}>
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Share your thoughts..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                  style={styles.input}
                   disabled={isLoading}
                 />
                 <button
                   onClick={() => sendMessage()}
                   disabled={isLoading || !input.trim()}
-                  className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 text-white rounded-full flex items-center justify-center hover:from-blue-600 hover:to-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  style={styles.sendButton}
                 >
                   <Send />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 text-center mt-2">
+              <p style={styles.disclaimer}>
                 This is a judgment-free space. Your conversation stays private.
               </p>
             </div>
