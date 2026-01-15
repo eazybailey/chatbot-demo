@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feeling Understood</title>
+  <title>Feel Understood - Self Assessment</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -19,424 +19,577 @@
       background: #ffffff;
       color: #121212;
     }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useRef, useEffect } = React;
+    const { useState } = React;
 
-    const API_ENDPOINT = '/api/chat';
+    const SelfAssessmentSurvey = () => {
+      const [currentStep, setCurrentStep] = useState(0);
+      const [responses, setResponses] = useState({});
+      const [showResults, setShowResults] = useState(false);
 
-    const MessageCircle = () => (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-      </svg>
-    );
-
-    const Send = () => (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    );
-
-    const FeelingUnderstoodChatbot = () => {
-      const [messages, setMessages] = useState([
+      const questions = [
         {
-          role: 'assistant',
-          content: "Welcome. This is a safe space to explore what it means to feel understood—and what happens when we don't.\n\nThink about the people who matter most to you. How well do you feel understood by them?",
+          id: 'intro',
+          type: 'intro',
+          title: 'How well do you feel understood?',
+          subtitle: 'A self-assessment survey',
+          description: 'This survey will help you understand how well you feel understood by the people in your life, and identify areas where you might want to improve communication.',
+          buttonText: 'Start Assessment'
+        },
+        {
+          id: 'general',
+          type: 'scale',
+          question: 'Overall, how well understood do you feel by the people you share your life with?',
           options: [
-            "I often feel understood",
-            "Sometimes I do, sometimes I don't",
-            "I rarely feel understood",
-            "I'd rather describe it in my own words"
+            'Very well understood',
+            'Somewhat understood',
+            'Neutral',
+            'Somewhat misunderstood',
+            'Very misunderstood'
           ]
+        },
+        {
+          id: 'who_understands',
+          type: 'multiple',
+          question: 'Who in your life understands you best?',
+          subtitle: 'Select all that apply',
+          options: [
+            'Partner/spouse',
+            'Family',
+            'Close friends',
+            'Colleagues',
+            'Online communities',
+            'No one'
+          ]
+        },
+        {
+          id: 'misunderstood_setting',
+          type: 'single',
+          question: 'In which setting do you feel most misunderstood or overlooked?',
+          options: [
+            'At work',
+            'At home',
+            'Socially',
+            'Online',
+            'Within my community'
+          ]
+        },
+        {
+          id: 'effects_positive',
+          type: 'multiple',
+          question: 'How does feeling understood affect you?',
+          subtitle: 'Select all that apply',
+          options: [
+            'I feel closer to the person',
+            'I feel we\'ve established a connection',
+            'I don\'t feel so alone with my thoughts',
+            'I am more likely to be open with them',
+            'It doesn\'t really affect me much'
+          ]
+        },
+        {
+          id: 'effects_negative',
+          type: 'multiple',
+          question: 'How does feeling misunderstood affect you?',
+          subtitle: 'Select all that apply',
+          options: [
+            'I feel undervalued',
+            'I feel disrespected',
+            'I don\'t feel like saying any more',
+            'I feel less close to the person',
+            'I feel angry',
+            'I feel like withdrawing',
+            'I doubt myself',
+            'I think they\'re not interested in me',
+            'It doesn\'t really affect me'
+          ]
+        },
+        {
+          id: 'values_beliefs',
+          type: 'rating',
+          question: 'How misunderstood do you feel about your values & beliefs?',
+          subtitle: 'Including your political views, spiritual beliefs, ethical principles, and life priorities',
+          scale: 10
+        },
+        {
+          id: 'personality',
+          type: 'rating',
+          question: 'How misunderstood do you feel about your personality & identity?',
+          subtitle: 'Including your outlook on life, emotional needs, communication style, and sense of humor',
+          scale: 10
+        },
+        {
+          id: 'preferences',
+          type: 'rating',
+          question: 'How misunderstood do you feel about your preferences & lifestyle?',
+          subtitle: 'Including your interests, tastes, social needs, and how you spend free time',
+          scale: 10
+        },
+        {
+          id: 'motivations',
+          type: 'rating',
+          question: 'How misunderstood do you feel about your motivations & aspirations?',
+          subtitle: 'Including your goals, ambitions, what motivates you daily, and need for creative expression',
+          scale: 10
+        },
+        {
+          id: 'challenges',
+          type: 'rating',
+          question: 'How misunderstood do you feel about your challenges & struggles?',
+          subtitle: 'Including mental health, physical health, past experiences, fears and anxieties',
+          scale: 10
         }
-      ]);
-      const [input, setInput] = useState('');
-      const [isLoading, setIsLoading] = useState(false);
-      const [showOptions, setShowOptions] = useState(true);
-      const messagesEndRef = useRef(null);
+      ];
 
-      const scrollToBottom = () => {
-        if (window.self === window.top) {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const handleResponse = (questionId, value) => {
+        setResponses(prev => ({
+          ...prev,
+          [questionId]: value
+        }));
+      };
+
+      const handleNext = () => {
+        if (currentStep < questions.length - 1) {
+          setCurrentStep(currentStep + 1);
+        } else {
+          setShowResults(true);
         }
       };
 
-      useEffect(() => {
-        scrollToBottom();
-      }, [messages]);
-
-      const systemPrompt = `You are an empathetic conversation guide for a project about feeling understood. Your role is to help people explore their experiences of feeling understood or misunderstood in their relationships.
-
-Key principles:
-- Be warm, compassionate, and non-judgmental
-- NEVER give advice. Your role is to listen, reflect, and help people articulate their feelings
-- Use active listening techniques: reflect back what you hear, validate emotions, ask clarifying questions
-- Help users identify which aspects of their identity they feel misunderstood about (needs, capabilities, role in relationships, values, worldview, ambitions, concerns, etc.)
-- When appropriate, gently introduce concepts from the "5 Ways to Feel Understood":
-  1. When not feeling understood, say so
-  2. Take responsibility for being understood
-  3. Ask for help in communicating better
-  4. Take your turn in conversations
-  5. Always check understanding rather than assume it
-- Periodically offer brief summaries of what you've heard to help the user feel understood
-- Create a safe space for exploration and self-discovery
-- Keep responses conversational and not too long (2-4 sentences usually)
-- The goal is for users to feel heard and to gain insight into their communication patterns
-
-Remember: This is about helping people understand themselves better and practice expressing their feelings in a no-jeopardy environment.`;
-
-      const handleOptionClick = async (option) => {
-        setShowOptions(false);
-        await sendMessage(option);
-      };
-
-      const sendMessage = async (messageText = input) => {
-        if (!messageText.trim()) return;
-
-        const userMessage = { role: 'user', content: messageText };
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        setIsLoading(true);
-
-        try {
-          const conversationHistory = [...messages, userMessage].map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }));
-
-          const response = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              system: systemPrompt,
-              messages: conversationHistory
-            })
-          });
-
-          const data = await response.json();
-          const assistantMessage = data.content
-            .filter(item => item.type === 'text')
-            .map(item => item.text)
-            .join('\n');
-
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: assistantMessage
-          }]);
-        } catch (error) {
-          console.error('Error:', error);
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: "I'm having trouble connecting right now. Please try again in a moment."
-          }]);
-        } finally {
-          setIsLoading(false);
+      const handlePrevious = () => {
+        if (currentStep > 0) {
+          setCurrentStep(currentStep - 1);
         }
       };
 
-      const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
+      const calculateResults = () => {
+        const misunderstoodScore = [
+          responses.values_beliefs || 0,
+          responses.personality || 0,
+          responses.preferences || 0,
+          responses.motivations || 0,
+          responses.challenges || 0
+        ].reduce((a, b) => a + b, 0) / 5;
+
+        return {
+          overallFeeling: responses.general,
+          misunderstoodScore: misunderstoodScore,
+          averageMisunderstoodScore: 5.2,
+          topSupporters: responses.who_understands || [],
+          challengingContext: responses.misunderstood_setting,
+          positiveEffects: (responses.effects_positive || []).length,
+          negativeEffects: (responses.effects_negative || []).length
+        };
       };
 
       const styles = {
         container: {
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100vh',
+          minHeight: '100vh',
           backgroundColor: '#ffffff',
-          fontFamily: 'Arial, Helvetica, sans-serif'
+          padding: '40px 20px'
+        },
+        content: {
+          maxWidth: '800px',
+          margin: '0 auto'
         },
         header: {
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e5e5e5',
-          padding: '20px 24px'
-        },
-        headerContent: {
-          maxWidth: '900px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px'
-        },
-        icon: {
-          width: '48px',
-          height: '48px',
-          backgroundColor: '#ffd21f',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#121212'
-        },
-        headerText: {
-          flex: 1
+          textAlign: 'center',
+          marginBottom: '48px'
         },
         title: {
+          fontSize: '36px',
+          fontWeight: 'bold',
+          color: '#121212',
+          marginBottom: '8px'
+        },
+        subtitle: {
+          fontSize: '18px',
+          color: '#999b9b',
+          marginBottom: '16px'
+        },
+        description: {
+          fontSize: '16px',
+          color: '#121212',
+          lineHeight: 1.6,
+          maxWidth: '600px',
+          margin: '0 auto'
+        },
+        questionCard: {
+          backgroundColor: '#ffffff',
+          border: '2px solid #e5e5e5',
+          borderRadius: '8px',
+          padding: '40px',
+          marginBottom: '24px'
+        },
+        questionText: {
           fontSize: '24px',
           fontWeight: 'bold',
           color: '#121212',
-          margin: 0,
-          lineHeight: 1.2
+          marginBottom: '8px',
+          lineHeight: 1.4
         },
-        subtitle: {
+        questionSubtitle: {
           fontSize: '14px',
           color: '#999b9b',
-          margin: '4px 0 0 0'
-        },
-        messagesContainer: {
-          flex: 1,
-          overflowY: 'auto',
-          padding: '32px 24px',
-          backgroundColor: '#ffffff'
-        },
-        messagesInner: {
-          maxWidth: '900px',
-          margin: '0 auto'
-        },
-        messageRow: {
-          display: 'flex',
-          marginBottom: '24px'
-        },
-        messageRowUser: {
-          justifyContent: 'flex-end'
-        },
-        messageRowAssistant: {
-          justifyContent: 'flex-start'
-        },
-        messageBubble: {
-          maxWidth: '75%',
-          padding: '16px 20px',
-          borderRadius: '8px',
-          lineHeight: 1.6
-        },
-        messageBubbleUser: {
-          backgroundColor: '#121212',
-          color: '#ffffff'
-        },
-        messageBubbleAssistant: {
-          backgroundColor: '#f5f5f5',
-          color: '#121212',
-          border: '1px solid #e5e5e5'
+          marginBottom: '32px'
         },
         optionsContainer: {
-          marginTop: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px'
+          gap: '12px'
         },
         optionButton: {
           width: '100%',
           textAlign: 'left',
-          padding: '12px 16px',
+          padding: '16px 20px',
           backgroundColor: '#ffffff',
-          border: '2px solid #121212',
-          borderRadius: '4px',
+          border: '2px solid #e5e5e5',
+          borderRadius: '8px',
           color: '#121212',
-          fontSize: '14px',
+          fontSize: '16px',
           cursor: 'pointer',
           transition: 'all 0.2s',
           fontFamily: 'Arial, Helvetica, sans-serif'
         },
-        loadingContainer: {
+        optionButtonSelected: {
+          backgroundColor: '#ffd21f',
+          borderColor: '#121212'
+        },
+        ratingContainer: {
           display: 'flex',
-          justifyContent: 'flex-start',
-          marginBottom: '24px'
+          gap: '8px',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
         },
-        loadingBubble: {
-          padding: '16px 20px',
-          borderRadius: '8px',
-          backgroundColor: '#f5f5f5',
-          border: '1px solid #e5e5e5'
-        },
-        loadingDots: {
-          display: 'flex',
-          gap: '6px'
-        },
-        loadingDot: {
-          width: '8px',
-          height: '8px',
-          backgroundColor: '#999b9b',
-          borderRadius: '50%',
-          animation: 'bounce 1.4s infinite ease-in-out'
-        },
-        inputContainer: {
+        ratingButton: {
+          width: '60px',
+          height: '60px',
           backgroundColor: '#ffffff',
-          borderTop: '1px solid #e5e5e5',
-          padding: '20px 24px'
-        },
-        inputInner: {
-          maxWidth: '900px',
-          margin: '0 auto'
-        },
-        inputRow: {
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center'
-        },
-        input: {
-          flex: 1,
-          padding: '14px 18px',
           border: '2px solid #e5e5e5',
           borderRadius: '8px',
-          fontSize: '15px',
-          fontFamily: 'Arial, Helvetica, sans-serif',
           color: '#121212',
-          outline: 'none'
+          fontSize: '20px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          fontFamily: 'Arial, Helvetica, sans-serif'
         },
-        sendButton: {
-          width: '52px',
-          height: '52px',
+        ratingButtonSelected: {
+          backgroundColor: '#ffd21f',
+          borderColor: '#121212'
+        },
+        ratingLabels: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '12px',
+          fontSize: '12px',
+          color: '#999b9b'
+        },
+        navigationContainer: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '32px'
+        },
+        button: {
+          padding: '14px 32px',
           backgroundColor: '#ffd21f',
           border: 'none',
           borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          color: '#121212',
+          fontSize: '16px',
+          fontWeight: 'bold',
           cursor: 'pointer',
           transition: 'all 0.2s',
-          color: '#121212'
+          fontFamily: 'Arial, Helvetica, sans-serif'
         },
-        disclaimer: {
-          textAlign: 'center',
-          fontSize: '12px',
+        buttonSecondary: {
+          padding: '14px 32px',
+          backgroundColor: '#ffffff',
+          border: '2px solid #121212',
+          borderRadius: '8px',
+          color: '#121212',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          fontFamily: 'Arial, Helvetica, sans-serif'
+        },
+        progressBar: {
+          height: '4px',
+          backgroundColor: '#e5e5e5',
+          borderRadius: '2px',
+          marginBottom: '32px',
+          overflow: 'hidden'
+        },
+        progressFill: {
+          height: '100%',
+          backgroundColor: '#ffd21f',
+          transition: 'width 0.3s ease'
+        },
+        resultsCard: {
+          backgroundColor: '#ffffff',
+          border: '2px solid #e5e5e5',
+          borderRadius: '8px',
+          padding: '40px',
+          marginBottom: '24px'
+        },
+        resultTitle: {
+          fontSize: '20px',
+          fontWeight: 'bold',
+          color: '#121212',
+          marginBottom: '16px'
+        },
+        resultValue: {
+          fontSize: '48px',
+          fontWeight: 'bold',
+          color: '#ffd21f',
+          marginBottom: '8px'
+        },
+        resultCompare: {
+          fontSize: '14px',
           color: '#999b9b',
-          marginTop: '12px'
+          marginBottom: '24px'
+        },
+        resultSection: {
+          marginBottom: '32px',
+          paddingBottom: '32px',
+          borderBottom: '1px solid #e5e5e5'
         }
       };
 
+      const currentQuestion = questions[currentStep];
+      const progress = ((currentStep + 1) / questions.length) * 100;
+      const canProceed = responses[currentQuestion?.id] !== undefined || currentQuestion?.type === 'intro';
+
+      if (showResults) {
+        const results = calculateResults();
+        
+        return (
+          <div style={styles.container}>
+            <div style={styles.content} className="fade-in">
+              <div style={styles.header}>
+                <h1 style={styles.title}>Your Results</h1>
+                <p style={styles.subtitle}>Here's how you compare</p>
+              </div>
+
+              <div style={styles.resultsCard}>
+                <div style={styles.resultSection}>
+                  <h2 style={styles.resultTitle}>Overall Misunderstood Score</h2>
+                  <div style={styles.resultValue}>{results.misunderstoodScore.toFixed(1)}/10</div>
+                  <p style={styles.resultCompare}>Average score: {results.averageMisunderstoodScore}/10</p>
+                  <p style={{color: '#121212', lineHeight: 1.6}}>
+                    {results.misunderstoodScore < results.averageMisunderstoodScore 
+                      ? "You feel more understood than the average person. That's wonderful! Continue nurturing these positive connections."
+                      : "You're experiencing more feelings of being misunderstood than average. This is an opportunity to improve communication in your relationships."}
+                  </p>
+                </div>
+
+                <div style={styles.resultSection}>
+                  <h2 style={styles.resultTitle}>Your Support Network</h2>
+                  <p style={{color: '#121212', marginBottom: '12px'}}>You feel most understood by:</p>
+                  <ul style={{listStyle: 'none', padding: 0}}>
+                    {results.topSupporters.map((supporter, i) => (
+                      <li key={i} style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#f5f5f5',
+                        marginBottom: '8px',
+                        borderRadius: '4px'
+                      }}>
+                        {supporter}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div style={styles.resultSection}>
+                  <h2 style={styles.resultTitle}>Most Challenging Context</h2>
+                  <p style={{color: '#121212'}}>
+                    You feel most misunderstood: <strong>{results.challengingContext}</strong>
+                  </p>
+                </div>
+
+                <div>
+                  <h2 style={styles.resultTitle}>Impact Assessment</h2>
+                  <p style={{color: '#121212', marginBottom: '16px'}}>
+                    You identified {results.positiveEffects} positive effects of feeling understood and {results.negativeEffects} negative effects of feeling misunderstood.
+                  </p>
+                  <p style={{color: '#999b9b', fontSize: '14px', lineHeight: 1.6}}>
+                    Understanding these impacts is the first step toward improving communication in your relationships. Consider exploring our resources on how to feel more understood in your daily life.
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => window.location.reload()} 
+                style={styles.button}
+              >
+                Take Assessment Again
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div style={styles.container}>
-          <style>
-            {`
-              @keyframes bounce {
-                0%, 80%, 100% { transform: translateY(0); }
-                40% { transform: translateY(-8px); }
-              }
-              .loading-dot-1 { animation-delay: -0.32s; }
-              .loading-dot-2 { animation-delay: -0.16s; }
-              input:focus {
-                border-color: #ffd21f !important;
-              }
-              button:hover:not(:disabled) {
-                opacity: 0.9;
-                transform: translateY(-1px);
-              }
-              button:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-              }
-              .option-button:hover {
-                backgroundColor: #ffd21f !important;
-              }
-            `}
-          </style>
-          
-          <div style={styles.header}>
-            <div style={styles.headerContent}>
-              <div style={styles.icon}>
-                <MessageCircle />
+          <div style={styles.content} className="fade-in">
+            {currentQuestion.type !== 'intro' && (
+              <div style={styles.progressBar}>
+                <div style={{...styles.progressFill, width: `${progress}%`}} />
               </div>
-              <div style={styles.headerText}>
-                <h1 style={styles.title}>— I want to feel understood</h1>
-                <p style={styles.subtitle}>A safe space for exploration</p>
-              </div>
-            </div>
-          </div>
+            )}
 
-          <div style={styles.messagesContainer}>
-            <div style={styles.messagesInner}>
-              {messages.map((message, index) => (
-                <div 
-                  key={index} 
-                  style={{
-                    ...styles.messageRow,
-                    ...(message.role === 'user' ? styles.messageRowUser : styles.messageRowAssistant)
-                  }}
-                >
-                  <div 
-                    style={{
-                      ...styles.messageBubble,
-                      ...(message.role === 'user' ? styles.messageBubbleUser : styles.messageBubbleAssistant)
-                    }}
-                  >
-                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{message.content}</p>
-                    
-                    {message.options && showOptions && index === messages.length - 1 && (
-                      <div style={styles.optionsContainer}>
-                        {message.options.map((option, optIndex) => (
+            {currentQuestion.type === 'intro' ? (
+              <>
+                <div style={styles.header}>
+                  <h1 style={styles.title}>{currentQuestion.title}</h1>
+                  <p style={styles.subtitle}>{currentQuestion.subtitle}</p>
+                  <p style={styles.description}>{currentQuestion.description}</p>
+                </div>
+                <div style={{textAlign: 'center'}}>
+                  <button onClick={handleNext} style={styles.button}>
+                    {currentQuestion.buttonText}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={styles.questionCard}>
+                  <h2 style={styles.questionText}>{currentQuestion.question}</h2>
+                  {currentQuestion.subtitle && (
+                    <p style={styles.questionSubtitle}>{currentQuestion.subtitle}</p>
+                  )}
+
+                  {currentQuestion.type === 'single' && (
+                    <div style={styles.optionsContainer}>
+                      {currentQuestion.options.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleResponse(currentQuestion.id, option)}
+                          style={{
+                            ...styles.optionButton,
+                            ...(responses[currentQuestion.id] === option ? styles.optionButtonSelected : {})
+                          }}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {currentQuestion.type === 'scale' && (
+                    <div style={styles.optionsContainer}>
+                      {currentQuestion.options.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleResponse(currentQuestion.id, option)}
+                          style={{
+                            ...styles.optionButton,
+                            ...(responses[currentQuestion.id] === option ? styles.optionButtonSelected : {})
+                          }}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {currentQuestion.type === 'multiple' && (
+                    <div style={styles.optionsContainer}>
+                      {currentQuestion.options.map((option, index) => {
+                        const selected = (responses[currentQuestion.id] || []).includes(option);
+                        return (
                           <button
-                            key={optIndex}
-                            onClick={() => handleOptionClick(option)}
-                            style={styles.optionButton}
-                            className="option-button"
-                            onMouseEnter={(e) => e.target.style.backgroundColor = '#ffd21f'}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = '#ffffff'}
+                            key={index}
+                            onClick={() => {
+                              const current = responses[currentQuestion.id] || [];
+                              const updated = selected
+                                ? current.filter(item => item !== option)
+                                : [...current, option];
+                              handleResponse(currentQuestion.id, updated);
+                            }}
+                            style={{
+                              ...styles.optionButton,
+                              ...(selected ? styles.optionButtonSelected : {})
+                            }}
                           >
+                            <span style={{marginRight: '12px'}}>{selected ? '✓' : '○'}</span>
                             {option}
                           </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              
-              {isLoading && (
-                <div style={styles.loadingContainer}>
-                  <div style={styles.loadingBubble}>
-                    <div style={styles.loadingDots}>
-                      <div style={{...styles.loadingDot}} className="loading-dot-1"></div>
-                      <div style={{...styles.loadingDot}} className="loading-dot-2"></div>
-                      <div style={{...styles.loadingDot}}></div>
+                        );
+                      })}
                     </div>
-                  </div>
-                </div>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
+                  )}
 
-          <div style={styles.inputContainer}>
-            <div style={styles.inputInner}>
-              <div style={styles.inputRow}>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Share your thoughts..."
-                  style={styles.input}
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={() => sendMessage()}
-                  disabled={isLoading || !input.trim()}
-                  style={styles.sendButton}
-                >
-                  <Send />
-                </button>
-              </div>
-              <p style={styles.disclaimer}>
-                This is a judgment-free space. Your conversation stays private.
-              </p>
-            </div>
+                  {currentQuestion.type === 'rating' && (
+                    <>
+                      <div style={styles.ratingContainer}>
+                        {[...Array(currentQuestion.scale)].map((_, index) => {
+                          const value = index + 1;
+                          return (
+                            <button
+                              key={value}
+                              onClick={() => handleResponse(currentQuestion.id, value)}
+                              style={{
+                                ...styles.ratingButton,
+                                ...(responses[currentQuestion.id] === value ? styles.ratingButtonSelected : {})
+                              }}
+                            >
+                              {value}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div style={styles.ratingLabels}>
+                        <span>Not at all</span>
+                        <span>Extremely</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div style={styles.navigationContainer}>
+                  <button 
+                    onClick={handlePrevious} 
+                    style={styles.buttonSecondary}
+                    disabled={currentStep === 0}
+                  >
+                    Previous
+                  </button>
+                  <span style={{color: '#999b9b', fontSize: '14px'}}>
+                    Question {currentStep + 1} of {questions.length}
+                  </span>
+                  <button 
+                    onClick={handleNext} 
+                    style={styles.button}
+                    disabled={!canProceed}
+                  >
+                    {currentStep === questions.length - 1 ? 'See Results' : 'Next'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       );
     };
 
-    ReactDOM.render(<FeelingUnderstoodChatbot />, document.getElementById('root'));
+    ReactDOM.render(<SelfAssessmentSurvey />, document.getElementById('root'));
   </script>
 </body>
 </html>
