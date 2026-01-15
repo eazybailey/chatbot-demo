@@ -5,17 +5,82 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial; background: #fff; color: #121212; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
     const App = () => {
-      const [count, setCount] = React.useState(0);
+      const [started, setStarted] = React.useState(false);
+      const [answer, setAnswer] = React.useState(null);
+      
+      if (!started) {
+        return (
+          <div style={{padding: '40px', maxWidth: '700px', margin: '0 auto', textAlign: 'center'}}>
+            <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '20px'}}>
+              The Understanding Gap
+            </h1>
+            <p style={{fontSize: '16px', marginBottom: '40px'}}>
+              A comprehensive self-assessment
+            </p>
+            <button 
+              onClick={() => setStarted(true)}
+              style={{
+                padding: '16px 36px',
+                backgroundColor: '#ffd21f',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Begin Assessment
+            </button>
+          </div>
+        );
+      }
+      
+      if (answer) {
+        return (
+          <div style={{padding: '40px'}}>
+            <h2>You selected: {answer}</h2>
+            <button onClick={() => window.location.reload()}>Restart</button>
+          </div>
+        );
+      }
+      
       return (
-        <div style={{padding: '40px'}}>
-          <h1>Counter Test</h1>
-          <p>Count: {count}</p>
-          <button onClick={() => setCount(count + 1)}>Click me</button>
+        <div style={{padding: '40px', maxWidth: '900px', margin: '0 auto'}}>
+          <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px'}}>
+            <h2 style={{fontSize: '22px', marginBottom: '36px'}}>
+              How accurately do people understand who you fundamentally are?
+            </h2>
+            
+            {['Very accurately', 'Somewhat accurately', 'Not very accurately'].map(opt => (
+              <button
+                key={opt}
+                onClick={() => setAnswer(opt)}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '18px 24px',
+                  marginBottom: '12px',
+                  backgroundColor: '#fff',
+                  border: '2px solid #e5e5e5',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  cursor: 'pointer'
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
         </div>
       );
     };
