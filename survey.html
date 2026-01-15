@@ -1,19 +1,191 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feel Understood - Self Assessment</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #ffffff; color: #121212; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    ReactDOM.render(
-      <h1>Hello Test</h1>,
-      document.getElementById('root')
-    );
+    function App() {
+      const [step, setStep] = React.useState(-1);
+      const [responses, setResponses] = React.useState({});
+      
+      const questions = [
+        {
+          id: 'general',
+          question: 'When you consider the totality of your relationships, how accurately would you say people understand who you fundamentally are?',
+          options: [
+            'People see me with remarkable clarity',
+            'Most people understand the essential me',
+            'There's a noticeable gap',
+            'I'm frequently misunderstood',
+            'I feel profoundly unseen'
+          ]
+        },
+        {
+          id: 'frequency',
+          question: 'How often do you experience that moment when someone truly "gets" what you're trying to communicate?',
+          options: [
+            'Almost always',
+            'Often enough',
+            'Occasionally',
+            'Rarely',
+            'Almost never'
+          ]
+        }
+      ];
+      
+      // Intro
+      if (step === -1) {
+        return (
+          <div style={{minHeight: '100vh', padding: '40px 20px'}}>
+            <div style={{maxWidth: '700px', margin: '0 auto', textAlign: 'center'}}>
+              <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '12px'}}>
+                The Understanding Gap
+              </h1>
+              <p style={{fontSize: '18px', color: '#999b9b', marginBottom: '24px'}}>
+                A comprehensive self-assessment
+              </p>
+              <p style={{fontSize: '16px', lineHeight: 1.8, marginBottom: '40px'}}>
+                This assessment examines the gap between who you are and how others perceive you.
+              </p>
+              <button 
+                onClick={() => setStep(0)}
+                style={{
+                  padding: '16px 36px',
+                  backgroundColor: '#ffd21f',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Begin Assessment
+              </button>
+            </div>
+          </div>
+        );
+      }
+      
+      // Results
+      if (step >= questions.length) {
+        return (
+          <div style={{minHeight: '100vh', padding: '40px 20px'}}>
+            <div style={{maxWidth: '900px', margin: '0 auto'}}>
+              <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '40px', textAlign: 'center'}}>
+                Your Results
+              </h1>
+              <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px'}}>
+                <p>Survey complete! You answered {Object.keys(responses).length} questions.</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  style={{
+                    marginTop: '20px',
+                    padding: '16px 36px',
+                    backgroundColor: '#ffd21f',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Retake
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      // Questions
+      const q = questions[step];
+      const progress = ((step + 1) / questions.length) * 100;
+      
+      return (
+        <div style={{minHeight: '100vh', padding: '40px 20px'}}>
+          <div style={{maxWidth: '900px', margin: '0 auto'}}>
+            <div style={{height: '4px', backgroundColor: '#e5e5e5', marginBottom: '40px'}}>
+              <div style={{height: '100%', backgroundColor: '#ffd21f', width: `${progress}%`}} />
+            </div>
+            
+            <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px', marginBottom: '24px'}}>
+              <h2 style={{fontSize: '22px', fontWeight: 'bold', marginBottom: '36px'}}>
+                {q.question}
+              </h2>
+              
+              <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                {q.options.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setResponses({...responses, [q.id]: opt})}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '18px 24px',
+                      backgroundColor: responses[q.id] === opt ? '#ffd21f' : '#ffffff',
+                      border: responses[q.id] === opt ? '2px solid #121212' : '2px solid #e5e5e5',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <button 
+                onClick={() => setStep(step - 1)}
+                disabled={step === 0}
+                style={{
+                  padding: '16px 36px',
+                  border: '2px solid #121212',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  opacity: step === 0 ? 0.5 : 1
+                }}
+              >
+                Previous
+              </button>
+              <span>Question {step + 1} of {questions.length}</span>
+              <button 
+                onClick={() => setStep(step + 1)}
+                disabled={!responses[q.id]}
+                style={{
+                  padding: '16px 36px',
+                  backgroundColor: '#ffd21f',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  opacity: responses[q.id] ? 1 : 0.5
+                }}
+              >
+                {step === questions.length - 1 ? 'View Results' : 'Next'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 </html>
