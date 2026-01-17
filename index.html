@@ -343,5 +343,29 @@
     
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
+<script>
+  // Send height updates to parent page
+  function sendHeightToParent() {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ type: 'resize', height: height }, '*');
+  }
+  
+  // Send height on load
+  window.addEventListener('load', sendHeightToParent);
+  
+  // Send height when window resizes
+  window.addEventListener('resize', sendHeightToParent);
+  
+  // Watch for DOM changes and send height updates
+  const observer = new MutationObserver(sendHeightToParent);
+  observer.observe(document.body, { 
+    childList: true, 
+    subtree: true, 
+    attributes: true 
+  });
+  
+  // Send height periodically as backup
+  setInterval(sendHeightToParent, 500);
+</script>
 </body>
 </html>
