@@ -10,6 +10,10 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial; background: #fff; color: #121212; }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -125,62 +129,103 @@
         setResponses({...responses, [qid]: updated});
       };
       
-      const generateAIAnalysis = async () => {
+      const calculateResults = () => {
+        const scores = {
+          general: {'People see me with remarkable clarity': 100, 'Most people understand the essential me': 75, 'There is a noticeable gap between who I am and how I am perceived': 50, 'I am frequently misunderstood in important ways': 25, 'I feel profoundly unseen by those around me': 0}[responses.general] || 50,
+          frequency: {'Almost always, it is a regular experience': 100, 'Often enough that I count on it': 75, 'Occasionally, but it feels special when it happens': 50, 'Rarely, it is notable when someone understands': 25, 'Almost never, I have largely stopped expecting it': 0}[responses.frequency] || 50
+        };
+        
+        const overallQuality = (scores.general + scores.frequency) / 2;
+        
+        const identityScores = [
+          responses.values || 5,
+          responses.personality || 5,
+          responses.preferences || 5,
+          responses.motivations || 5,
+          responses.struggles || 5,
+          responses.capabilities || 5
+        ];
+        const avgIdentity = identityScores.reduce((a,b) => a+b, 0) / 6;
+        
+        const dims = [
+          {name: 'Values and Beliefs', score: responses.values || 5},
+          {name: 'Personality and Emotional Nature', score: responses.personality || 5},
+          {name: 'Preferences and Lifestyle', score: responses.preferences || 5},
+          {name: 'Aspirations and Motivations', score: responses.motivations || 5},
+          {name: 'Challenges and Vulnerabilities', score: responses.struggles || 5},
+          {name: 'Capabilities and Potential', score: responses.capabilities || 5}
+        ].sort((a,b) => b.score - a.score);
+        
+        const supportCount = (responses.support || []).filter(s => s !== 'None of the above apply to me').length;
+        const posCount = (responses.positive || []).length;
+        const negCount = (responses.negative || []).length;
+        
+        return {
+          overallQuality,
+          avgIdentity,
+          dims,
+          supportCount,
+          posCount,
+          negCount,
+          context: responses.context
+        };
+      };
+      
+      const generateAIAnalysis = async (results) => {
         setIsGenerating(true);
         
-        const prompt = `You are analyzing responses from a "Feeling Understood" self-assessment survey. Based on the person's answers, provide a comprehensive, personalized analysis of their experience with being understood and misunderstood.
+        const prompt = `You are analyzing responses from a "Feeling Understood" self-assessment survey. Based on the person's complete response pattern, provide deep, personalized insights that go beyond the quantitative scores.
 
-SURVEY RESPONSES:
+QUANTITATIVE SCORES:
+- Overall Understanding Quality: ${Math.round(results.overallQuality)}%
+- Average Identity Misunderstanding: ${results.avgIdentity.toFixed(1)}/10
+- Support Network Size: ${results.supportCount} relationships
+- Positive Effects Count: ${results.posCount}
+- Negative Effects Count: ${results.negCount}
+
+DETAILED RESPONSES:
 
 General Understanding: ${responses.general}
 Frequency of Being Understood: ${responses.frequency}
 Support Network: ${(responses.support || []).join(', ')}
 Most Misunderstood Context: ${responses.context}
-Positive Effects Selected: ${(responses.positive || []).join(', ')}
-Negative Effects Selected: ${(responses.negative || []).join(', ')}
+Positive Effects: ${(responses.positive || []).join(', ')}
+Negative Effects: ${(responses.negative || []).join(', ')}
 
-Identity Dimension Ratings (1-10 scale, where 10 = extremely misunderstood):
-- Values and Beliefs: ${responses.values || 'Not answered'}/10
-- Personality and Emotional Nature: ${responses.personality || 'Not answered'}/10
-- Preferences and Lifestyle: ${responses.preferences || 'Not answered'}/10
-- Aspirations and Motivations: ${responses.motivations || 'Not answered'}/10
-- Challenges and Vulnerabilities: ${responses.struggles || 'Not answered'}/10
-- Capabilities and Potential: ${responses.capabilities || 'Not answered'}/10
+Identity Dimensions (1-10 misunderstanding scale):
+- Values/Beliefs: ${responses.values}/10
+- Personality: ${responses.personality}/10
+- Preferences/Lifestyle: ${responses.preferences}/10
+- Motivations: ${responses.motivations}/10
+- Struggles/Vulnerabilities: ${responses.struggles}/10
+- Capabilities/Potential: ${responses.capabilities}/10
+
+Most Misunderstood Dimension: ${results.dims[0].name} (${results.dims[0].score}/10)
 
 Communication Patterns:
-- Responsibility for Being Understood: ${responses.responsibility}
-- Frequency of Expressing Lack of Understanding: ${responses.expression}
-- Awareness of False Positives: ${responses.awareness}
+- Responsibility Attribution: ${responses.responsibility}
+- Expressing Lack of Understanding: ${responses.expression}
+- Awareness of Misunderstanding: ${responses.awareness}
 
-ANALYSIS REQUIREMENTS:
+YOUR TASK:
+Write a 600-800 word personalized analysis that:
 
-1. Write a comprehensive, personalized analysis (800-1200 words) that:
-   - Identifies unique patterns in their responses
-   - Highlights which identity dimensions are most/least understood
-   - Connects their communication patterns to their experience
-   - Explores the context where they feel most misunderstood
-   - Analyzes the impact (positive and negative effects they selected)
-   - Provides specific, actionable insights
+1. PATTERN RECOGNITION: Identify the unique signature in their responses - what stands out? What's the through-line connecting their experiences?
 
-2. Structure as flowing prose with clear sections:
-   - Overall Pattern (2-3 paragraphs)
-   - Identity Dimensions Analysis (2-3 paragraphs)
-   - Communication and Relationships (2 paragraphs)
-   - Key Insights and Recommendations (2-3 paragraphs)
+2. DEEPER MEANING: Interpret what their pattern reveals about their inner life and relationships. Go beneath the surface numbers.
 
-3. Tone: Empathetic, insightful, psychologically informed but accessible
-4. Avoid generic advice - make it specific to THEIR pattern of responses
-5. Use "you" language - write directly to them
-6. No bullet points - write in cohesive paragraphs
+3. SPECIFIC INSIGHTS: Connect their most misunderstood identity dimension to the contexts and impacts they described. Make it personal to THEM.
 
-Generate the analysis now:`;
+4. ACTIONABLE UNDERSTANDING: Based on their communication patterns, what specific shifts could help them feel more understood?
+
+Write in flowing, empathetic prose (no bullet points). Use "you" language. Be psychologically sophisticated but accessible. Focus on insights they couldn't get from the numbers alone - this is where AI adds unique value.`;
 
         try {
           const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              system: 'You are an expert psychologist analyzing self-assessment survey results about feeling understood. Provide deep, personalized insights based on response patterns.',
+              system: 'You are an expert psychologist specializing in interpersonal communication and the psychology of feeling understood. Provide deep, personalized insights based on assessment patterns. Write in clear, empathetic prose.',
               messages: [{ role: 'user', content: prompt }]
             })
           });
@@ -193,8 +238,8 @@ Generate the analysis now:`;
 
           setAiAnalysis(analysis);
         } catch (error) {
-          console.error('Error generating analysis:', error);
-          setAiAnalysis('We encountered an issue generating your personalized analysis. Please try again.');
+          console.error('Error:', error);
+          setAiAnalysis('We encountered an issue generating your personalized analysis. Your quantitative results are shown above.');
         } finally {
           setIsGenerating(false);
         }
@@ -202,7 +247,8 @@ Generate the analysis now:`;
       
       const handleComplete = async () => {
         setShowResults(true);
-        await generateAIAnalysis();
+        const results = calculateResults();
+        await generateAIAnalysis(results);
       };
       
       if (step === -1) {
@@ -223,36 +269,77 @@ Generate the analysis now:`;
       }
       
       if (showResults) {
+        const r = calculateResults();
         return (
           <div style={{minHeight: '100vh', padding: '40px 20px'}}>
             <div style={{maxWidth: '900px', margin: '0 auto'}}>
               <h1 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center'}}>Your Understanding Profile</h1>
-              <p style={{fontSize: '18px', color: '#999b9b', marginBottom: '40px', textAlign: 'center'}}>A personalized analysis generated by AI</p>
+              <p style={{fontSize: '18px', color: '#999b9b', marginBottom: '40px', textAlign: 'center'}}>Quantitative analysis + AI-generated insights</p>
               
-              <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px', marginBottom: '24px', minHeight: '400px'}}>
-                {isGenerating ? (
-                  <div style={{textAlign: 'center', padding: '60px 20px'}}>
-                    <div style={{marginBottom: '20px'}}>
-                      <div style={{display: 'inline-block', width: '50px', height: '50px', border: '5px solid #e5e5e5', borderTop: '5px solid #ffd21f', borderRadius: '50%', animation: 'spin 1s linear infinite'}}></div>
+              {/* Quantitative Results */}
+              <div style={{border: '2px solid #e5e5e5', borderRadius: '8px', padding: '48px', marginBottom: '24px'}}>
+                <div style={{marginBottom: '48px', paddingBottom: '48px', borderBottom: '1px solid #e5e5e5'}}>
+                  <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px'}}>Overall Understanding Quality</h2>
+                  <div style={{fontSize: '56px', fontWeight: 'bold', color: '#ffd21f', marginBottom: '12px'}}>{Math.round(r.overallQuality)}%</div>
+                  {r.supportCount > 0 && (
+                    <div style={{backgroundColor: '#f9f9f9', padding: '20px 24px', borderRadius: '6px', borderLeft: '4px solid #ffd21f', marginTop: '20px'}}>
+                      <strong>Your Support Network:</strong> You identified {r.supportCount} relationship{r.supportCount !== 1 ? 's' : ''} where you feel genuinely understood. These are your psychological anchors.
                     </div>
-                    <p style={{fontSize: '18px', color: '#121212', marginBottom: '8px'}}>Analyzing your responses...</p>
-                    <p style={{fontSize: '14px', color: '#999b9b'}}>Our AI is generating your personalized insights</p>
+                  )}
+                </div>
+                
+                <div style={{marginBottom: '48px', paddingBottom: '48px', borderBottom: '1px solid #e5e5e5'}}>
+                  <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px'}}>Identity Misunderstanding Profile</h2>
+                  <div style={{fontSize: '56px', fontWeight: 'bold', color: '#ffd21f', marginBottom: '12px'}}>{r.avgIdentity.toFixed(1)}/10</div>
+                  <p style={{fontSize: '14px', color: '#999b9b', marginBottom: '24px'}}>Population average: 5.2/10</p>
+                  
+                  <h3 style={{fontSize: '18px', fontWeight: 'bold', marginBottom: '12px', marginTop: '24px'}}>Where You Feel Most Misunderstood</h3>
+                  {r.dims.map((d,i) => (
+                    <div key={i} style={{marginBottom: '16px'}}>
+                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px'}}>
+                        <span>{d.name}</span>
+                        <span style={{fontWeight: 'bold'}}>{d.score}/10</span>
+                      </div>
+                      <div style={{height: '12px', backgroundColor: '#e5e5e5', borderRadius: '6px', overflow: 'hidden'}}>
+                        <div style={{height: '100%', backgroundColor: '#ffd21f', width: ((d.score / 10) * 100) + '%', transition: 'width 0.5s'}} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div>
+                  <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px'}}>Impact Assessment</h2>
+                  <p style={{fontSize: '16px', lineHeight: 1.8}}>
+                    You identified {r.posCount} positive effects when you feel understood and {r.negCount} negative consequences when you are misunderstood.
+                  </p>
+                  {r.context && r.context !== 'The gap feels relatively consistent across all domains' && (
+                    <div style={{backgroundColor: '#f9f9f9', padding: '20px 24px', borderRadius: '6px', borderLeft: '4px solid #ffd21f', marginTop: '20px'}}>
+                      <strong>Most Challenging Context:</strong> {r.context}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* AI Analysis */}
+              <div style={{border: '2px solid #ffd21f', borderRadius: '8px', padding: '48px', marginBottom: '24px', backgroundColor: '#fffef0'}}>
+                <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px'}}>
+                  <span>✨</span> Personalized Insights
+                </h2>
+                {isGenerating ? (
+                  <div style={{textAlign: 'center', padding: '40px 20px'}}>
+                    <div style={{marginBottom: '20px'}}>
+                      <div style={{display: 'inline-block', width: '40px', height: '40px', border: '4px solid #e5e5e5', borderTop: '4px solid #ffd21f', borderRadius: '50%', animation: 'spin 1s linear infinite'}}></div>
+                    </div>
+                    <p style={{fontSize: '16px', color: '#121212'}}>AI is analyzing your unique pattern...</p>
                   </div>
                 ) : aiAnalysis ? (
                   <div style={{fontSize: '16px', lineHeight: 1.8, color: '#121212', whiteSpace: 'pre-wrap'}}>
                     {aiAnalysis}
                   </div>
                 ) : (
-                  <p>Analysis could not be generated. Please try again.</p>
+                  <p style={{fontSize: '16px', color: '#999b9b'}}>Analysis could not be generated.</p>
                 )}
               </div>
-              
-              <style>{`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
               
               <button onClick={() => window.location.reload()} style={{padding: '16px 36px', backgroundColor: '#ffd21f', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer'}}>
                 Retake Assessment
