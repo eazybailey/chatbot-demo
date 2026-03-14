@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Conversation Coach — Feel Understood</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .tools-banner {
+      background: var(--color-gray);
+    }
+
+    .tool-selector {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 32px 24px;
+      background: var(--color-light-bg);
+      flex-wrap: wrap;
+    }
+    .tool-tab {
+      padding: 12px 28px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      background: var(--color-white);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tool-tab:hover { border-color: var(--color-yellow); }
+    .tool-tab.active {
+      background: var(--color-yellow);
+      border-color: var(--color-yellow);
+      color: var(--color-dark);
+    }
+
+    .tool-section {
+      min-height: 80vh;
+      display: none;
+    }
+    .tool-section.active { display: block; }
+
+    /* Assessment embed */
+    .tool-embed {
+      width: 100%;
+      min-height: 85vh;
+      border: none;
+    }
+
+    /* Voice section styling */
+    .voice-wrapper {
+      width: 100%;
+      min-height: 85vh;
+    }
+    .voice-wrapper iframe {
+      width: 100%;
+      height: 85vh;
+      border: none;
+    }
+
+    /* Info cards */
+    .tools-info {
+      background: var(--color-light-bg);
+      padding: 64px 24px;
+    }
+    .tools-info .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .tools-info h2 {
+      font-family: var(--font-heading);
+      font-size: 32px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .info-card {
+      background: var(--color-white);
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .info-card .icon { font-size: 36px; margin-bottom: 12px; }
+    .info-card h3 {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .info-card p { font-size: 15px; color: #555; line-height: 1.6; }
+
+    @media (max-width: 768px) {
+      .tool-tab { padding: 10px 20px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="site-logo">
+        <span class="green">Feel</span><span class="yellow">Understood</span>
+      </a>
+      <nav class="nav-links">
+        <a href="about.html">About</a>
+        <a href="insights.html">Insights</a>
+        <a href="podcast.html">Podcast</a>
+        <a href="tools.html" class="active">The Conversation Coach</a>
+      </nav>
+      <button class="hamburger" onclick="this.classList.toggle('open'); document.querySelector('.mobile-nav').classList.toggle('open')" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <nav class="mobile-nav">
+      <a href="about.html">About</a>
+      <a href="insights.html">Insights</a>
+      <a href="podcast.html">Podcast</a>
+      <a href="tools.html">The Conversation Coach</a>
+    </nav>
+  </header>
+
+  <!-- Banner -->
+  <section class="page-banner tools-banner">
+    <h1>The Conversation Coach</h1>
+    <p>AI-powered tools to explore how understood you feel</p>
+  </section>
+
+  <!-- Tool Tabs -->
+  <div class="tool-selector">
+    <button class="tool-tab active" onclick="switchTool('assessment')">Self-Assessment</button>
+    <button class="tool-tab" onclick="switchTool('voice')">Voice Chat</button>
+  </div>
+
+  <!-- Assessment Tool -->
+  <div id="tool-assessment" class="tool-section active">
+    <iframe class="tool-embed" src="assessment.html" title="Feel Understood Self-Assessment"></iframe>
+  </div>
+
+  <!-- Voice Tool -->
+  <div id="tool-voice" class="tool-section">
+    <div class="voice-wrapper">
+      <iframe src="voice.html" title="Feel Understood Voice Chat"></iframe>
+    </div>
+  </div>
+
+  <!-- Info Section -->
+  <section class="tools-info">
+    <div class="container">
+      <h2>How It Works</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="icon">📊</div>
+          <h3>Self-Assessment</h3>
+          <p>Answer 15 research-informed questions about your relationships, communication patterns, and sense of being understood. Get quantitative scores plus a personalized AI-generated analysis of your unique pattern.</p>
+        </div>
+        <div class="info-card">
+          <div class="icon">🎙️</div>
+          <h3>Voice Chat</h3>
+          <p>Have a spoken conversation with an AI counselor about how understood you feel. Uses voice recognition and speech synthesis for a natural, hands-free experience. Best in Chrome.</p>
+        </div>
+        <div class="info-card">
+          <div class="icon">🔒</div>
+          <h3>Private &amp; Secure</h3>
+          <p>Your responses are processed in real-time and never stored. No account needed. No data collected. This is a tool for self-reflection, not data gathering.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        <div class="footer-brand"><span class="green">Feel</span><span class="yellow">Understood</span></div>
+        <p class="footer-tagline">Exploring what it means to truly feel understood — and why it matters.</p>
+      </div>
+      <div class="footer-links">
+        <a href="about.html">About</a>
+        <a href="insights.html">Insights</a>
+        <a href="podcast.html">Podcast</a>
+        <a href="tools.html">Tools</a>
+      </div>
+    </div>
+    <div class="footer-copy">
+      &copy; 2025 FeelUnderstood. All rights reserved. &nbsp;|&nbsp; <a href="#">Privacy &amp; AI Use</a>
+    </div>
+  </footer>
+
+  <script>
+    function switchTool(tool) {
+      // Update tabs
+      document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      // Update sections
+      document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('tool-' + tool).classList.add('active');
+    }
+
+    // Handle hash navigation
+    if (window.location.hash === '#voice') {
+      setTimeout(() => {
+        document.querySelectorAll('.tool-tab')[1].click();
+      }, 100);
+    }
+  </script>
+</body>
+</html>
