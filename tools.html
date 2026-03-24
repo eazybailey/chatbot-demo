@@ -14,44 +14,6 @@
       background: var(--color-gray);
     }
 
-    .tool-selector {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      padding: 32px 24px;
-      background: var(--color-light-bg);
-      flex-wrap: wrap;
-    }
-    .tool-tab {
-      padding: 12px 28px;
-      border-radius: 8px;
-      border: 2px solid #ddd;
-      background: var(--color-white);
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .tool-tab:hover { border-color: var(--color-yellow); }
-    .tool-tab.active {
-      background: var(--color-yellow);
-      border-color: var(--color-yellow);
-      color: var(--color-dark);
-    }
-
-    .tool-section {
-      min-height: 80vh;
-      display: none;
-    }
-    .tool-section.active { display: block; }
-
-    /* Assessment embed */
-    .tool-embed {
-      width: 100%;
-      min-height: 85vh;
-      border: none;
-    }
-
     /* Voice section styling */
     .voice-wrapper {
       width: 100%;
@@ -135,22 +97,9 @@
     <p>AI-powered tools to explore how understood you feel</p>
   </section>
 
-  <!-- Tool Tabs -->
-  <div class="tool-selector">
-    <button class="tool-tab active" onclick="switchTool('assessment')">Self-Assessment</button>
-    <button class="tool-tab" onclick="switchTool('voice')">Voice Chat</button>
-  </div>
-
-  <!-- Assessment Tool -->
-  <div id="tool-assessment" class="tool-section active">
-    <iframe class="tool-embed" src="assessment" title="Feel Understood Self-Assessment"></iframe>
-  </div>
-
-  <!-- Voice Tool -->
-  <div id="tool-voice" class="tool-section">
-    <div class="voice-wrapper">
-      <iframe src="voice" title="Feel Understood Voice Chat"></iframe>
-    </div>
+  <!-- Voice Chat -->
+  <div class="voice-wrapper">
+    <iframe src="voice" title="Dialogue Coach Voice Chat"></iframe>
   </div>
 
   <!-- Info Section -->
@@ -159,19 +108,19 @@
       <h2>How It Works</h2>
       <div class="info-grid">
         <div class="info-card">
-          <div class="icon">📊</div>
-          <h3>Self-Assessment</h3>
-          <p>Answer 15 research-informed questions about your relationships, communication patterns, and sense of being understood. Get quantitative scores plus a personalized AI-generated analysis of your unique pattern.</p>
-        </div>
-        <div class="info-card">
           <div class="icon">🎙️</div>
           <h3>Voice Chat</h3>
-          <p>Have a spoken conversation with an AI counselor about how understood you feel. Uses voice recognition and speech synthesis for a natural, hands-free experience. Best in Chrome.</p>
+          <p>Have a spoken conversation with your AI Dialogue Coach. Learn communication skills, get coaching on real challenges, and practice conversations through role-play. Best in Chrome.</p>
+        </div>
+        <div class="info-card">
+          <div class="icon">📚</div>
+          <h3>Learn &amp; Practice</h3>
+          <p>Explore the three roles of dialogue — Explainer, Understander, and Conversation Manager — and practice the 25 skills that make conversations work.</p>
         </div>
         <div class="info-card">
           <div class="icon">🔒</div>
           <h3>Private &amp; Secure</h3>
-          <p>Your responses are processed in real-time and never stored. No account needed. No data collected. This is a tool for self-reflection, not data gathering.</p>
+          <p>Your conversations are processed in real-time and never stored. No account needed. No data collected. This is a tool for self-improvement, not data gathering.</p>
         </div>
       </div>
     </div>
@@ -196,22 +145,5 @@
     </div>
   </footer>
 
-  <script>
-    function switchTool(tool) {
-      // Update tabs
-      document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      // Update sections
-      document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
-      document.getElementById('tool-' + tool).classList.add('active');
-    }
-
-    // Handle hash navigation
-    if (window.location.hash === '#voice') {
-      setTimeout(() => {
-        document.querySelectorAll('.tool-tab')[1].click();
-      }, 100);
-    }
-  </script>
 </body>
 </html>
