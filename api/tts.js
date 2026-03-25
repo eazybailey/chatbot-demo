@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         model: 'tts-1',
         input: input,
         voice: voice || 'nova',
-        response_format: 'mp3',
+        response_format: 'opus',
       }),
     });
 
@@ -38,12 +38,23 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: err.error?.message || 'TTS request failed' });
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Length', arrayBuffer.byteLength);
-    res.status(200).send(Buffer.from(arrayBuffer));
+    // Stream audio directly to client instead of buffering
+    res.setHeader('Content-Type', 'audio/ogg');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    const reader = response.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(Buffer.from(value));
+    }
+    res.end();
   } catch (error) {
     console.error('TTS Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.end();
+    }
   }
 }
