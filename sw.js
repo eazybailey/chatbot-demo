@@ -1,4 +1,4 @@
-const CACHE_NAME = 'conversation-coach-v1';
+const CACHE_NAME = 'conversation-coach-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -9,6 +9,11 @@ const STATIC_ASSETS = [
   '/images/icon-192.png',
   '/images/icon-512.png',
   '/images/apple-touch-icon.png',
+  '/images/icon-app.svg',
+  '/images/icon-learn.svg',
+  '/images/icon-coach.svg',
+  '/images/icon-practice.svg',
+  '/images/icon-avatar.svg',
 ];
 
 const CDN_ASSETS = [
