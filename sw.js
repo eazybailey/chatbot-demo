@@ -1,4 +1,4 @@
-const CACHE_NAME = 'conversation-coach-v2';
+const CACHE_NAME = 'conversation-coach-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

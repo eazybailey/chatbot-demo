@@ -150,66 +150,65 @@ VOICE & STYLE GUIDELINES:
       return { start, stop, supported };
     };
 
-    // ── Speech Synthesis Hook (Female voice) ──
+    // ── Speech Synthesis Hook (OpenAI TTS via Nova) ──
     const useSpeechSynthesis = () => {
-      const [voices, setVoices] = React.useState([]);
-      const utterRef = React.useRef(null);
+      const audioRef = React.useRef(null);
+      const cancelledRef = React.useRef(false);
 
-      React.useEffect(() => {
-        const load = () => setVoices(speechSynthesis.getVoices());
-        speechSynthesis.addEventListener('voiceschanged', load);
-        load();
-        return () => speechSynthesis.removeEventListener('voiceschanged', load);
-      }, []);
+      const speak = async (text) => {
+        cancelledRef.current = false;
+        try {
+          const response = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: text, voice: 'nova' }),
+          });
 
-      const pickVoice = () => {
-        // Prefer female voices
-        const prefs = [
-          'Google UK English Female',
-          'Google US English Female',
-          'Samantha',
-          'Karen',
-          'Moira',
-          'Fiona',
-          'Victoria',
-          'Microsoft Zira',
-          'Tessa',
-        ];
-        for (const p of prefs) {
-          const v = voices.find(v => v.name.includes(p));
-          if (v) return v;
-        }
-        // Fallback: any female-sounding English voice
-        const femaleKeywords = ['female', 'woman', 'girl'];
-        const female = voices.find(v =>
-          v.lang.startsWith('en') && femaleKeywords.some(k => v.name.toLowerCase().includes(k))
-        );
-        if (female) return female;
-        return voices.find(v => v.lang.startsWith('en')) || null;
-      };
+          if (!response.ok) throw new Error('TTS request failed');
+          if (cancelledRef.current) return;
 
-      const speak = (text) => {
-        return new Promise((resolve) => {
-          speechSynthesis.cancel();
-          const sentences = text.match(/[^.!?]+[.!?]+[\s]*/g) || [text];
-          let i = 0;
-          const next = () => {
-            if (i >= sentences.length) { resolve(); return; }
-            const u = new SpeechSynthesisUtterance(sentences[i].trim());
+          const blob = await response.blob();
+          if (cancelledRef.current) return;
+
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audioRef.current = audio;
+
+          return new Promise((resolve) => {
+            audio.onended = () => {
+              URL.revokeObjectURL(url);
+              audioRef.current = null;
+              resolve();
+            };
+            audio.onerror = () => {
+              URL.revokeObjectURL(url);
+              audioRef.current = null;
+              resolve();
+            };
+            audio.play().catch(() => resolve());
+          });
+        } catch (err) {
+          console.error('TTS error:', err);
+          // Fallback to browser speech synthesis
+          return new Promise((resolve) => {
+            const u = new SpeechSynthesisUtterance(text);
             u.rate = 1.0;
-            u.pitch = 1.05;
-            const v = pickVoice();
-            if (v) u.voice = v;
-            u.onend = () => { i++; next(); };
-            u.onerror = () => { i++; next(); };
-            utterRef.current = u;
+            u.onend = resolve;
+            u.onerror = resolve;
             speechSynthesis.speak(u);
-          };
-          next();
-        });
+          });
+        }
       };
 
-      const cancel = () => speechSynthesis.cancel();
+      const cancel = () => {
+        cancelledRef.current = true;
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current = null;
+        }
+        speechSynthesis.cancel();
+      };
 
       return { speak, cancel };
     };
