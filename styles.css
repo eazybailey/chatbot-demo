@@ -1,5 +1,5 @@
 /* The Conversation Coach — App Styles */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Patrick+Hand&display=swap');
 
 :root {
   --bg: #0f0f1a;
@@ -52,10 +52,11 @@ html, body {
 .onboarding-logo img { display: inline-block; }
 
 .onboarding-title {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 400;
   margin-bottom: 8px;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.5px;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .onboarding-sub {
@@ -92,6 +93,26 @@ html, body {
   justify-content: center;
   background: var(--accent-dim);
   border-radius: 10px;
+}
+
+.doodle-icon {
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+.feature-icon .doodle-icon {
+  filter: none;
+  opacity: 1;
+}
+
+.avatar .doodle-icon {
+  filter: none;
+  opacity: 0.85;
+}
+
+.header-icon .doodle-icon {
+  filter: none;
+  opacity: 0.9;
 }
 
 .onboarding-feature strong {

@@ -1,6 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 60">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 70">
   <style>
-    text { font-family: 'Poppins', Arial, Helvetica, sans-serif; font-weight: 700; font-size: 48px; }
+    @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand:wght@400&amp;display=swap');
+    text { font-family: 'Patrick Hand', 'Comic Sans MS', 'Segoe Print', cursive; font-weight: 400; font-size: 52px; }
   </style>
-  <text x="0" y="46"><tspan fill="#abd600">Feel</tspan><tspan fill="#ffd21f">Understood</tspan></text>
+  <!-- Hand-drawn underline squiggle -->
+  <path d="M10 62 Q80 55, 140 63 Q200 71, 280 60 Q360 50, 440 62 Q500 70, 550 58"
+        fill="none" stroke="#abd600" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <text x="5" y="50">
+    <tspan fill="#abd600" letter-spacing="1">Feel </tspan>
+    <tspan fill="#ffd21f" letter-spacing="1">Understood</tspan>
+  </text>
+  <!-- Small sparkle -->
+  <circle cx="540" cy="12" r="3" fill="#ffd21f"/>
+  <line x1="540" y1="4" x2="540" y2="20" stroke="#ffd21f" stroke-width="2" stroke-linecap="round"/>
+  <line x1="532" y1="12" x2="548" y2="12" stroke="#ffd21f" stroke-width="2" stroke-linecap="round"/>
 </svg>
