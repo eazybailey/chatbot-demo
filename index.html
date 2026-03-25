@@ -150,7 +150,46 @@ VOICE & STYLE GUIDELINES:
       return { start, stop, supported };
     };
 
-    // ── Speech Synthesis Hook (OpenAI TTS via Nova) ──
+    // ── TTS Audio Queue (OpenAI TTS via Nova) ──
+    // Fetches TTS for a sentence and returns a playable blob URL
+    const fetchTTS = async (text) => {
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: text, voice: 'nova' }),
+      });
+      if (!response.ok) throw new Error('TTS failed');
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    };
+
+    // Plays a single audio URL, returns a promise
+    const playAudioUrl = (url, audioRef) => {
+      return new Promise((resolve) => {
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(); };
+        audio.play().catch(() => resolve());
+      });
+    };
+
+    // Splits text into sentences for chunked TTS
+    const splitSentences = (text) => {
+      const parts = text.match(/[^.!?]+[.!?]+[\s]*/g);
+      if (!parts) return [text];
+      // Recombine very short fragments with previous sentence
+      const result = [];
+      for (const p of parts) {
+        if (result.length > 0 && result[result.length - 1].length < 20) {
+          result[result.length - 1] += p;
+        } else {
+          result.push(p);
+        }
+      }
+      return result;
+    };
+
     const useSpeechSynthesis = () => {
       const audioRef = React.useRef(null);
       const cancelledRef = React.useRef(false);
@@ -158,46 +197,69 @@ VOICE & STYLE GUIDELINES:
       const speak = async (text) => {
         cancelledRef.current = false;
         try {
-          const response = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input: text, voice: 'nova' }),
-          });
-
-          if (!response.ok) throw new Error('TTS request failed');
-          if (cancelledRef.current) return;
-
-          const blob = await response.blob();
-          if (cancelledRef.current) return;
-
-          const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
-          audioRef.current = audio;
-
-          return new Promise((resolve) => {
-            audio.onended = () => {
-              URL.revokeObjectURL(url);
-              audioRef.current = null;
-              resolve();
-            };
-            audio.onerror = () => {
-              URL.revokeObjectURL(url);
-              audioRef.current = null;
-              resolve();
-            };
-            audio.play().catch(() => resolve());
-          });
+          const sentences = splitSentences(text);
+          // Fire all TTS requests in parallel immediately
+          const ttsPromises = sentences.map(s => fetchTTS(s.trim()));
+          // Play each in order as they resolve
+          for (let i = 0; i < sentences.length; i++) {
+            if (cancelledRef.current) return;
+            const url = await ttsPromises[i];
+            if (cancelledRef.current) { URL.revokeObjectURL(url); return; }
+            await playAudioUrl(url, audioRef);
+          }
         } catch (err) {
           console.error('TTS error:', err);
-          // Fallback to browser speech synthesis
-          return new Promise((resolve) => {
-            const u = new SpeechSynthesisUtterance(text);
-            u.rate = 1.0;
-            u.onend = resolve;
-            u.onerror = resolve;
-            speechSynthesis.speak(u);
-          });
+          if (!cancelledRef.current) {
+            return new Promise((resolve) => {
+              const u = new SpeechSynthesisUtterance(text);
+              u.rate = 1.0;
+              u.onend = resolve;
+              u.onerror = resolve;
+              speechSynthesis.speak(u);
+            });
+          }
         }
+      };
+
+      // Streaming speak: accepts sentences one at a time, overlaps fetch + playback
+      const speakStreaming = () => {
+        cancelledRef.current = false;
+        const queue = []; // { promise: Promise<url>, index }
+        let playIndex = 0;
+        let playing = false;
+        let resolveFinished;
+        let doneAdding = false;
+        const finished = new Promise(r => { resolveFinished = r; });
+
+        const tryPlay = async () => {
+          if (playing) return;
+          playing = true;
+          while (playIndex < queue.length) {
+            if (cancelledRef.current) break;
+            try {
+              const url = await queue[playIndex];
+              if (cancelledRef.current) { URL.revokeObjectURL(url); break; }
+              await playAudioUrl(url, audioRef);
+            } catch (e) { /* skip failed chunk */ }
+            playIndex++;
+          }
+          playing = false;
+          if (doneAdding && playIndex >= queue.length) resolveFinished();
+        };
+
+        const addSentence = (sentence) => {
+          queue.push(fetchTTS(sentence.trim()));
+          tryPlay();
+        };
+
+        const finish = () => {
+          doneAdding = true;
+          if (playIndex >= queue.length) resolveFinished();
+          else tryPlay();
+          return finished;
+        };
+
+        return { addSentence, finish };
       };
 
       const cancel = () => {
@@ -210,7 +272,7 @@ VOICE & STYLE GUIDELINES:
         speechSynthesis.cancel();
       };
 
-      return { speak, cancel };
+      return { speak, speakStreaming, cancel };
     };
 
     // ── Onboarding Screen ──
@@ -318,7 +380,7 @@ VOICE & STYLE GUIDELINES:
       const messagesRef = React.useRef(messages);
       const inputRef = React.useRef(null);
       const { start: startRec, stop: stopRec, supported: sttSupported } = useSpeechRecognition();
-      const { speak, cancel: cancelSpeak } = useSpeechSynthesis();
+      const { speak, speakStreaming, cancel: cancelSpeak } = useSpeechSynthesis();
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
 
@@ -341,7 +403,7 @@ VOICE & STYLE GUIDELINES:
         setInterimText('');
 
         try {
-          const response = await fetch('/api/chat', {
+          const response = await fetch('/api/chat-stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -351,19 +413,71 @@ VOICE & STYLE GUIDELINES:
             }),
           });
 
-          const data = await response.json();
-          if (data.error) throw new Error(data.error.message || 'API error');
+          if (!response.ok) throw new Error('Stream request failed');
 
-          const assistantText = data.content
-            .filter(item => item.type === 'text')
-            .map(item => item.text)
-            .join(' ');
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let fullText = '';
+          let sentenceBuffer = '';
+          let streamSpeaker = null;
+          let startedSpeaking = false;
 
-          const withReply = [...updated, { role: 'assistant', content: assistantText }];
-          setMessages(withReply);
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          setVoiceState('speaking');
-          await speak(assistantText);
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.text) {
+                  fullText += parsed.text;
+                  sentenceBuffer += parsed.text;
+
+                  // Update message text as it streams in
+                  setMessages([...updated, { role: 'assistant', content: fullText }]);
+
+                  // Check for sentence boundaries and fire TTS immediately
+                  const sentenceMatch = sentenceBuffer.match(/^([\s\S]*?[.!?])\s*/);
+                  if (sentenceMatch) {
+                    const sentence = sentenceMatch[1].trim();
+                    sentenceBuffer = sentenceBuffer.slice(sentenceMatch[0].length);
+
+                    if (sentence.length > 0) {
+                      if (!streamSpeaker) {
+                        streamSpeaker = speakStreaming();
+                        setVoiceState('speaking');
+                        startedSpeaking = true;
+                      }
+                      streamSpeaker.addSentence(sentence);
+                    }
+                  }
+                }
+              } catch (e) { /* skip */ }
+            }
+          }
+
+          // Handle any remaining text that didn't end with punctuation
+          const remaining = sentenceBuffer.trim();
+          if (remaining.length > 0) {
+            if (!streamSpeaker) {
+              streamSpeaker = speakStreaming();
+              setVoiceState('speaking');
+              startedSpeaking = true;
+            }
+            streamSpeaker.addSentence(remaining);
+          }
+
+          // Wait for all audio to finish playing
+          if (streamSpeaker) {
+            await streamSpeaker.finish();
+          }
           setVoiceState('idle');
         } catch (err) {
           console.error('Error:', err);
