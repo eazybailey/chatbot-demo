@@ -1,21 +1,32 @@
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export const config = { runtime: 'edge' };
 
+export default async function handler(req) {
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
-    const { input, voice } = req.body;
+    const { input, voice } = await req.json();
 
     if (!input || !input.trim()) {
-      return res.status(400).json({ error: 'No input text provided' });
+      return new Response(JSON.stringify({ error: 'No input text provided' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -28,33 +39,30 @@ export default async function handler(req, res) {
         model: 'tts-1',
         input: input,
         voice: voice || 'nova',
-        response_format: 'opus',
+        response_format: 'mp3',
       }),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      console.error('OpenAI TTS error:', err);
-      return res.status(response.status).json({ error: err.error?.message || 'TTS request failed' });
+      return new Response(JSON.stringify({ error: err.error?.message || 'TTS request failed' }), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Stream audio directly to client instead of buffering
-    res.setHeader('Content-Type', 'audio/ogg');
-    res.setHeader('Transfer-Encoding', 'chunked');
-
-    const reader = response.body.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(Buffer.from(value));
-    }
-    res.end();
+    // Stream audio directly from OpenAI to client
+    return new Response(response.body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
   } catch (error) {
-    console.error('TTS Error:', error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Internal server error' });
-    } else {
-      res.end();
-    }
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
