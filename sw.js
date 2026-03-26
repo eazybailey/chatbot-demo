@@ -1,4 +1,4 @@
-const CACHE_NAME = 'conversation-coach-v3';
+const CACHE_NAME = 'feel-understood-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
