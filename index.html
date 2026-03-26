@@ -22,7 +22,9 @@
   <div id="root"></div>
   <script type="text/babel">
 
-    const SYSTEM_PROMPT = `You are the Dialogue Coach — a warm, knowledgeable, and encouraging conversation coach and practice buddy. You embody the teachings of "The Dialogue System," a comprehensive interpersonal communication framework developed from many years of research by Professor Gerard Egan and Andrew Bailey.
+    // ── Profile-based System Prompt Builder ──
+    const buildSystemPrompt = (profile) => {
+      const base = `You are the Dialogue Coach — a warm, knowledgeable, and encouraging conversation coach and practice buddy. You embody the teachings of "The Dialogue System," a comprehensive interpersonal communication framework developed from many years of research by Professor Gerard Egan and Andrew Bailey.
 
 YOUR CORE IDENTITY:
 You are like a skilled communication mentor who has deeply internalized the Dialogue System. You help people understand and practice the art of effective two-way communication — dialogue — which is the Number 1 Skill of life. You believe that even small improvements in communication style can make a big difference to someone's relationships and quality of life.
@@ -105,7 +107,365 @@ VOICE & STYLE GUIDELINES:
 - Use the Dialogue System's own principles in YOUR conversation — model good dialogue by feeding back highlights, checking understanding, and showing genuine interest.
 - Never be preachy or condescending. The book itself says "you don't always have to be nice" — be real and direct when needed, but always respectful.`;
 
-    const GREETING = "Hey! I'm your Dialogue Coach. Want to learn a communication skill, get help with a tricky conversation, or jump into a role-play? What's on your mind?";
+      if (!profile) return base;
+
+      const modeMap = {
+        learn: 'learning communication skills and frameworks',
+        coach: 'getting help with a specific real conversation',
+        practice: 'practicing difficult conversations through role-play',
+        reflect: 'understanding their own communication style',
+      };
+
+      const explainerMap = {
+        improv: 'They tend to jump into explanations without a clear structure — they could benefit from learning to headline and provide context first.',
+        structured: 'They naturally headline and structure their explanations well — this is a strength to build on.',
+        context: 'They tend to over-explain with too much context — they could benefit from learning to headline first and be more concise.',
+        brief: 'They tend to under-explain and skip context — they could benefit from learning to fill in the picture more using frameworks like SAME or MRI.',
+      };
+
+      const understanderMap = {
+        fix: 'Their instinct is to offer solutions immediately — a common pattern. Help them practice feeding back highlights and resisting the urge to fix.',
+        curious: 'They naturally ask questions to understand — a strong Understander trait. Help them also practice feeding back highlights in their own words.',
+        relate: 'They connect by sharing similar experiences — this builds rapport but can accidentally hijack. Help them balance sharing with focused listening.',
+        listen: 'They default to quiet listening — good patience, but they may appear passive. Help them practice active skills like feeding back highlights.',
+      };
+
+      const conflictMap = {
+        push: 'Under tension they push harder — a compete pattern. Help them practice getting curious about the other side and finding win-win outcomes.',
+        avoid: 'Under tension they back off — an avoidance pattern. Help them build confidence to stay in difficult conversations while managing emotions.',
+        compromise: 'Under tension they seek middle ground — a good instinct. Help them go deeper by understanding both sides fully before compromising.',
+        collaborate: 'Under tension they get curious — an excellent Conversation Manager instinct. Help them build on this strength.',
+      };
+
+      const challengeMap = {
+        heard: 'Their biggest struggle is being heard and understood — focus on Explainer skills like engaging attention, headlining, and checking for understanding.',
+        listening: 'Their biggest struggle is truly listening — focus on Understander skills, especially feeding back highlights and listening with an open mind.',
+        emotions: 'Their biggest struggle is navigating emotions — focus on Conversation Manager skills like monitoring emotional temperature and responding rather than reacting.',
+        starting: 'Their biggest struggle is starting and sustaining conversations — focus on preparation, sharing purpose, and building confidence through practice.',
+      };
+
+      const profileContext = `
+
+USER PROFILE — PERSONALISE YOUR COACHING:
+- Name: ${profile.name}
+- Primary interest: ${modeMap[profile.goal] || 'general communication improvement'}
+- Explaining style: ${explainerMap[profile.explainer] || ''}
+- Listening style: ${understanderMap[profile.understander] || ''}
+- Conflict approach: ${conflictMap[profile.conflict] || ''}
+- Key challenge: ${challengeMap[profile.challenge] || ''}
+
+IMPORTANT: Address the user by their name naturally (not every message, but occasionally). Tailor your coaching to their profile — lean into their strengths, gently work on their growth areas. Start with their primary interest but be flexible. Reference their specific patterns when relevant (e.g., "I know you mentioned navigating tense conversations is tough for you — let's work on that").`;
+
+      return base + profileContext;
+    };
+
+    const buildGreeting = (profile) => {
+      if (!profile) return "Hey! I'm your Dialogue Coach. Want to learn a communication skill, get help with a tricky conversation, or jump into a role-play? What's on your mind?";
+
+      const goalGreetings = {
+        learn: `Hey ${profile.name}! Great to meet you. You said you're keen to learn new communication skills — I love that. The Dialogue System is packed with practical stuff. Want to start with the three roles we all play in every conversation, or is there a specific skill you're curious about?`,
+        coach: `Hey ${profile.name}! Good to have you here. You mentioned you've got a specific conversation you'd like help with — I'm all ears. Tell me what's going on and we'll work through it together.`,
+        practice: `Hey ${profile.name}! Welcome — you're here to practice, and that's the best way to get better. Think of a conversation you've got coming up or one that didn't go well, and we can role-play it. What scenario would be most useful for you?`,
+        reflect: `Hey ${profile.name}! I'm glad you want to explore your communication style — self-awareness is where it all starts. Let me ask you this: think about your last few important conversations. Do you notice any patterns in how they went?`,
+      };
+
+      return goalGreetings[profile.goal] || `Hey ${profile.name}! Great to meet you. I'm your Dialogue Coach — here to help you have better conversations. What would you like to work on?`;
+    };
+
+    // ── Quiz Data ──
+    const QUIZ_SCREENS = [
+      {
+        id: 'welcome',
+        type: 'splash',
+      },
+      {
+        id: 'name',
+        type: 'name-input',
+        title: 'What should we call you?',
+        subtitle: 'Your coach will use your name to personalise the experience.',
+      },
+      {
+        id: 'goal',
+        type: 'choice',
+        title: 'What would help you most right now?',
+        subtitle: 'This helps your coach know where to start.',
+        options: [
+          { value: 'learn', label: 'Learn new skills', desc: 'Discover frameworks that make every conversation better' },
+          { value: 'coach', label: 'Get help with a conversation', desc: "Work through something that's on your mind" },
+          { value: 'practice', label: 'Practice a tricky conversation', desc: 'Role-play with your coach and get feedback' },
+          { value: 'reflect', label: 'Understand my style', desc: 'Discover patterns in how you communicate' },
+        ],
+      },
+      {
+        id: 'explainer',
+        type: 'choice',
+        title: 'When you need to explain something important, you usually...',
+        subtitle: 'Everyone has a natural explaining style. There are no wrong answers.',
+        insight: 'The Dialogue System identifies the Explainer as one of three roles we play in every conversation.',
+        options: [
+          { value: 'improv', label: 'Jump right in and figure it out as I talk' },
+          { value: 'structured', label: 'Lead with the headline, then fill in details' },
+          { value: 'context', label: 'Set the scene with lots of background first' },
+          { value: 'brief', label: 'Keep it short — less is more' },
+        ],
+      },
+      {
+        id: 'understander',
+        type: 'choice',
+        title: 'Someone tells you about a tough situation. Your first instinct?',
+        subtitle: 'How we respond when others share matters more than we think.',
+        insight: 'The Understander role is about truly getting the other person — not just hearing them.',
+        options: [
+          { value: 'fix', label: 'Offer advice or a solution' },
+          { value: 'curious', label: 'Ask questions to understand more' },
+          { value: 'relate', label: 'Share a similar experience of my own' },
+          { value: 'listen', label: 'Just listen and let them talk' },
+        ],
+      },
+      {
+        id: 'conflict',
+        type: 'choice',
+        title: 'When a conversation gets tense, you tend to...',
+        subtitle: 'Tension is where conversations are won or lost.',
+        insight: 'The Conversation Manager looks after the health of the conversation itself.',
+        options: [
+          { value: 'push', label: 'Push my point harder' },
+          { value: 'avoid', label: 'Back off to keep the peace' },
+          { value: 'compromise', label: 'Find the middle ground' },
+          { value: 'collaborate', label: 'Get curious about their side' },
+        ],
+      },
+      {
+        id: 'challenge',
+        type: 'choice',
+        title: "What's hardest for you in conversations?",
+        subtitle: 'Knowing your challenge is the first step to growth.',
+        options: [
+          { value: 'heard', label: 'Being heard and understood' },
+          { value: 'listening', label: 'Truly listening without jumping ahead' },
+          { value: 'emotions', label: 'Navigating emotions and tension' },
+          { value: 'starting', label: 'Starting or keeping conversations going' },
+        ],
+      },
+      {
+        id: 'profile',
+        type: 'profile-reveal',
+      },
+    ];
+
+    // ── Profile Analysis ──
+    const analyzeProfile = (answers) => {
+      const strengthMap = {
+        structured: { label: 'Clear Communicator', desc: 'You naturally structure your thoughts before sharing — a key Explainer skill that many people struggle with.' },
+        curious: { label: 'Natural Questioner', desc: 'You instinctively ask questions to understand — the foundation of being a great Understander.' },
+        collaborate: { label: 'Collaborative Navigator', desc: 'When things get tense, you lean in with curiosity — a hallmark of skilled Conversation Managers.' },
+        compromise: { label: 'Bridge Builder', desc: 'You instinctively look for common ground — a valuable skill for keeping conversations productive.' },
+        listen: { label: 'Patient Listener', desc: 'You give people space to express themselves — a gift in a world where everyone wants to talk.' },
+        relate: { label: 'Empathic Connector', desc: "You build bridges by sharing your own experiences — this creates rapport and trust." },
+        context: { label: 'Thorough Explainer', desc: 'You make sure people have the full picture — attention to context is a real strength.' },
+        brief: { label: 'Concise Communicator', desc: 'You get to the point efficiently — people appreciate clarity and brevity.' },
+        improv: { label: 'Spontaneous Communicator', desc: 'You think on your feet and speak naturally — this brings energy and authenticity to conversations.' },
+        fix: { label: 'Problem Solver', desc: 'You jump to help with solutions — people know they can count on you to take action.' },
+        push: { label: 'Assertive Communicator', desc: "You stand your ground under pressure — knowing what you want is a foundation to build on." },
+        avoid: { label: 'Harmony Keeper', desc: 'You value peace in relationships — this sensitivity to others is a real asset when channelled well.' },
+      };
+
+      const growthMap = {
+        heard: { label: 'Being Understood', desc: 'We\'ll work on Explainer skills — like engaging attention, headlining your message, and checking that your point landed.' },
+        listening: { label: 'Deep Listening', desc: "We'll practice Understander skills — especially feeding back what you've heard in your own words. It's the most powerful and underused skill." },
+        emotions: { label: 'Emotional Navigation', desc: "We'll build Conversation Manager skills — like reading the emotional temperature and responding rather than reacting." },
+        starting: { label: 'Conversation Confidence', desc: "We'll work on preparation and flow — learning to share purpose, manage turn-taking, and keep conversations alive." },
+      };
+
+      // Pick strength from explainer or understander answer (whichever is more distinctive)
+      const strengthKey = answers.understander || answers.explainer || 'curious';
+      const strength = strengthMap[strengthKey] || strengthMap.curious;
+      const growth = growthMap[answers.challenge] || growthMap.heard;
+
+      return { strength, growth };
+    };
+
+    // ── ProfileQuiz Component ──
+    const ProfileQuiz = ({ onComplete }) => {
+      const [step, setStep] = React.useState(0);
+      const [answers, setAnswers] = React.useState({});
+      const [name, setName] = React.useState('');
+      const [animDir, setAnimDir] = React.useState('forward');
+      const [animating, setAnimating] = React.useState(false);
+      const nameInputRef = React.useRef(null);
+
+      const screen = QUIZ_SCREENS[step];
+      const totalSteps = QUIZ_SCREENS.length;
+      const progress = step / (totalSteps - 1);
+
+      React.useEffect(() => {
+        if (screen.type === 'name-input' && nameInputRef.current) {
+          setTimeout(() => nameInputRef.current?.focus(), 400);
+        }
+      }, [step]);
+
+      const goNext = () => {
+        if (animating) return;
+        setAnimDir('forward');
+        setAnimating(true);
+        setTimeout(() => {
+          setStep(s => s + 1);
+          setAnimating(false);
+        }, 300);
+      };
+
+      const goBack = () => {
+        if (animating || step === 0) return;
+        setAnimDir('back');
+        setAnimating(true);
+        setTimeout(() => {
+          setStep(s => s - 1);
+          setAnimating(false);
+        }, 300);
+      };
+
+      const selectOption = (questionId, value) => {
+        setAnswers(a => ({ ...a, [questionId]: value }));
+        // Auto-advance after a brief pause
+        setTimeout(() => goNext(), 350);
+      };
+
+      const handleNameSubmit = (e) => {
+        e.preventDefault();
+        if (name.trim()) goNext();
+      };
+
+      const handleFinish = () => {
+        const profile = { name: name.trim(), ...answers };
+        onComplete(profile);
+      };
+
+      const analysis = analyzeProfile(answers);
+
+      // ── Render current screen ──
+      const renderScreen = () => {
+        const animClass = animating
+          ? (animDir === 'forward' ? 'quiz-exit' : 'quiz-exit-back')
+          : (animDir === 'forward' ? 'quiz-enter' : 'quiz-enter-back');
+
+        if (screen.type === 'splash') {
+          return React.createElement('div', { className: `quiz-screen quiz-splash ${animClass}`, key: step },
+            React.createElement('div', { className: 'quiz-splash-content' },
+              React.createElement('div', { className: 'quiz-splash-icon' },
+                React.createElement('img', { src: '/images/logo.svg', alt: '', height: 28 })
+              ),
+              React.createElement('h1', { className: 'quiz-splash-title' }, 'Your conversations shape your life'),
+              React.createElement('p', { className: 'quiz-splash-desc' },
+                'In just a minute, discover your communication style and meet your personal AI coach.'
+              ),
+              React.createElement('div', { className: 'quiz-splash-features' },
+                React.createElement('div', { className: 'quiz-splash-feat' },
+                  React.createElement('span', { className: 'quiz-feat-dot' }),
+                  'Based on 30+ years of communication research'
+                ),
+                React.createElement('div', { className: 'quiz-splash-feat' },
+                  React.createElement('span', { className: 'quiz-feat-dot' }),
+                  'Personalised to how you actually communicate'
+                ),
+                React.createElement('div', { className: 'quiz-splash-feat' },
+                  React.createElement('span', { className: 'quiz-feat-dot' }),
+                  'Practice with a coach that adapts to you'
+                ),
+              ),
+              React.createElement('button', { className: 'quiz-cta', onClick: goNext }, "Let's Go"),
+            )
+          );
+        }
+
+        if (screen.type === 'name-input') {
+          return React.createElement('div', { className: `quiz-screen quiz-name ${animClass}`, key: step },
+            React.createElement('h2', { className: 'quiz-title' }, screen.title),
+            React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
+            React.createElement('form', { className: 'quiz-name-form', onSubmit: handleNameSubmit },
+              React.createElement('input', {
+                ref: nameInputRef,
+                type: 'text',
+                className: 'quiz-name-input',
+                value: name,
+                onChange: (e) => setName(e.target.value),
+                placeholder: 'Your first name',
+                maxLength: 30,
+                autoComplete: 'given-name',
+              }),
+              React.createElement('button', {
+                type: 'submit',
+                className: `quiz-cta ${name.trim() ? '' : 'quiz-cta-disabled'}`,
+                disabled: !name.trim(),
+              }, 'Continue'),
+            )
+          );
+        }
+
+        if (screen.type === 'choice') {
+          return React.createElement('div', { className: `quiz-screen quiz-choice ${animClass}`, key: step },
+            React.createElement('h2', { className: 'quiz-title' }, screen.title),
+            React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
+            React.createElement('div', { className: 'quiz-options' },
+              screen.options.map((opt) =>
+                React.createElement('button', {
+                  key: opt.value,
+                  className: `quiz-option ${answers[screen.id] === opt.value ? 'quiz-option-selected' : ''}`,
+                  onClick: () => selectOption(screen.id, opt.value),
+                },
+                  React.createElement('span', { className: 'quiz-option-label' }, opt.label),
+                  opt.desc && React.createElement('span', { className: 'quiz-option-desc' }, opt.desc),
+                )
+              )
+            ),
+            screen.insight && React.createElement('p', { className: 'quiz-insight' }, screen.insight),
+          );
+        }
+
+        if (screen.type === 'profile-reveal') {
+          return React.createElement('div', { className: `quiz-screen quiz-reveal ${animClass}`, key: step },
+            React.createElement('div', { className: 'quiz-reveal-header' },
+              React.createElement('div', { className: 'quiz-reveal-avatar' }, name.trim().charAt(0).toUpperCase()),
+              React.createElement('h2', { className: 'quiz-reveal-name' }, name.trim()),
+              React.createElement('p', { className: 'quiz-reveal-tagline' }, 'Your Communication Profile'),
+            ),
+            React.createElement('div', { className: 'quiz-reveal-cards' },
+              React.createElement('div', { className: 'quiz-reveal-card quiz-strength-card' },
+                React.createElement('span', { className: 'quiz-card-badge quiz-badge-strength' }, 'Your Strength'),
+                React.createElement('h3', null, analysis.strength.label),
+                React.createElement('p', null, analysis.strength.desc),
+              ),
+              React.createElement('div', { className: 'quiz-reveal-card quiz-growth-card' },
+                React.createElement('span', { className: 'quiz-card-badge quiz-badge-growth' }, 'Growth Area'),
+                React.createElement('h3', null, analysis.growth.label),
+                React.createElement('p', null, analysis.growth.desc),
+              ),
+            ),
+            React.createElement('button', { className: 'quiz-cta quiz-cta-final', onClick: handleFinish }, 'Meet Your Coach'),
+          );
+        }
+
+        return null;
+      };
+
+      return React.createElement('div', { className: 'quiz-container' },
+        // Progress bar (hidden on splash)
+        step > 0 && React.createElement('div', { className: 'quiz-progress-wrap' },
+          step > 0 && React.createElement('button', {
+            className: 'quiz-back-btn',
+            onClick: goBack,
+            'aria-label': 'Go back',
+          },
+            React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' },
+              React.createElement('polyline', { points: '15 18 9 12 15 6' })
+            )
+          ),
+          React.createElement('div', { className: 'quiz-progress-bar' },
+            React.createElement('div', { className: 'quiz-progress-fill', style: { width: `${progress * 100}%` } })
+          ),
+        ),
+        renderScreen(),
+      );
+    };
 
     // ── Speech Recognition Hook ──
     const useSpeechRecognition = () => {
@@ -276,53 +636,6 @@ VOICE & STYLE GUIDELINES:
       return { speak, speakStreaming, cancel };
     };
 
-    // ── Onboarding Screen ──
-    const OnboardingScreen = ({ onStart }) => {
-      return React.createElement('div', { className: 'onboarding' },
-        React.createElement('div', { className: 'onboarding-content' },
-          React.createElement('div', { className: 'onboarding-logo' },
-            React.createElement('img', { src: '/images/logo.svg', alt: 'Feel Understood', height: 32 })
-          ),
-          React.createElement('h1', { className: 'onboarding-title' }, 'The Conversation Coach'),
-          React.createElement('p', { className: 'onboarding-sub' }, 'Practice better conversations with AI'),
-          React.createElement('div', { className: 'onboarding-features' },
-            React.createElement('div', { className: 'onboarding-feature' },
-              React.createElement('span', { className: 'feature-icon' },
-                React.createElement('img', { src: '/images/icon-learn.svg', alt: '', width: 28, height: 28, className: 'doodle-icon' })
-              ),
-              React.createElement('div', {},
-                React.createElement('strong', {}, 'Learn'),
-                React.createElement('span', {}, 'Communication skills & frameworks'),
-              )
-            ),
-            React.createElement('div', { className: 'onboarding-feature' },
-              React.createElement('span', { className: 'feature-icon' },
-                React.createElement('img', { src: '/images/icon-coach.svg', alt: '', width: 28, height: 28, className: 'doodle-icon' })
-              ),
-              React.createElement('div', {},
-                React.createElement('strong', {}, 'Coach'),
-                React.createElement('span', {}, 'Get help with real challenges'),
-              )
-            ),
-            React.createElement('div', { className: 'onboarding-feature' },
-              React.createElement('span', { className: 'feature-icon' },
-                React.createElement('img', { src: '/images/icon-practice.svg', alt: '', width: 28, height: 28, className: 'doodle-icon' })
-              ),
-              React.createElement('div', {},
-                React.createElement('strong', {}, 'Practice'),
-                React.createElement('span', {}, 'Role-play tricky conversations'),
-              )
-            ),
-          ),
-          React.createElement('button', {
-            className: 'start-btn',
-            onClick: onStart
-          }, 'Start Talking'),
-          React.createElement('p', { className: 'onboarding-note' }, 'Works best in Chrome. Uses your microphone for voice chat.'),
-        )
-      );
-    };
-
     // ── Typing Indicator ──
     const TypingIndicator = () => {
       return React.createElement('div', { className: 'msg-row assistant' },
@@ -370,30 +683,35 @@ VOICE & STYLE GUIDELINES:
     // ── Main App ──
     const App = () => {
       const [started, setStarted] = React.useState(false);
-      const [messages, setMessages] = React.useState([
-        { role: 'assistant', content: GREETING }
-      ]);
+      const [profile, setProfile] = React.useState(null);
+      const [messages, setMessages] = React.useState([]);
       const [voiceState, setVoiceState] = React.useState('idle');
       const [interimText, setInterimText] = React.useState('');
       const [textInput, setTextInput] = React.useState('');
       const [error, setError] = React.useState(null);
       const chatEndRef = React.useRef(null);
       const messagesRef = React.useRef(messages);
+      const profileRef = React.useRef(null);
       const inputRef = React.useRef(null);
       const { start: startRec, stop: stopRec, supported: sttSupported } = useSpeechRecognition();
       const { speak, speakStreaming, cancel: cancelSpeak } = useSpeechSynthesis();
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
+      React.useEffect(() => { profileRef.current = profile; }, [profile]);
 
       React.useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, [messages, voiceState, interimText]);
 
-      const handleStart = () => {
+      const handleQuizComplete = (quizProfile) => {
+        setProfile(quizProfile);
+        profileRef.current = quizProfile;
+        const greeting = buildGreeting(quizProfile);
+        setMessages([{ role: 'assistant', content: greeting }]);
         setStarted(true);
         setTimeout(() => {
           setVoiceState('speaking');
-          speak(GREETING).then(() => setVoiceState('idle'));
+          speak(greeting).then(() => setVoiceState('idle'));
         }, 400);
       };
 
@@ -408,7 +726,7 @@ VOICE & STYLE GUIDELINES:
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              system: SYSTEM_PROMPT,
+              system: buildSystemPrompt(profileRef.current),
               max_tokens: 500,
               messages: updated.map(m => ({ role: m.role, content: m.content })),
             }),
@@ -551,16 +869,17 @@ VOICE & STYLE GUIDELINES:
 
       const handleNewChat = () => {
         cancelSpeak();
-        setMessages([{ role: 'assistant', content: GREETING }]);
+        const greeting = buildGreeting(profileRef.current);
+        setMessages([{ role: 'assistant', content: greeting }]);
         setVoiceState('idle');
         setInterimText('');
         setTextInput('');
         setError(null);
       };
 
-      // ── Onboarding ──
+      // ── Onboarding Quiz ──
       if (!started) {
-        return React.createElement(OnboardingScreen, { onStart: handleStart });
+        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete });
       }
 
       const statusLabel = {
