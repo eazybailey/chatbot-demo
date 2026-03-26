@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://api.openai.com">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Conversation Coach">
-  <meta name="description" content="Practice better conversations with your AI Dialogue Coach. Learn, get coached, and role-play real scenarios.">
-  <title>The Conversation Coach</title>
+  <meta name="apple-mobile-web-app-title" content="Feel Understood">
+  <meta name="description" content="Feel Understood — Your Conversation Coach. Practice better conversations with AI. Learn, get coached, and role-play real scenarios.">
+  <title>Feel Understood — Your Conversation Coach</title>
   <link rel="stylesheet" href="styles.css">
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -22,7 +22,7 @@
   <div id="root"></div>
   <script type="text/babel">
 
-    const SYSTEM_PROMPT = `You are the Dialogue Coach — a warm, knowledgeable, and encouraging conversation coach and practice buddy. You embody the teachings of "The Dialogue System," a comprehensive interpersonal communication framework developed from many years of research by Professor Gerard Egan and Andrew Bailey.
+    const SYSTEM_PROMPT = `You are the coach behind "Feel Understood" — a warm, knowledgeable, and encouraging conversation coach and practice buddy. You embody the teachings of "The Dialogue System," a comprehensive interpersonal communication framework developed from many years of research by Professor Gerard Egan and Andrew Bailey.
 
 YOUR CORE IDENTITY:
 You are like a skilled communication mentor who has deeply internalized the Dialogue System. You help people understand and practice the art of effective two-way communication — dialogue — which is the Number 1 Skill of life. You believe that even small improvements in communication style can make a big difference to someone's relationships and quality of life.
@@ -105,7 +105,7 @@ VOICE & STYLE GUIDELINES:
 - Use the Dialogue System's own principles in YOUR conversation — model good dialogue by feeding back highlights, checking understanding, and showing genuine interest.
 - Never be preachy or condescending. The book itself says "you don't always have to be nice" — be real and direct when needed, but always respectful.`;
 
-    const GREETING = "Hey! I'm your Dialogue Coach. Want to learn a communication skill, get help with a tricky conversation, or jump into a role-play? What's on your mind?";
+    const GREETING = "Hey! Welcome to Feel Understood. I'm your Conversation Coach. Want to learn a communication skill, get help with a tricky conversation, or jump into a role-play? What's on your mind?";
 
     // ── Speech Recognition Hook ──
     const useSpeechRecognition = () => {
@@ -283,8 +283,8 @@ VOICE & STYLE GUIDELINES:
           React.createElement('div', { className: 'onboarding-logo' },
             React.createElement('img', { src: '/images/logo.svg', alt: 'Feel Understood', height: 32 })
           ),
-          React.createElement('h1', { className: 'onboarding-title' }, 'The Conversation Coach'),
-          React.createElement('p', { className: 'onboarding-sub' }, 'Practice better conversations with AI'),
+          React.createElement('h1', { className: 'onboarding-title' }, 'Feel Understood'),
+          React.createElement('p', { className: 'onboarding-sub' }, 'Your Conversation Coach'),
           React.createElement('div', { className: 'onboarding-features' },
             React.createElement('div', { className: 'onboarding-feature' },
               React.createElement('span', { className: 'feature-icon' },
@@ -578,7 +578,7 @@ VOICE & STYLE GUIDELINES:
             React.createElement('div', { className: 'header-icon' },
               React.createElement('img', { src: '/images/icon-avatar.svg', alt: '', width: 22, height: 22, className: 'doodle-icon' })
             ),
-            React.createElement('span', { className: 'header-title' }, 'Conversation Coach'),
+            React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
           ),
           React.createElement('button', {
             className: 'new-chat-btn',

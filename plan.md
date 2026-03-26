@@ -1,7 +1,7 @@
-# Voice Chatbot Implementation Plan for "Feel Understood"
+# Voice Chatbot Implementation Plan for "Feel Understood — Your Conversation Coach"
 
 ## Overview
-Add a ChatGPT-like voice interface to the Feel Understood project. Users will be able to have a spoken conversation with a Claude-powered therapist/counselor chatbot that helps them explore how understood they feel.
+Add a ChatGPT-like voice interface to the Feel Understood project. Users will be able to have a spoken conversation with a Claude-powered conversation coach that helps them practice and improve their communication skills using the Dialogue System framework.
 
 ## Architecture
 
