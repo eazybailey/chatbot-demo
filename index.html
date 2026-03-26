@@ -7,6 +7,7 @@
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#121212">
+  <link rel="preconnect" href="https://api.openai.com">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Conversation Coach">
@@ -443,20 +444,35 @@ VOICE & STYLE GUIDELINES:
                   // Update message text as it streams in
                   setMessages([...updated, { role: 'assistant', content: fullText }]);
 
-                  // Check for sentence boundaries and fire TTS immediately
-                  const sentenceMatch = sentenceBuffer.match(/^([\s\S]*?[.!?])\s*/);
-                  if (sentenceMatch) {
-                    const sentence = sentenceMatch[1].trim();
-                    sentenceBuffer = sentenceBuffer.slice(sentenceMatch[0].length);
+                  // Aggressively fire TTS on any natural break point
+                  // Priority 1: sentence endings (.!?)
+                  // Priority 2: clause breaks (,;:—–) if buffer > 40 chars
+                  // Priority 3: any content if buffer > 80 chars (force split at word boundary)
+                  let fireChunk = null;
+                  const sentenceMatch = sentenceBuffer.match(/^([\s\S]*?[.!?])[\s]?/);
+                  const clauseMatch = sentenceBuffer.length > 40 && sentenceBuffer.match(/^([\s\S]*?[,;:\u2014\u2013])[\s]?/);
 
-                    if (sentence.length > 0) {
-                      if (!streamSpeaker) {
-                        streamSpeaker = speakStreaming();
-                        setVoiceState('speaking');
-                        startedSpeaking = true;
-                      }
-                      streamSpeaker.addSentence(sentence);
+                  if (sentenceMatch) {
+                    fireChunk = sentenceMatch[1].trim();
+                    sentenceBuffer = sentenceBuffer.slice(sentenceMatch[0].length);
+                  } else if (clauseMatch) {
+                    fireChunk = clauseMatch[1].trim();
+                    sentenceBuffer = sentenceBuffer.slice(clauseMatch[0].length);
+                  } else if (sentenceBuffer.length > 80) {
+                    // Force split at last word boundary
+                    const wordBreak = sentenceBuffer.lastIndexOf(' ', 80);
+                    const splitAt = wordBreak > 20 ? wordBreak : 80;
+                    fireChunk = sentenceBuffer.slice(0, splitAt).trim();
+                    sentenceBuffer = sentenceBuffer.slice(splitAt);
+                  }
+
+                  if (fireChunk && fireChunk.length > 0) {
+                    if (!streamSpeaker) {
+                      streamSpeaker = speakStreaming();
+                      setVoiceState('speaking');
+                      startedSpeaking = true;
                     }
+                    streamSpeaker.addSentence(fireChunk);
                   }
                 }
               } catch (e) { /* skip */ }
