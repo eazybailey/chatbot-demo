@@ -48,11 +48,15 @@ html, body {
 
 .onboarding-logo {
   margin-bottom: 28px;
+  width: 100%;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .onboarding-logo img {
-  display: inline-block;
-  height: 56px;
-  width: auto;
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .onboarding-title {
@@ -264,10 +268,12 @@ html, body {
 
 .quiz-splash-icon {
   margin-bottom: 28px;
+  width: 100%;
+  max-width: 320px;
 }
 .quiz-splash-icon img {
-  height: 56px;
-  width: auto;
+  width: 100%;
+  height: auto;
 }
 
 .quiz-splash-title {
