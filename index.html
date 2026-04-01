@@ -512,70 +512,88 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
     };
 
     // ── TTS Audio Queue (OpenAI TTS via Nova) ──
-    // Single reusable Audio element — avoids mobile autoplay restrictions.
-    // Routed through a Web AudioContext so iOS uses the main speaker
-    // instead of the earpiece (which happens with plain HTMLAudioElement).
-    const sharedAudio = new Audio();
-    sharedAudio.crossOrigin = 'anonymous';
+    // Uses Web AudioContext to decode + play audio buffers directly.
+    // This avoids two mobile issues:
+    //  1) new Audio() after async work loses the user-gesture chain (autoplay blocked)
+    //  2) HTMLAudioElement can route through the earpiece on iOS (low volume)
+    // AudioContext.decodeAudioData → buffer source → destination uses the main speaker.
+    // Falls back to a shared HTMLAudioElement when AudioContext is unavailable.
+    const sharedAudio = new Audio();  // fallback only
     let audioCtx = null;
     let audioUnlocked = false;
 
     const unlockAudio = () => {
       if (audioUnlocked) return;
       audioUnlocked = true;
-
-      // Create AudioContext and route sharedAudio through it → main speaker
       try {
-        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioCtxClass();
-        const source = audioCtx.createMediaElementSource(sharedAudio);
-        source.connect(audioCtx.destination);
+        const AC = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AC();
+        // Play a tiny silent buffer to fully unlock on iOS
+        const buf = audioCtx.createBuffer(1, 1, 22050);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start(0);
       } catch (e) {
-        console.warn('AudioContext setup failed, falling back to direct playback:', e);
+        console.warn('AudioContext unlock failed:', e);
       }
-
-      // Resume AudioContext (required by browsers) + play silent buffer to unlock
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      sharedAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYlp2NYAAAAAAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYlp2NYAAAAAAAAAAAAAAAAAAAA';
-      sharedAudio.play().then(() => { sharedAudio.pause(); }).catch(() => {});
-
       document.removeEventListener('touchstart', unlockAudio, true);
       document.removeEventListener('click', unlockAudio, true);
     };
     document.addEventListener('touchstart', unlockAudio, true);
     document.addEventListener('click', unlockAudio, true);
 
-    // Fetches TTS for a sentence and returns a playable blob URL
-    const fetchTTS = async (text) => {
+    // Fetches TTS for a sentence and returns an ArrayBuffer (for AudioContext)
+    // or a blob URL (for fallback)
+    const fetchTTSBuffer = async (text) => {
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: text, voice: 'nova' }),
       });
       if (!response.ok) throw new Error('TTS failed');
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
+      return await response.arrayBuffer();
     };
 
-    // Plays a single audio URL, returns a promise
-    // Reuses sharedAudio routed through AudioContext for main speaker output
-    const playAudioUrl = (url, audioRef) => {
-      return new Promise((resolve) => {
-        const audio = sharedAudio;
-        audioRef.current = audio;
+    // Plays audio via AudioContext (main speaker), falls back to HTMLAudioElement
+    const playAudioBuffer = (arrayBuffer, audioRef) => {
+      return new Promise(async (resolve) => {
+        // Ensure AudioContext is active
+        if (audioCtx && audioCtx.state === 'suspended') {
+          try { await audioCtx.resume(); } catch(e) {}
+        }
+
+        // Primary path: decode and play through AudioContext
+        if (audioCtx) {
+          try {
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioCtx.destination);
+            audioRef.current = source;
+            source.onended = () => { audioRef.current = null; resolve(); };
+            source.start(0);
+            return;
+          } catch (e) {
+            console.warn('AudioContext playback failed, using fallback:', e);
+          }
+        }
+
+        // Fallback: shared HTMLAudioElement
+        const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        audioRef.current = sharedAudio;
         const cleanup = () => {
-          audio.onended = null;
-          audio.onerror = null;
+          sharedAudio.onended = null;
+          sharedAudio.onerror = null;
           URL.revokeObjectURL(url);
           audioRef.current = null;
           resolve();
         };
-        audio.onended = cleanup;
-        audio.onerror = cleanup;
-        // Ensure AudioContext is active (browsers may suspend it)
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        audio.src = url;
-        audio.play().catch(cleanup);
+        sharedAudio.onended = cleanup;
+        sharedAudio.onerror = cleanup;
+        sharedAudio.src = url;
+        sharedAudio.play().catch(cleanup);
       });
     };
 
@@ -603,14 +621,12 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         cancelledRef.current = false;
         try {
           const sentences = splitSentences(text);
-          // Fire all TTS requests in parallel immediately
-          const ttsPromises = sentences.map(s => fetchTTS(s.trim()));
-          // Play each in order as they resolve
+          const ttsPromises = sentences.map(s => fetchTTSBuffer(s.trim()));
           for (let i = 0; i < sentences.length; i++) {
             if (cancelledRef.current) return;
-            const url = await ttsPromises[i];
-            if (cancelledRef.current) { URL.revokeObjectURL(url); return; }
-            await playAudioUrl(url, audioRef);
+            const buffer = await ttsPromises[i];
+            if (cancelledRef.current) return;
+            await playAudioBuffer(buffer, audioRef);
           }
         } catch (err) {
           console.error('TTS error:', err);
@@ -629,7 +645,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
       // Streaming speak: accepts sentences one at a time, overlaps fetch + playback
       const speakStreaming = () => {
         cancelledRef.current = false;
-        const queue = []; // { promise: Promise<url>, index }
+        const queue = [];
         let playIndex = 0;
         let playing = false;
         let resolveFinished;
@@ -642,9 +658,9 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           while (playIndex < queue.length) {
             if (cancelledRef.current) break;
             try {
-              const url = await queue[playIndex];
-              if (cancelledRef.current) { URL.revokeObjectURL(url); break; }
-              await playAudioUrl(url, audioRef);
+              const buffer = await queue[playIndex];
+              if (cancelledRef.current) break;
+              await playAudioBuffer(buffer, audioRef);
             } catch (e) { /* skip failed chunk */ }
             playIndex++;
           }
@@ -653,7 +669,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         };
 
         const addSentence = (sentence) => {
-          queue.push(fetchTTS(sentence.trim()));
+          queue.push(fetchTTSBuffer(sentence.trim()));
           tryPlay();
         };
 
@@ -669,12 +685,16 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
 
       const cancel = () => {
         cancelledRef.current = true;
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.removeAttribute('src');
-          audioRef.current.load();
-          audioRef.current = null;
-        }
+        try {
+          if (audioRef.current && audioRef.current.stop) {
+            // AudioContext BufferSourceNode
+            audioRef.current.stop();
+          } else if (audioRef.current && audioRef.current.pause) {
+            // HTMLAudioElement fallback
+            audioRef.current.pause();
+          }
+        } catch(e) {}
+        audioRef.current = null;
         speechSynthesis.cancel();
       };
 
@@ -1017,7 +1037,12 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
 
           !sttSupported && React.createElement('p', { className: 'browser-warn' },
             'Voice requires Chrome or Edge. Type below instead.'
-          )
+          ),
+
+          // Version label
+          React.createElement('p', {
+            style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
+          }, 'v1.1.0')
         )
       );
     };
