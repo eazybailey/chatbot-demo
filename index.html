@@ -512,18 +512,33 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
     };
 
     // ── TTS Audio Queue (OpenAI TTS via Nova) ──
-    // Single reusable Audio element — avoids mobile autoplay restrictions
-    // Mobile browsers require audio playback to originate from a user gesture;
-    // creating new Audio() after async work (fetch/streaming) breaks that chain.
-    // By reusing one element unlocked on the first tap, subsequent plays work.
+    // Single reusable Audio element — avoids mobile autoplay restrictions.
+    // Routed through a Web AudioContext so iOS uses the main speaker
+    // instead of the earpiece (which happens with plain HTMLAudioElement).
     const sharedAudio = new Audio();
+    sharedAudio.crossOrigin = 'anonymous';
+    let audioCtx = null;
     let audioUnlocked = false;
+
     const unlockAudio = () => {
       if (audioUnlocked) return;
       audioUnlocked = true;
-      // Play a tiny silent buffer to unlock the audio element on iOS/Android
+
+      // Create AudioContext and route sharedAudio through it → main speaker
+      try {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioCtxClass();
+        const source = audioCtx.createMediaElementSource(sharedAudio);
+        source.connect(audioCtx.destination);
+      } catch (e) {
+        console.warn('AudioContext setup failed, falling back to direct playback:', e);
+      }
+
+      // Resume AudioContext (required by browsers) + play silent buffer to unlock
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       sharedAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYlp2NYAAAAAAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYlp2NYAAAAAAAAAAAAAAAAAAAA';
       sharedAudio.play().then(() => { sharedAudio.pause(); }).catch(() => {});
+
       document.removeEventListener('touchstart', unlockAudio, true);
       document.removeEventListener('click', unlockAudio, true);
     };
@@ -543,7 +558,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
     };
 
     // Plays a single audio URL, returns a promise
-    // Reuses sharedAudio to maintain mobile playback permission
+    // Reuses sharedAudio routed through AudioContext for main speaker output
     const playAudioUrl = (url, audioRef) => {
       return new Promise((resolve) => {
         const audio = sharedAudio;
@@ -557,6 +572,8 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         };
         audio.onended = cleanup;
         audio.onerror = cleanup;
+        // Ensure AudioContext is active (browsers may suspend it)
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         audio.src = url;
         audio.play().catch(cleanup);
       });
