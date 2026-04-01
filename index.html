@@ -480,12 +480,26 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         r.interimResults = true;
         r.lang = 'en-US';
         recognitionRef.current = r;
+
+        // Feature-detect: try starting then immediately aborting.
+        // On iOS Chrome / standalone PWA mode, SpeechRecognition exists
+        // but throws 'service-not-allowed' — detect this and fall back to text.
+        r.onerror = (e) => {
+          if (e.error === 'service-not-allowed' || e.error === 'not-allowed') {
+            setSupported(false);
+            recognitionRef.current = null;
+          }
+        };
+        try { r.start(); } catch(e) { setSupported(false); }
+        // Abort immediately — we just wanted to probe
+        setTimeout(() => { try { r.abort(); } catch(e) {} }, 100);
+
         return () => { try { r.abort(); } catch(e) {} };
       }, []);
 
       const start = (onInterim, onFinal, onError) => {
         const r = recognitionRef.current;
-        if (!r) return;
+        if (!r) { onError('not-supported'); return; }
         r.onresult = (e) => {
           let interim = '', final = '';
           for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -501,7 +515,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           onError(e.error);
         };
         r.onend = () => {};
-        try { r.start(); } catch(e) {}
+        try { r.start(); } catch(e) { onError('start-failed'); }
       };
 
       const stop = () => {
@@ -883,9 +897,17 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
             else setVoiceState('idle');
           },
           (err) => {
-            setError(err === 'not-allowed' ? 'Mic access denied. Check browser permissions.' : `Speech error: ${err}`);
+            let msg;
+            if (err === 'not-allowed' || err === 'service-not-allowed') {
+              msg = 'Mic not available here. Try Safari, or use the text input below.';
+            } else if (err === 'not-supported' || err === 'start-failed') {
+              msg = 'Voice not supported in this browser. Use the text input below.';
+            } else {
+              msg = `Speech error: ${err}`;
+            }
+            setError(msg);
             setVoiceState('idle');
-            setTimeout(() => setError(null), 4000);
+            setTimeout(() => setError(null), 6000);
           }
         );
       };
@@ -1008,7 +1030,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.2.0')
+          }, 'v1.3.0')
         )
       );
     };
