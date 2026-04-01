@@ -512,6 +512,24 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
     };
 
     // ── TTS Audio Queue (OpenAI TTS via Nova) ──
+    // Single reusable Audio element — avoids mobile autoplay restrictions
+    // Mobile browsers require audio playback to originate from a user gesture;
+    // creating new Audio() after async work (fetch/streaming) breaks that chain.
+    // By reusing one element unlocked on the first tap, subsequent plays work.
+    const sharedAudio = new Audio();
+    let audioUnlocked = false;
+    const unlockAudio = () => {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      // Play a tiny silent buffer to unlock the audio element on iOS/Android
+      sharedAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYlp2NYAAAAAAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYlp2NYAAAAAAAAAAAAAAAAAAAA';
+      sharedAudio.play().then(() => { sharedAudio.pause(); }).catch(() => {});
+      document.removeEventListener('touchstart', unlockAudio, true);
+      document.removeEventListener('click', unlockAudio, true);
+    };
+    document.addEventListener('touchstart', unlockAudio, true);
+    document.addEventListener('click', unlockAudio, true);
+
     // Fetches TTS for a sentence and returns a playable blob URL
     const fetchTTS = async (text) => {
       const response = await fetch('/api/tts', {
@@ -525,13 +543,22 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
     };
 
     // Plays a single audio URL, returns a promise
+    // Reuses sharedAudio to maintain mobile playback permission
     const playAudioUrl = (url, audioRef) => {
       return new Promise((resolve) => {
-        const audio = new Audio(url);
+        const audio = sharedAudio;
         audioRef.current = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(); };
-        audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; resolve(); };
-        audio.play().catch(() => resolve());
+        const cleanup = () => {
+          audio.onended = null;
+          audio.onerror = null;
+          URL.revokeObjectURL(url);
+          audioRef.current = null;
+          resolve();
+        };
+        audio.onended = cleanup;
+        audio.onerror = cleanup;
+        audio.src = url;
+        audio.play().catch(cleanup);
       });
     };
 
@@ -627,7 +654,8 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         cancelledRef.current = true;
         if (audioRef.current) {
           audioRef.current.pause();
-          audioRef.current.currentTime = 0;
+          audioRef.current.removeAttribute('src');
+          audioRef.current.load();
           audioRef.current = null;
         }
         speechSynthesis.cancel();
