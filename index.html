@@ -480,20 +480,6 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         r.interimResults = true;
         r.lang = 'en-US';
         recognitionRef.current = r;
-
-        // Feature-detect: try starting then immediately aborting.
-        // On iOS Chrome / standalone PWA mode, SpeechRecognition exists
-        // but throws 'service-not-allowed' — detect this and fall back to text.
-        r.onerror = (e) => {
-          if (e.error === 'service-not-allowed' || e.error === 'not-allowed') {
-            setSupported(false);
-            recognitionRef.current = null;
-          }
-        };
-        try { r.start(); } catch(e) { setSupported(false); }
-        // Abort immediately — we just wanted to probe
-        setTimeout(() => { try { r.abort(); } catch(e) {} }, 100);
-
         return () => { try { r.abort(); } catch(e) {} };
       }, []);
 
@@ -515,7 +501,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           onError(e.error);
         };
         r.onend = () => {};
-        try { r.start(); } catch(e) { onError('start-failed'); }
+        try { r.start(); } catch(e) { onError(e.message || 'start-failed'); }
       };
 
       const stop = () => {
@@ -525,58 +511,110 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
       return { start, stop, supported };
     };
 
-    // ── TTS Audio Queue (OpenAI TTS via Nova) ──
-    // Mobile browsers block audio.play() unless it traces back to a user gesture.
-    // We keep ONE Audio element and "unlock" it on the very first tap by calling
-    // play() on it. After that, swapping .src and calling play() again works even
-    // after async fetch/streaming — because the element is already user-activated.
-    const sharedAudio = new Audio();
-    sharedAudio.setAttribute('playsinline', '');
-    sharedAudio.setAttribute('webkit-playsinline', '');
+    // ── TTS Audio (OpenAI TTS via Nova) ──
+    //
+    // iOS WebKit blocks HTMLAudioElement.play() unless called within the
+    // synchronous callstack of a user gesture. The greeting works (called
+    // from a short setTimeout after a tap) but streamed TTS responses
+    // arrive seconds later after async fetch, well outside any gesture.
+    //
+    // AudioContext does NOT have this limitation. Once an AudioContext is
+    // created and resumed during a user gesture, decodeAudioData() and
+    // bufferSource.start() work freely without further gestures.
+    //
+    // Strategy:
+    //   1. On first user tap → create + resume AudioContext
+    //   2. Fetch TTS as ArrayBuffer
+    //   3. Decode with decodeAudioData → play via BufferSource
+    //   4. Fall back to HTMLAudioElement only if AudioContext unavailable
 
-    const unlockAudio = () => {
-      // Unlock with a tiny silent WAV (44 bytes, valid header, zero samples)
-      sharedAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
-      const p = sharedAudio.play();
-      if (p) p.then(() => sharedAudio.pause()).catch(() => {});
-      document.removeEventListener('touchstart', unlockAudio, true);
-      document.removeEventListener('touchend', unlockAudio, true);
-      document.removeEventListener('click', unlockAudio, true);
+    let audioCtx = null;
+    let audioCtxReady = false;
+
+    // Called on every user interaction to ensure AudioContext is alive
+    const ensureAudioContext = () => {
+      try {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        if (audioCtx && audioCtx.state !== 'closed') {
+          audioCtxReady = true;
+        }
+      } catch(e) {
+        console.warn('AudioContext init failed:', e);
+      }
     };
-    document.addEventListener('touchstart', unlockAudio, true);
-    document.addEventListener('touchend', unlockAudio, true);
-    document.addEventListener('click', unlockAudio, true);
 
-    // Fetches TTS for a sentence and returns a playable blob URL
-    const fetchTTS = async (text) => {
+    // Listen on EVERY tap — AudioContext can get suspended by iOS at any time
+    document.addEventListener('touchstart', ensureAudioContext, true);
+    document.addEventListener('touchend', ensureAudioContext, true);
+    document.addEventListener('click', ensureAudioContext, true);
+
+    // Fetches TTS audio as ArrayBuffer
+    const fetchTTSBuffer = async (text) => {
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: text, voice: 'nova' }),
       });
-      if (!response.ok) throw new Error('TTS failed');
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
+      if (!response.ok) throw new Error('TTS request failed: ' + response.status);
+      return await response.arrayBuffer();
     };
 
-    // Plays audio through the shared (pre-unlocked) Audio element
-    const playAudioUrl = (url, audioRef) => {
-      return new Promise((resolve) => {
-        audioRef.current = sharedAudio;
-        let resolved = false;
-        const done = () => {
-          if (resolved) return;
-          resolved = true;
-          sharedAudio.onended = null;
-          sharedAudio.onerror = null;
-          URL.revokeObjectURL(url);
+    // Plays an ArrayBuffer of audio through AudioContext (primary)
+    // or falls back to HTMLAudioElement
+    const playAudioBuffer = (arrayBuffer, audioRef) => {
+      return new Promise(async (resolve) => {
+        // Ensure context is resumed (may have been suspended during idle)
+        if (audioCtx && audioCtx.state === 'suspended') {
+          try { await audioCtx.resume(); } catch(e) {}
+        }
+
+        // ── Primary: AudioContext ──
+        if (audioCtx && audioCtx.state === 'running') {
+          try {
+            // .slice(0) because decodeAudioData detaches the buffer
+            const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+            const source = audioCtx.createBufferSource();
+            source.buffer = decoded;
+            source.connect(audioCtx.destination);
+            audioRef.current = source;
+            source.onended = () => { audioRef.current = null; resolve(); };
+            source.start(0);
+            return;
+          } catch(e) {
+            console.warn('AudioContext decode/play failed:', e);
+          }
+        }
+
+        // ── Fallback: HTMLAudioElement ──
+        try {
+          const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.setAttribute('playsinline', '');
+          audioRef.current = audio;
+          let done = false;
+          const cleanup = () => {
+            if (done) return;
+            done = true;
+            audio.onended = null;
+            audio.onerror = null;
+            URL.revokeObjectURL(url);
+            audioRef.current = null;
+            resolve();
+          };
+          audio.onended = cleanup;
+          audio.onerror = cleanup;
+          audio.play().catch(cleanup);
+        } catch(e) {
           audioRef.current = null;
           resolve();
-        };
-        sharedAudio.onended = done;
-        sharedAudio.onerror = done;
-        sharedAudio.src = url;
-        sharedAudio.play().catch(done);
+        }
       });
     };
 
@@ -584,7 +622,6 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
     const splitSentences = (text) => {
       const parts = text.match(/[^.!?]+[.!?]+[\s]*/g);
       if (!parts) return [text];
-      // Recombine very short fragments with previous sentence
       const result = [];
       for (const p of parts) {
         if (result.length > 0 && result[result.length - 1].length < 20) {
@@ -604,17 +641,16 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         cancelledRef.current = false;
         try {
           const sentences = splitSentences(text);
-          // Fire all TTS requests in parallel immediately
-          const ttsPromises = sentences.map(s => fetchTTS(s.trim()));
-          // Play each in order as they resolve
+          const ttsPromises = sentences.map(s => fetchTTSBuffer(s.trim()));
           for (let i = 0; i < sentences.length; i++) {
             if (cancelledRef.current) return;
-            const url = await ttsPromises[i];
-            if (cancelledRef.current) { URL.revokeObjectURL(url); return; }
-            await playAudioUrl(url, audioRef);
+            const buf = await ttsPromises[i];
+            if (cancelledRef.current) return;
+            await playAudioBuffer(buf, audioRef);
           }
         } catch (err) {
           console.error('TTS error:', err);
+          // Last-resort fallback: browser built-in speech synthesis
           if (!cancelledRef.current) {
             return new Promise((resolve) => {
               const u = new SpeechSynthesisUtterance(text);
@@ -627,7 +663,6 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         }
       };
 
-      // Streaming speak: accepts sentences one at a time, overlaps fetch + playback
       const speakStreaming = () => {
         cancelledRef.current = false;
         const queue = [];
@@ -643,9 +678,9 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           while (playIndex < queue.length) {
             if (cancelledRef.current) break;
             try {
-              const url = await queue[playIndex];
-              if (cancelledRef.current) { URL.revokeObjectURL(url); break; }
-              await playAudioUrl(url, audioRef);
+              const buf = await queue[playIndex];
+              if (cancelledRef.current) break;
+              await playAudioBuffer(buf, audioRef);
             } catch (e) { /* skip failed chunk */ }
             playIndex++;
           }
@@ -654,7 +689,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         };
 
         const addSentence = (sentence) => {
-          queue.push(fetchTTS(sentence.trim()));
+          queue.push(fetchTTSBuffer(sentence.trim()));
           tryPlay();
         };
 
@@ -670,11 +705,12 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
 
       const cancel = () => {
         cancelledRef.current = true;
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-          audioRef.current = null;
-        }
+        try {
+          const ref = audioRef.current;
+          if (ref && typeof ref.stop === 'function') ref.stop();       // BufferSource
+          else if (ref && typeof ref.pause === 'function') ref.pause(); // HTMLAudioElement
+        } catch(e) {}
+        audioRef.current = null;
         speechSynthesis.cancel();
       };
 
@@ -1030,7 +1066,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.3.0')
+          }, 'v1.4.0')
         )
       );
     };
