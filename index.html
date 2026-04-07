@@ -144,17 +144,65 @@ VOICE & STYLE GUIDELINES:
         starting: 'Their biggest struggle is starting and sustaining conversations — focus on preparation, sharing purpose, and building confidence through practice.',
       };
 
+      const lifestageMap = {
+        student: 'Student or early career — navigating new relationships, finding their voice, and building communication habits that will serve them for life.',
+        building: 'Building their career — managing work relationships, handling feedback, and communicating with more stakeholders.',
+        established: 'Established professional or leader — leading teams, mentoring, managing upward, and handling high-stakes conversations.',
+        personal: 'Focused on personal life — parenting, romantic relationships, or navigating a life transition where communication is critical.',
+      };
+
+      const relationshipsMap = {
+        partner: 'Their most important conversations are with a partner or close family — deeply personal, emotionally charged, and with high stakes for the relationship.',
+        work: 'Their most important conversations are with colleagues or a boss — professional context where power dynamics, clarity, and diplomacy matter.',
+        social: 'Their most important conversations are with friends or social circle — where authenticity, boundaries, and social confidence are key.',
+        authority: 'Their most important conversations are with clients, students, or people they lead — where they need to inspire, guide, and listen across a power differential.',
+      };
+
+      const settingMap = {
+        'one-on-one': 'They find one-on-one conversations trickiest — the intensity and intimacy can feel overwhelming. Focus on preparation and managing emotional temperature.',
+        'small-group': 'They find small group discussions trickiest — managing turn-taking, being heard, and reading multiple people at once. Focus on Conversation Manager skills.',
+        'large-group': 'They find larger groups or presentations trickiest — the pressure of many listeners. Focus on Explainer skills like engaging attention and headlining.',
+        digital: 'They find digital communication trickiest (text, email, video calls) — where tone, body language, and turn-taking cues are missing. Focus on being explicit about context and checking for understanding.',
+      };
+
+      const confidenceMap = {
+        low: 'Low confidence — they tend to avoid important conversations entirely. Start very gently, build small wins, and focus on preparation skills to reduce anxiety.',
+        moderate: 'Moderate confidence — they get through difficult conversations but find them stressful and often ruminate afterwards. Help them build frameworks to feel more in control.',
+        good: 'Good confidence — they handle most conversations well but recognise blind spots. Challenge them with nuance and help them see patterns they might miss.',
+        high: 'High confidence — they are already a capable communicator looking to fine-tune. Push them on advanced skills like reading social undercurrents and coaching others to play better.',
+      };
+
+      const emotionsMap = {
+        shutdown: 'When emotions run high, they tend to shut down and go quiet — the words stop coming. Help them practice staying present and using simple frameworks to keep talking even when it feels hard.',
+        flood: 'When emotions run high, they tend to over-share or over-react — saying things they later regret. Help them practice the "count to ten" principle and responding rather than reacting.',
+        deflect: 'When emotions run high, they deflect with humour or change the subject — avoiding the emotional core. Help them build courage to stay with difficult feelings in conversation.',
+        regulate: 'When emotions run high, they can usually stay grounded — a real strength. Help them use this self-regulation to also help others manage their emotions in conversation.',
+      };
+
+      const slipperyslopeMap = {
+        ruminate: 'After a breakdown they ruminate — replaying the conversation and getting stuck in what they should have said. This is the Slippery Slope in action. Help them redirect that energy into preparation for repair.',
+        blame: 'After a breakdown they focus on what the other person did wrong — building a case. This is classic Slippery Slope (giving it your own spin → assumptions → conclusions). Help them practice seeing the other perspective first.',
+        repair: 'After a breakdown they try to repair — reaching out to clear things up. This is an excellent instinct. Help them refine their repair skills and make those conversations more effective.',
+        'move-on': 'After a breakdown they move on and hope it blows over — avoiding reopening the wound. This can leave unresolved tension. Help them build confidence to initiate repair conversations.',
+      };
+
       const profileContext = `
 
 USER PROFILE — PERSONALISE YOUR COACHING:
 - Name: ${profile.name}
+- Life stage: ${lifestageMap[profile.lifestage] || ''}
+- Key relationships: ${relationshipsMap[profile.relationships] || ''}
+- Tricky setting: ${settingMap[profile.setting] || ''}
 - Primary interest: ${modeMap[profile.goal] || 'general communication improvement'}
+- Confidence level: ${confidenceMap[profile.confidence] || ''}
 - Explaining style: ${explainerMap[profile.explainer] || ''}
 - Listening style: ${understanderMap[profile.understander] || ''}
+- Emotional pattern: ${emotionsMap[profile.emotions] || ''}
 - Conflict approach: ${conflictMap[profile.conflict] || ''}
+- After a breakdown: ${slipperyslopeMap[profile.slipperyslope] || ''}
 - Key challenge: ${challengeMap[profile.challenge] || ''}
 
-IMPORTANT: Address the user by their name naturally (not every message, but occasionally). Tailor your coaching to their profile — lean into their strengths, gently work on their growth areas. Start with their primary interest but be flexible. Reference their specific patterns when relevant (e.g., "I know you mentioned navigating tense conversations is tough for you — let's work on that").`;
+IMPORTANT: Address the user by their name naturally (not every message, but occasionally). Tailor your coaching to their full profile — their life stage, who they communicate with, and the settings they find hardest all shape the examples, scenarios, and language you use. Lean into their strengths, gently work on their growth areas. Match your coaching intensity to their confidence level. Start with their primary interest but be flexible. Reference their specific patterns when relevant (e.g., "I know you mentioned you tend to shut down when emotions run high — let's work on that"). Use their relationship context to make examples feel personal and relevant.`;
 
       return base + profileContext;
     };
@@ -172,7 +220,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
       return goalGreetings[profile.goal] || `Hey ${profile.name}! Great to meet you. Welcome to Feel Understood — I'm your Conversation Coach, here to help you have better conversations. What would you like to work on?`;
     };
 
-    // ── Quiz Data ──
+    // ── Quiz Data (12 questions + splash + profile reveal) ──
     const QUIZ_SCREENS = [
       {
         id: 'welcome',
@@ -185,6 +233,44 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         subtitle: 'Your coach will use your name to personalise the experience.',
       },
       {
+        id: 'lifestage',
+        type: 'choice',
+        title: 'Where are you in life right now?',
+        subtitle: 'Your life stage shapes the conversations that matter most.',
+        options: [
+          { value: 'student', label: 'Student or early career', desc: 'Navigating new relationships and finding your voice' },
+          { value: 'building', label: 'Building my career', desc: 'Growing professionally and managing work relationships' },
+          { value: 'established', label: 'Established professional or leader', desc: 'Leading teams, mentoring, or managing stakeholders' },
+          { value: 'personal', label: 'Focused on personal life', desc: 'Parenting, relationships, or a life transition' },
+        ],
+      },
+      {
+        id: 'relationships',
+        type: 'choice',
+        title: 'Which conversations matter most to you right now?',
+        subtitle: 'We communicate differently with different people.',
+        insight: 'The Dialogue System teaches that every relationship has its own "theme and variations" — patterns that repeat.',
+        options: [
+          { value: 'partner', label: 'Partner or close family', desc: 'The people you share your life with' },
+          { value: 'work', label: 'Colleagues or boss', desc: 'The people you work alongside every day' },
+          { value: 'social', label: 'Friends or social circle', desc: 'The people you choose to spend time with' },
+          { value: 'authority', label: 'Clients, students, or people I lead', desc: 'People who look to you for guidance' },
+        ],
+      },
+      {
+        id: 'setting',
+        type: 'choice',
+        title: 'Where do you find conversations trickiest?',
+        subtitle: 'The setting changes everything about how we communicate.',
+        insight: 'Conversation Managers adapt their approach based on the setting — one-on-one is very different from a group.',
+        options: [
+          { value: 'one-on-one', label: 'One-on-one conversations', desc: 'Intense, personal, nowhere to hide' },
+          { value: 'small-group', label: 'Small group discussions', desc: 'Meetings, dinner tables, team chats' },
+          { value: 'large-group', label: 'Larger groups or presentations', desc: 'Speaking up when many people are listening' },
+          { value: 'digital', label: 'Text, email, or video calls', desc: 'When tone and body language are missing' },
+        ],
+      },
+      {
         id: 'goal',
         type: 'choice',
         title: 'What would help you most right now?',
@@ -194,6 +280,19 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           { value: 'coach', label: 'Get help with a conversation', desc: "Work through something that's on your mind" },
           { value: 'practice', label: 'Practice a tricky conversation', desc: 'Role-play with your coach and get feedback' },
           { value: 'reflect', label: 'Understand my style', desc: 'Discover patterns in how you communicate' },
+        ],
+      },
+      {
+        id: 'confidence',
+        type: 'choice',
+        title: 'How confident do you feel in important conversations?',
+        subtitle: 'Honest self-awareness is where growth begins.',
+        insight: 'The Dialogue System says misunderstanding is the norm, not the exception — so even confident communicators have room to grow.',
+        options: [
+          { value: 'low', label: "I usually avoid them", desc: "I'll put off a difficult conversation as long as I can" },
+          { value: 'moderate', label: "I manage, but it's stressful", desc: 'I get through them but often replay them in my head afterwards' },
+          { value: 'good', label: "I'm fairly confident", desc: 'I handle most conversations well but have blind spots' },
+          { value: 'high', label: "I'm comfortable, I want to fine-tune", desc: 'I want to go from good to great' },
         ],
       },
       {
@@ -223,6 +322,19 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         ],
       },
       {
+        id: 'emotions',
+        type: 'choice',
+        title: 'When emotions run high in a conversation, what usually happens?',
+        subtitle: 'Emotional awareness is a superpower in dialogue.',
+        insight: 'The Slippery Slope: an incident → your spin → assumptions → unwarranted conclusions → acting on the mess. Catching it early changes everything.',
+        options: [
+          { value: 'shutdown', label: 'I go quiet and shut down', desc: 'The words just stop coming' },
+          { value: 'flood', label: 'I say too much and regret it later', desc: 'Emotions take over and I over-share or over-react' },
+          { value: 'deflect', label: 'I use humour or change the subject', desc: 'I steer away from the emotional intensity' },
+          { value: 'regulate', label: 'I can usually stay grounded', desc: 'I notice the emotion but can still think clearly' },
+        ],
+      },
+      {
         id: 'conflict',
         type: 'choice',
         title: 'When a conversation gets tense, you tend to...',
@@ -233,6 +345,19 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           { value: 'avoid', label: 'Back off to keep the peace' },
           { value: 'compromise', label: 'Find the middle ground' },
           { value: 'collaborate', label: 'Get curious about their side' },
+        ],
+      },
+      {
+        id: 'slipperyslope',
+        type: 'choice',
+        title: 'After a conversation goes wrong, you most often...',
+        subtitle: 'What we do after a breakdown matters as much as the breakdown itself.',
+        insight: 'The Dialogue System emphasises repairing conversations — catching mistakes and taking responsibility.',
+        options: [
+          { value: 'ruminate', label: 'Replay it over and over in my head', desc: 'I get stuck in what I should have said' },
+          { value: 'blame', label: 'Focus on what the other person did wrong', desc: 'I build a case for why they were the problem' },
+          { value: 'repair', label: 'Try to go back and fix it', desc: 'I reach out to clear things up' },
+          { value: 'move-on', label: 'Move on and hope it blows over', desc: 'I avoid reopening the wound' },
         ],
       },
       {
@@ -268,6 +393,8 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         fix: { label: 'Problem Solver', desc: 'You jump to help with solutions — people know they can count on you to take action.' },
         push: { label: 'Assertive Communicator', desc: "You stand your ground under pressure — knowing what you want is a foundation to build on." },
         avoid: { label: 'Harmony Keeper', desc: 'You value peace in relationships — this sensitivity to others is a real asset when channelled well.' },
+        regulate: { label: 'Emotionally Grounded', desc: 'You stay centred when emotions run high — this self-regulation is a rare and powerful skill.' },
+        repair: { label: 'Relationship Repairer', desc: 'When conversations break down, you reach out to fix things — a hallmark of skilled Conversation Managers.' },
       };
 
       const growthMap = {
@@ -277,12 +404,25 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         starting: { label: 'Conversation Confidence', desc: "We'll work on preparation and flow — learning to share purpose, manage turn-taking, and keep conversations alive." },
       };
 
-      // Pick strength from explainer or understander answer (whichever is more distinctive)
-      const strengthKey = answers.understander || answers.explainer || 'curious';
+      // Derive communication style label from life context
+      const contextLabel = {
+        partner: 'in close relationships',
+        work: 'at work',
+        social: 'in social settings',
+        authority: 'in leadership',
+      };
+
+      // Pick strength: prefer emotional/conflict strengths, then understander, then explainer
+      const strengthKey = answers.emotions === 'regulate' ? 'regulate'
+        : answers.slipperyslope === 'repair' ? 'repair'
+        : answers.conflict === 'collaborate' ? 'collaborate'
+        : answers.understander || answers.explainer || 'curious';
       const strength = strengthMap[strengthKey] || strengthMap.curious;
       const growth = growthMap[answers.challenge] || growthMap.heard;
 
-      return { strength, growth };
+      const context = contextLabel[answers.relationships] || '';
+
+      return { strength, growth, context };
     };
 
     // ── ProfileQuiz Component ──
@@ -356,7 +496,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
               ),
               React.createElement('h1', { className: 'quiz-splash-title' }, 'Your conversations shape your life'),
               React.createElement('p', { className: 'quiz-splash-desc' },
-                'In just a minute, discover your communication style and meet your personal AI coach.'
+                'Answer a few quick questions, discover your communication style, and meet your personal AI coach.'
               ),
               React.createElement('div', { className: 'quiz-splash-features' },
                 React.createElement('div', { className: 'quiz-splash-feat' },
@@ -426,7 +566,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
             React.createElement('div', { className: 'quiz-reveal-header' },
               React.createElement('div', { className: 'quiz-reveal-avatar' }, name.trim().charAt(0).toUpperCase()),
               React.createElement('h2', { className: 'quiz-reveal-name' }, name.trim()),
-              React.createElement('p', { className: 'quiz-reveal-tagline' }, 'Your Communication Profile'),
+              React.createElement('p', { className: 'quiz-reveal-tagline' }, analysis.context ? `Your Communication Profile ${analysis.context}` : 'Your Communication Profile'),
             ),
             React.createElement('div', { className: 'quiz-reveal-cards' },
               React.createElement('div', { className: 'quiz-reveal-card quiz-strength-card' },
