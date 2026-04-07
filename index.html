@@ -22,6 +22,46 @@
   <div id="root"></div>
   <script type="text/babel">
 
+    // ── Conversation Persistence (localStorage) ──
+    const STORAGE_KEYS = {
+      conversations: 'fu_conversations',
+      activeId: 'fu_active_conversation',
+      profile: 'fu_profile',
+    };
+    const MAX_CONVERSATIONS = 50;
+
+    const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+    const loadFromStorage = (key, fallback) => {
+      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+      catch { return fallback; }
+    };
+
+    const saveToStorage = (key, value) => {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    };
+
+    const loadConversations = () => loadFromStorage(STORAGE_KEYS.conversations, []);
+
+    const saveConversation = (convo) => {
+      const all = loadConversations();
+      const idx = all.findIndex(c => c.id === convo.id);
+      if (idx >= 0) all[idx] = convo;
+      else all.unshift(convo);
+      // Cap at MAX_CONVERSATIONS
+      if (all.length > MAX_CONVERSATIONS) all.length = MAX_CONVERSATIONS;
+      saveToStorage(STORAGE_KEYS.conversations, all);
+    };
+
+    const deleteConversation = (id) => {
+      const all = loadConversations().filter(c => c.id !== id);
+      saveToStorage(STORAGE_KEYS.conversations, all);
+      return all;
+    };
+
+    const loadProfile = () => loadFromStorage(STORAGE_KEYS.profile, null);
+    const saveProfile = (profile) => saveToStorage(STORAGE_KEYS.profile, profile);
+
     // ── Profile-based System Prompt Builder ──
     const buildSystemPrompt = (profile) => {
       const base = `You are the coach behind "Feel Understood" — a warm, knowledgeable, and encouraging conversation coach and practice buddy. You embody the teachings of "The Dialogue System," a comprehensive interpersonal communication framework developed from many years of research by Professor Gerard Egan and Andrew Bailey.
@@ -903,32 +943,68 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
 
     // ── Main App ──
     const App = () => {
-      const [started, setStarted] = React.useState(false);
-      const [profile, setProfile] = React.useState(null);
-      const [messages, setMessages] = React.useState([]);
+      // Restore persisted state on mount
+      const savedProfile = React.useMemo(() => loadProfile(), []);
+      const savedActiveId = React.useMemo(() => loadFromStorage(STORAGE_KEYS.activeId, null), []);
+      const savedConvo = React.useMemo(() => {
+        if (!savedActiveId) return null;
+        return loadConversations().find(c => c.id === savedActiveId) || null;
+      }, []);
+
+      const [started, setStarted] = React.useState(!!savedConvo);
+      const [profile, setProfile] = React.useState(savedProfile);
+      const [messages, setMessages] = React.useState(savedConvo ? savedConvo.messages : []);
+      const [activeConvoId, setActiveConvoId] = React.useState(savedConvo ? savedConvo.id : null);
+      const [showHistory, setShowHistory] = React.useState(false);
+      const [conversations, setConversations] = React.useState(() => loadConversations());
       const [voiceState, setVoiceState] = React.useState('idle');
       const [interimText, setInterimText] = React.useState('');
       const [textInput, setTextInput] = React.useState('');
       const [error, setError] = React.useState(null);
       const chatEndRef = React.useRef(null);
       const messagesRef = React.useRef(messages);
-      const profileRef = React.useRef(null);
+      const profileRef = React.useRef(profile);
+      const activeConvoIdRef = React.useRef(activeConvoId);
       const inputRef = React.useRef(null);
       const { start: startRec, stop: stopRec, supported: sttSupported } = useSpeechRecognition();
       const { speak, speakStreaming, cancel: cancelSpeak } = useSpeechSynthesis();
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
       React.useEffect(() => { profileRef.current = profile; }, [profile]);
+      React.useEffect(() => { activeConvoIdRef.current = activeConvoId; }, [activeConvoId]);
+
+      // Auto-save messages to localStorage whenever they change
+      React.useEffect(() => {
+        if (!activeConvoIdRef.current || messages.length === 0) return;
+        const convo = {
+          id: activeConvoIdRef.current,
+          title: messages.find(m => m.role === 'user')?.content.slice(0, 60) || 'New conversation',
+          messages,
+          updatedAt: Date.now(),
+        };
+        saveConversation(convo);
+        saveToStorage(STORAGE_KEYS.activeId, activeConvoIdRef.current);
+        setConversations(loadConversations());
+      }, [messages]);
 
       React.useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, [messages, voiceState, interimText]);
 
+      const startNewConversation = (msgs) => {
+        const id = generateId();
+        setActiveConvoId(id);
+        activeConvoIdRef.current = id;
+        setMessages(msgs);
+        saveToStorage(STORAGE_KEYS.activeId, id);
+      };
+
       const handleQuizComplete = (quizProfile) => {
         setProfile(quizProfile);
         profileRef.current = quizProfile;
+        saveProfile(quizProfile);
         const greeting = buildGreeting(quizProfile);
-        setMessages([{ role: 'assistant', content: greeting }]);
+        startNewConversation([{ role: 'assistant', content: greeting }]);
         setStarted(true);
         setTimeout(() => {
           setVoiceState('speaking');
@@ -1098,14 +1174,70 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
 
       const handleNewChat = () => {
         cancelSpeak();
+        // Start a new conversation (profile persists, no need to redo quiz)
+        if (profile) {
+          const greeting = buildGreeting(profile);
+          startNewConversation([{ role: 'assistant', content: greeting }]);
+          setVoiceState('idle');
+          setInterimText('');
+          setTextInput('');
+          setError(null);
+          setShowHistory(false);
+        } else {
+          // No profile — go back to quiz
+          setMessages([]);
+          setActiveConvoId(null);
+          saveToStorage(STORAGE_KEYS.activeId, null);
+          setVoiceState('idle');
+          setInterimText('');
+          setTextInput('');
+          setError(null);
+          setStarted(false);
+          setShowHistory(false);
+        }
+      };
+
+      const handleStartOver = () => {
+        cancelSpeak();
         setProfile(null);
         profileRef.current = null;
+        saveProfile(null);
         setMessages([]);
+        setActiveConvoId(null);
+        saveToStorage(STORAGE_KEYS.activeId, null);
         setVoiceState('idle');
         setInterimText('');
         setTextInput('');
         setError(null);
         setStarted(false);
+        setShowHistory(false);
+      };
+
+      const handleLoadConversation = (convo) => {
+        cancelSpeak();
+        setActiveConvoId(convo.id);
+        activeConvoIdRef.current = convo.id;
+        setMessages(convo.messages);
+        saveToStorage(STORAGE_KEYS.activeId, convo.id);
+        setVoiceState('idle');
+        setInterimText('');
+        setTextInput('');
+        setError(null);
+        setShowHistory(false);
+        setStarted(true);
+      };
+
+      const handleDeleteConversation = (e, id) => {
+        e.stopPropagation();
+        const remaining = deleteConversation(id);
+        setConversations(remaining);
+        if (id === activeConvoId) {
+          if (remaining.length > 0) {
+            handleLoadConversation(remaining[0]);
+          } else {
+            handleNewChat();
+          }
+        }
       };
 
       // ── Onboarding Quiz ──
@@ -1120,21 +1252,82 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         speaking: 'Tap to stop',
       }[voiceState];
 
+      const formatTime = (ts) => {
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 60000) return 'Just now';
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+        if (diff < 604800000) return Math.floor(diff / 86400000) + 'd ago';
+        return d.toLocaleDateString();
+      };
+
       // ── Chat UI ──
       return React.createElement('div', { className: 'app-shell' },
         // Top bar
         React.createElement('header', { className: 'app-header' },
           React.createElement('div', { className: 'header-left' },
-            React.createElement('div', { className: 'header-icon' },
-              React.createElement('img', { src: '/images/icon-avatar.svg', alt: '', width: 22, height: 22, className: 'doodle-icon' })
+            React.createElement('button', {
+              className: 'history-toggle-btn',
+              onClick: () => setShowHistory(!showHistory),
+              'aria-label': 'Conversation history',
+              title: 'Conversation history',
+            },
+              React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                React.createElement('line', { x1: 3, y1: 6, x2: 21, y2: 6 }),
+                React.createElement('line', { x1: 3, y1: 12, x2: 21, y2: 12 }),
+                React.createElement('line', { x1: 3, y1: 18, x2: 21, y2: 18 }),
+              )
             ),
             React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
           ),
           React.createElement('button', {
             className: 'new-chat-btn',
             onClick: handleNewChat,
-            title: 'Start over'
-          }, 'Start Over')
+            title: 'New conversation'
+          }, 'New Chat')
+        ),
+
+        // History drawer
+        showHistory && React.createElement('div', { className: 'history-overlay', onClick: () => setShowHistory(false) }),
+        React.createElement('div', { className: `history-drawer ${showHistory ? 'history-open' : ''}` },
+          React.createElement('div', { className: 'history-header' },
+            React.createElement('h3', null, 'Conversations'),
+            React.createElement('button', {
+              className: 'history-close-btn',
+              onClick: () => setShowHistory(false),
+              'aria-label': 'Close history',
+            }, '\u00D7'),
+          ),
+          React.createElement('div', { className: 'history-list' },
+            conversations.length === 0
+              ? React.createElement('p', { className: 'history-empty' }, 'No conversations yet')
+              : conversations.map(c =>
+                  React.createElement('div', {
+                    key: c.id,
+                    className: `history-item ${c.id === activeConvoId ? 'history-item-active' : ''}`,
+                    onClick: () => handleLoadConversation(c),
+                  },
+                    React.createElement('div', { className: 'history-item-content' },
+                      React.createElement('span', { className: 'history-item-title' }, c.title),
+                      React.createElement('span', { className: 'history-item-time' }, formatTime(c.updatedAt)),
+                    ),
+                    React.createElement('button', {
+                      className: 'history-item-delete',
+                      onClick: (e) => handleDeleteConversation(e, c.id),
+                      'aria-label': 'Delete conversation',
+                      title: 'Delete',
+                    }, '\u00D7'),
+                  )
+                )
+          ),
+          React.createElement('div', { className: 'history-footer' },
+            React.createElement('button', {
+              className: 'history-start-over-btn',
+              onClick: handleStartOver,
+            }, 'Reset Profile & Start Over'),
+          ),
         ),
 
         // Messages
@@ -1206,7 +1399,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.4.0')
+          }, 'v1.5.0')
         )
       );
     };
