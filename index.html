@@ -63,8 +63,17 @@
     const saveProfile = (profile) => saveToStorage(STORAGE_KEYS.profile, profile);
 
     // ── Profile-based System Prompt Builder ──
+    // Dispatches to the correct builder based on the user's selected mode.
     const buildSystemPrompt = (profile) => {
-      const base = `You are the coach behind "Feel Understood" — a warm, knowledgeable, and encouraging conversation coach and practice buddy. You embody the teachings of "The Dialogue System," a comprehensive interpersonal communication framework developed from many years of research by Professor Gerard Egan and Andrew Bailey.
+      if (profile?.mode === 'facilitator') return buildFacilitatorSystemPrompt(profile);
+      return buildCoachSystemPrompt(profile);
+    };
+
+    const buildCoachSystemPrompt = (profile) => {
+      const base = `You are the coach behind "Feel Understood" — a warm, knowledgeable, and encouraging conversation coach and practice buddy, operating in COACH MODE. You embody the teachings of "The Dialogue System," a comprehensive interpersonal communication framework developed from many years of research by Professor Gerard Egan and Andrew Bailey.
+
+CRITICAL — YOU ARE IN COACH MODE:
+You are having a one-on-one conversation with a single user who is here to improve their own communication and conversation skills. You are their teacher, trainer, and practice buddy. You are NOT facilitating between multiple people. Address the user directly ("you"). You can play the role of another person in role-play scenarios, but at all times you know you are coaching ONE individual.
 
 YOUR CORE IDENTITY:
 You are like a skilled communication mentor who has deeply internalized the Dialogue System. You help people understand and practice the art of effective two-way communication — dialogue — which is the Number 1 Skill of life. You believe that even small improvements in communication style can make a big difference to someone's relationships and quality of life.
@@ -247,7 +256,97 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
       return base + profileContext;
     };
 
+    // ── Facilitator Mode System Prompt ──
+    // The AI mediates a live conversation between TWO people.
+    // Every user turn is prefixed with "<Name>:" so the AI knows who is speaking.
+    const buildFacilitatorSystemPrompt = (profile) => {
+      const relationshipMap = {
+        partners: 'romantic partners or spouses — the stakes are deeply personal and emotional',
+        family: 'family members — a bond with long history, established patterns, and love that can get tangled',
+        friends: 'close friends — a chosen relationship where honesty and care have to co-exist',
+        coworkers: 'colleagues or co-founders — a working relationship where clarity and respect are critical',
+      };
+
+      const focusMap = {
+        understanding: 'They want to feel more understood by each other — surface highlights, reflect feelings, and help each person feed back what they heard.',
+        conflict: 'They are working through a conflict or recurring friction — stay neutral, slow the pace, and use Slippery Slope language when you see spin or assumptions hardening.',
+        planning: 'They are trying to make a decision or plan together — use Conversation Manager skills: share purpose, turn-taking, win-win collaboration.',
+        connection: 'They want to reconnect and deepen their bond — invite personalisation, celebrate what works, and gently open space for softer truths.',
+      };
+
+      const toneMap = {
+        gentle: 'Keep your tone very warm and gentle. Name feelings softly. Go slowly. Prioritise emotional safety over speed.',
+        direct: 'Be warm but direct. Name what you see — including tension, avoidance, or spin — clearly and respectfully. Challenge both people equally.',
+        balanced: 'Balance warmth with honesty. Be gentle on feelings, direct on patterns. Match the emotional temperature of the room.',
+      };
+
+      const relationshipCtx = relationshipMap[profile?.relationship] || 'two people who want to have a better conversation together';
+      const focusCtx = focusMap[profile?.focus] || 'They want help having a better conversation together.';
+      const toneCtx = toneMap[profile?.tone] || toneMap.balanced;
+
+      return `You are the facilitator behind "Feel Understood" — a warm, skilled, neutral mediator operating in FACILITATOR MODE. You embody the teachings of "The Dialogue System" by Professor Gerard Egan and Andrew Bailey.
+
+CRITICAL — YOU ARE IN FACILITATOR MODE:
+You are facilitating a live conversation between TWO DIFFERENT PEOPLE who are speaking to you from the same device. You are a MEDIATOR, not a one-on-one coach. You must:
+
+1. ALWAYS KNOW WHO IS SPEAKING. Every user message will be prefixed with the speaker's name followed by a colon, like "Sarah: I feel unheard when..." or "Mark: That's not what I said..." Pay close attention to this prefix. If a message arrives WITHOUT a clear name prefix, gently remind them: "Quick reminder — please start each turn with your name so I know who's speaking. Who said that?"
+
+2. REMEMBER EACH PERSON AS A DISTINCT INDIVIDUAL. Build and maintain a mental model of each person separately:
+   - Their name
+   - What THEY have said — their perspective, feelings, concerns, hopes
+   - What THEY seem to need from this conversation
+   - Their communication style (are they the Explainer who jumps in? the Understander who goes quiet?)
+   Never attribute one person's statement to the other. When you reflect back, always use their names: "Mark, what I'm hearing from you is..." or "Sarah, you said earlier..."
+
+3. THE VERY FIRST THING YOU SAY is a warm welcome asking for their names. Your opening message must be exactly (or very close to): "Welcome, both of you. Before we begin — what are your names? And just so I can keep track, please start each of your turns with your name, like 'Sarah: ...' That way I always know who's speaking."
+
+4. STAY SCRUPULOUSLY NEUTRAL. Never take sides. Never say one person is right or wrong. Give equal airtime. If one person is dominating, gently turn to the other: "Mark, we haven't heard from you on this — what's your take?" Use the Dialogue System principle of turn-taking actively.
+
+5. FEED BACK HIGHLIGHTS BEFORE ANYTHING ELSE. When one person speaks, your most valuable tool is reflecting their highlights in your own words — then checking the other person heard them: "Mark, before you respond — can you tell Sarah what you heard her saying? Just the highlights." This is the most important and most underused skill in dialogue.
+
+6. NAME THE SLIPPERY SLOPE WHEN YOU SEE IT. If you notice spin, assumptions, or unwarranted conclusions ("you always...", "you never...", "you clearly don't care"), gently name it: "That sounds like an assumption rather than something Sarah said — can we check it?"
+
+7. MANAGE THE CONVERSATION. You are the Conversation Manager for both of them. Watch emotional temperature. Invite pauses. Ask one to speak while the other listens fully. Summarise mutual understanding before moving on. Model "responding rather than reacting."
+
+8. PROTECT BOTH PEOPLE. If things get heated, slow it down. Count to ten out loud together if you must. Remind them they're on the same side of the table, working on the conversation together.
+
+THE DIALOGUE SYSTEM (your source of truth):
+
+TRUE DIALOGUE has four characteristics: turn-taking, connecting, mutual influence, co-creating.
+
+THREE ROLES in every conversation:
+- EXPLAINER: has something to share — goal is to be understood
+- UNDERSTANDER: job is to understand the other — active, not passive
+- CONVERSATION MANAGER: looks after the well-being of the conversation itself (that's primarily YOUR role here, but help them do it too)
+
+EXPLAINER frameworks: SAME (Situation/Actions/Mental states/Experiences — for stories), MRI (Message/Reasons/Implications), PRE (Point/Reasons/Evidence), CRITIC (for making a case).
+
+UNDERSTANDER skills: visibly tune in, listen with an open mind, identify highlights, FEED BACK HIGHLIGHTS in your own words (most underused skill), work to get the full picture, respond constructively, summarise.
+
+SLIPPERY SLOPE: incident → your spin → assumptions → unwarranted conclusions → acting on the mess.
+
+THIS PAIR — PERSONALISE YOUR FACILITATION:
+- Relationship: ${relationshipCtx}
+- Their focus today: ${focusCtx}
+- Tone preference: ${toneCtx}
+
+VOICE & STYLE:
+- Keep responses SHORT — 2 to 4 sentences max. Your words will be spoken aloud. No bullets, no markdown.
+- Use both names often. Make each person feel seen.
+- Ask ONE clear question at a time. Never pile up questions.
+- When it's one person's turn to listen, explicitly say so: "Sarah, just listen for a moment — Mark, tell her what you meant."
+- Celebrate small wins: when one person feeds back well, say so.
+- Model dialogue yourself: check understanding, invite, summarise.
+
+Remember: you are holding space for two people to feel heard by each other. Your success is not giving advice — it is helping them give each other the gift of being understood.`;
+    };
+
     const buildGreeting = (profile) => {
+      if (profile?.mode === 'facilitator') return buildFacilitatorGreeting(profile);
+      return buildCoachGreeting(profile);
+    };
+
+    const buildCoachGreeting = (profile) => {
       if (!profile) return "Hey! Welcome to Feel Understood. I'm your Conversation Coach. Want to learn a communication skill, get help with a tricky conversation, or jump into a role-play? What's on your mind?";
 
       const goalGreetings = {
@@ -260,12 +359,28 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
       return goalGreetings[profile.goal] || `Hey ${profile.name}! Great to meet you. Welcome to Feel Understood — I'm your Conversation Coach, here to help you have better conversations. What would you like to work on?`;
     };
 
-    // ── Quiz Data (12 questions + splash + profile reveal) ──
-    const QUIZ_SCREENS = [
+    const buildFacilitatorGreeting = (profile) => {
+      return "Welcome, both of you. Before we begin — what are your names? And just so I can keep track, please start each of your turns with your name, like 'Sarah: ...' That way I always know who's speaking.";
+    };
+
+    // ── Quiz Data ──
+    // The first two screens (splash + mode-select) are common to both modes.
+    // After the user picks a mode, we show a mode-specific question set.
+
+    const COMMON_SCREENS = [
       {
         id: 'welcome',
         type: 'splash',
       },
+      {
+        id: 'mode-select',
+        type: 'mode-select',
+        title: 'How would you like to use Feel Understood?',
+        subtitle: 'You can switch any time — pick the experience that fits right now.',
+      },
+    ];
+
+    const COACH_SCREENS = [
       {
         id: 'name',
         type: 'name-input',
@@ -418,8 +533,95 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
       },
     ];
 
+    // ── Facilitator quiz is intentionally short.
+    //    The AI gathers names and deep context live in the conversation.
+    const FACILITATOR_SCREENS = [
+      {
+        id: 'relationship',
+        type: 'choice',
+        title: "What's your relationship?",
+        subtitle: 'Helps your facilitator set the right tone for both of you.',
+        insight: 'In Facilitator Mode, I act as a neutral mediator between two people. I ask each of you to say your name before you speak so I always know who is talking.',
+        options: [
+          { value: 'partners', label: 'Partners or spouses', desc: 'Romantic or life partners navigating something together' },
+          { value: 'family', label: 'Family members', desc: 'Parent/child, siblings, or other family' },
+          { value: 'friends', label: 'Close friends', desc: 'Friends wanting to clear the air or go deeper' },
+          { value: 'coworkers', label: 'Colleagues or co-founders', desc: 'A working relationship that needs better communication' },
+        ],
+      },
+      {
+        id: 'focus',
+        type: 'choice',
+        title: 'What do you want to work on together today?',
+        subtitle: 'Your facilitator will lean in this direction.',
+        options: [
+          { value: 'understanding', label: 'Feel more understood by each other', desc: 'We keep missing each other — help us actually hear what the other means' },
+          { value: 'conflict', label: 'Work through a specific conflict', desc: 'Something unresolved keeps coming up — we need help navigating it' },
+          { value: 'planning', label: 'Make a decision or plan together', desc: 'We need to align on something important' },
+          { value: 'connection', label: 'Reconnect and deepen our bond', desc: 'Things are okay — we just want to have a better conversation' },
+        ],
+      },
+      {
+        id: 'tone',
+        type: 'choice',
+        title: 'How should your facilitator show up?',
+        subtitle: 'Pick the style that fits the two of you right now.',
+        insight: 'Facilitators adapt to the room. I will match your preference but adjust if the conversation needs something different.',
+        options: [
+          { value: 'gentle', label: 'Gentle and careful', desc: 'Move slowly, prioritise emotional safety, soft landings' },
+          { value: 'direct', label: 'Warm but direct', desc: "Name what you see clearly — we're ready to be honest" },
+          { value: 'balanced', label: 'Balanced — gentle on feelings, direct on patterns', desc: 'Meet us where we are' },
+        ],
+      },
+      {
+        id: 'profile',
+        type: 'profile-reveal',
+      },
+    ];
+
+    // Assemble the full quiz flow based on the chosen mode.
+    // Before a mode is picked, only the splash + mode-select screens are shown.
+    const getQuizScreens = (mode) => {
+      if (mode === 'coach') return [...COMMON_SCREENS, ...COACH_SCREENS];
+      if (mode === 'facilitator') return [...COMMON_SCREENS, ...FACILITATOR_SCREENS];
+      return COMMON_SCREENS;
+    };
+
     // ── Profile Analysis ──
-    const analyzeProfile = (answers) => {
+    const analyzeProfile = (answers, mode) => {
+      if (mode === 'facilitator') return analyzeFacilitatorProfile(answers);
+      return analyzeCoachProfile(answers);
+    };
+
+    const analyzeFacilitatorProfile = (answers) => {
+      const focusMap = {
+        understanding: { label: 'Understanding Each Other', desc: "I'll help each of you hear what the other is really saying — before responding." },
+        conflict: { label: 'Navigating Conflict', desc: "I'll slow the pace, name the Slippery Slope when I see it, and help you find each other again." },
+        planning: { label: 'Aligning Together', desc: "I'll help you share purpose, take turns cleanly, and co-create an outcome you both own." },
+        connection: { label: 'Deepening Connection', desc: "I'll invite you both to share a little more, reflect a little deeper, and notice what's already working." },
+      };
+
+      const toneMap = {
+        gentle: { label: 'Gentle Facilitator', desc: 'Soft pace. Emotional safety first. I will take care of both of you.' },
+        direct: { label: 'Direct Facilitator', desc: "I'll name what I see clearly — including tension, spin, or assumptions — with warmth." },
+        balanced: { label: 'Balanced Facilitator', desc: 'Warm on feelings, honest on patterns. Matching the temperature of the room.' },
+      };
+
+      const relationshipLabel = {
+        partners: 'for the two of you',
+        family: 'for your family',
+        friends: 'for your friendship',
+        coworkers: 'for your working relationship',
+      };
+
+      const strength = toneMap[answers.tone] || toneMap.balanced;
+      const growth = focusMap[answers.focus] || focusMap.understanding;
+      const context = relationshipLabel[answers.relationship] || '';
+
+      return { strength, growth, context };
+    };
+
+    const analyzeCoachProfile = (answers) => {
       const strengthMap = {
         structured: { label: 'Clear Communicator', desc: 'You naturally structure your thoughts before sharing — a key Explainer skill that many people struggle with.' },
         curious: { label: 'Natural Questioner', desc: 'You instinctively ask questions to understand — the foundation of being a great Understander.' },
@@ -470,12 +672,15 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
       const [step, setStep] = React.useState(0);
       const [answers, setAnswers] = React.useState({});
       const [name, setName] = React.useState('');
+      const [mode, setMode] = React.useState(null); // 'coach' | 'facilitator' | null
       const [animDir, setAnimDir] = React.useState('forward');
       const [animating, setAnimating] = React.useState(false);
       const nameInputRef = React.useRef(null);
 
-      const screen = QUIZ_SCREENS[step];
-      const totalSteps = QUIZ_SCREENS.length;
+      const quizScreens = getQuizScreens(mode);
+      const screen = quizScreens[step] || COMMON_SCREENS[0];
+      // Progress based on the full flow length once a mode is chosen.
+      const totalSteps = mode ? quizScreens.length : 14; // approximate full coach length pre-selection
       const progress = step / (totalSteps - 1);
 
       React.useEffect(() => {
@@ -510,17 +715,26 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         setTimeout(() => goNext(), 350);
       };
 
+      const selectMode = (chosenMode) => {
+        setMode(chosenMode);
+        // Auto-advance into the mode-specific question set
+        setTimeout(() => goNext(), 350);
+      };
+
       const handleNameSubmit = (e) => {
         e.preventDefault();
         if (name.trim()) goNext();
       };
 
       const handleFinish = () => {
-        const profile = { name: name.trim(), ...answers };
+        // Facilitator mode has no name-input; coach does.
+        const profile = mode === 'facilitator'
+          ? { mode, ...answers }
+          : { mode, name: name.trim(), ...answers };
         onComplete(profile);
       };
 
-      const analysis = analyzeProfile(answers);
+      const analysis = analyzeProfile(answers, mode);
 
       // ── Render current screen ──
       const renderScreen = () => {
@@ -536,7 +750,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
               ),
               React.createElement('h1', { className: 'quiz-splash-title' }, 'Your conversations shape your life'),
               React.createElement('p', { className: 'quiz-splash-desc' },
-                'Answer a few quick questions, discover your communication style, and meet your personal AI coach.'
+                "Train with a personal coach, or bring someone else along and let us facilitate the conversation together."
               ),
               React.createElement('div', { className: 'quiz-splash-features' },
                 React.createElement('div', { className: 'quiz-splash-feat' },
@@ -545,15 +759,75 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
                 ),
                 React.createElement('div', { className: 'quiz-splash-feat' },
                   React.createElement('span', { className: 'quiz-feat-dot' }),
-                  'Personalised to how you actually communicate'
+                  'Two modes: solo coaching or live facilitation'
                 ),
                 React.createElement('div', { className: 'quiz-splash-feat' },
                   React.createElement('span', { className: 'quiz-feat-dot' }),
-                  'Practice with a coach that adapts to you'
+                  'Personalised to how you actually communicate'
                 ),
               ),
               React.createElement('button', { className: 'quiz-cta', onClick: goNext }, "Let's Go"),
             )
+          );
+        }
+
+        if (screen.type === 'mode-select') {
+          return React.createElement('div', { className: `quiz-screen quiz-mode-select ${animClass}`, key: step },
+            React.createElement('h2', { className: 'quiz-title' }, screen.title),
+            React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
+            React.createElement('div', { className: 'mode-cards' },
+              React.createElement('button', {
+                className: `mode-card mode-card-coach ${mode === 'coach' ? 'mode-card-selected' : ''}`,
+                onClick: () => selectMode('coach'),
+              },
+                React.createElement('div', { className: 'mode-card-icon mode-icon-coach' },
+                  React.createElement('svg', { width: 28, height: 28, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('path', { d: 'M12 2L2 7l10 5 10-5-10-5z' }),
+                    React.createElement('path', { d: 'M2 17l10 5 10-5' }),
+                    React.createElement('path', { d: 'M2 12l10 5 10-5' }),
+                  )
+                ),
+                React.createElement('div', { className: 'mode-card-body' },
+                  React.createElement('span', { className: 'mode-card-pill' }, 'Just You'),
+                  React.createElement('h3', { className: 'mode-card-title' }, 'Coach Mode'),
+                  React.createElement('p', { className: 'mode-card-desc' },
+                    'Your personal coach, teacher, trainer, and practice buddy. Learn communication skills, work through real conversations, and role-play tricky scenarios.'
+                  ),
+                  React.createElement('ul', { className: 'mode-card-list' },
+                    React.createElement('li', null, 'Learn & teach communication concepts'),
+                    React.createElement('li', null, 'Coach you through real challenges'),
+                    React.createElement('li', null, 'Role-play scenarios with feedback'),
+                    React.createElement('li', null, 'Quizzes & modules (coming soon)'),
+                  ),
+                ),
+              ),
+              React.createElement('button', {
+                className: `mode-card mode-card-facilitator ${mode === 'facilitator' ? 'mode-card-selected' : ''}`,
+                onClick: () => selectMode('facilitator'),
+              },
+                React.createElement('div', { className: 'mode-card-icon mode-icon-facilitator' },
+                  React.createElement('svg', { width: 28, height: 28, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('circle', { cx: 9, cy: 7, r: 3 }),
+                    React.createElement('circle', { cx: 17, cy: 7, r: 3 }),
+                    React.createElement('path', { d: 'M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2' }),
+                    React.createElement('path', { d: 'M14 15h3a4 4 0 0 1 4 4v2' }),
+                  )
+                ),
+                React.createElement('div', { className: 'mode-card-body' },
+                  React.createElement('span', { className: 'mode-card-pill mode-card-pill-pair' }, 'Two People'),
+                  React.createElement('h3', { className: 'mode-card-title' }, 'Facilitator Mode'),
+                  React.createElement('p', { className: 'mode-card-desc' },
+                    "Bring another person. I'll act as a neutral mediator, helping both of you feel understood. Each person says their name before they speak so I always know who's talking."
+                  ),
+                  React.createElement('ul', { className: 'mode-card-list' },
+                    React.createElement('li', null, 'Mediate between two people live'),
+                    React.createElement('li', null, 'Remembers each person separately'),
+                    React.createElement('li', null, 'Helps surface the Slippery Slope'),
+                    React.createElement('li', null, 'Perfect for couples, family, co-founders'),
+                  ),
+                ),
+              ),
+            ),
           );
         }
 
@@ -602,25 +876,45 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
         }
 
         if (screen.type === 'profile-reveal') {
+          const isFacilitator = mode === 'facilitator';
+          const headerNode = isFacilitator
+            ? React.createElement('div', { className: 'quiz-reveal-header' },
+                React.createElement('div', { className: 'quiz-reveal-avatar quiz-reveal-avatar-pair' },
+                  React.createElement('svg', { width: 36, height: 36, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('circle', { cx: 9, cy: 7, r: 3 }),
+                    React.createElement('circle', { cx: 17, cy: 7, r: 3 }),
+                    React.createElement('path', { d: 'M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2' }),
+                    React.createElement('path', { d: 'M14 15h3a4 4 0 0 1 4 4v2' }),
+                  )
+                ),
+                React.createElement('h2', { className: 'quiz-reveal-name' }, 'Facilitator Mode'),
+                React.createElement('p', { className: 'quiz-reveal-tagline' }, analysis.context ? `How I will show up ${analysis.context}` : 'How I will show up'),
+              )
+            : React.createElement('div', { className: 'quiz-reveal-header' },
+                React.createElement('div', { className: 'quiz-reveal-avatar' }, name.trim().charAt(0).toUpperCase()),
+                React.createElement('h2', { className: 'quiz-reveal-name' }, name.trim()),
+                React.createElement('p', { className: 'quiz-reveal-tagline' }, analysis.context ? `Your Communication Profile ${analysis.context}` : 'Your Communication Profile'),
+              );
+
+          const strengthBadge = isFacilitator ? 'My Style' : 'Your Strength';
+          const growthBadge = isFacilitator ? 'Our Focus' : 'Growth Area';
+          const ctaLabel = isFacilitator ? 'Begin Together' : 'Meet Your Coach';
+
           return React.createElement('div', { className: `quiz-screen quiz-reveal ${animClass}`, key: step },
-            React.createElement('div', { className: 'quiz-reveal-header' },
-              React.createElement('div', { className: 'quiz-reveal-avatar' }, name.trim().charAt(0).toUpperCase()),
-              React.createElement('h2', { className: 'quiz-reveal-name' }, name.trim()),
-              React.createElement('p', { className: 'quiz-reveal-tagline' }, analysis.context ? `Your Communication Profile ${analysis.context}` : 'Your Communication Profile'),
-            ),
+            headerNode,
             React.createElement('div', { className: 'quiz-reveal-cards' },
               React.createElement('div', { className: 'quiz-reveal-card quiz-strength-card' },
-                React.createElement('span', { className: 'quiz-card-badge quiz-badge-strength' }, 'Your Strength'),
+                React.createElement('span', { className: 'quiz-card-badge quiz-badge-strength' }, strengthBadge),
                 React.createElement('h3', null, analysis.strength.label),
                 React.createElement('p', null, analysis.strength.desc),
               ),
               React.createElement('div', { className: 'quiz-reveal-card quiz-growth-card' },
-                React.createElement('span', { className: 'quiz-card-badge quiz-badge-growth' }, 'Growth Area'),
+                React.createElement('span', { className: 'quiz-card-badge quiz-badge-growth' }, growthBadge),
                 React.createElement('h3', null, analysis.growth.label),
                 React.createElement('p', null, analysis.growth.desc),
               ),
             ),
-            React.createElement('button', { className: 'quiz-cta quiz-cta-final', onClick: handleFinish }, 'Meet Your Coach'),
+            React.createElement('button', { className: 'quiz-cta quiz-cta-final', onClick: handleFinish }, ctaLabel),
           );
         }
 
@@ -1281,6 +1575,10 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
               )
             ),
             React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
+            profile?.mode && React.createElement('span', {
+              className: `mode-badge mode-badge-${profile.mode}`,
+              title: profile.mode === 'facilitator' ? 'Facilitating a conversation between two people' : 'Your one-on-one coach',
+            }, profile.mode === 'facilitator' ? 'Facilitator' : 'Coach'),
           ),
           React.createElement('button', {
             className: 'new-chat-btn',
@@ -1330,6 +1628,12 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           ),
         ),
 
+        // Facilitator hint banner — reminds users to say their name
+        profile?.mode === 'facilitator' && React.createElement('div', { className: 'facilitator-hint' },
+          React.createElement('strong', null, 'Facilitator Mode · '),
+          'Each of you, say your name before you speak — e.g. "Sarah: I felt..."'
+        ),
+
         // Messages
         React.createElement('main', { className: 'chat-area' },
           messages.map((m, i) =>
@@ -1376,7 +1680,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
               type: 'text',
               value: textInput,
               onChange: (e) => setTextInput(e.target.value),
-              placeholder: 'Or type here...',
+              placeholder: profile?.mode === 'facilitator' ? 'Sarah: ... or Mark: ...' : 'Or type here...',
               disabled: voiceState === 'processing' || voiceState === 'speaking',
               className: 'text-input',
             }),
@@ -1399,7 +1703,7 @@ IMPORTANT: Address the user by their name naturally (not every message, but occa
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.5.0')
+          }, 'v1.6.0')
         )
       );
     };
