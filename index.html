@@ -474,6 +474,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
     const NEXT_STEPS = [
       {
         id: 'lessons',
+        label: 'Lessons',
         title: 'Take some lessons',
         tag: 'Conversation Coach',
         desc: "Boost your communication skills with me as your teacher. Short, fun sessions that change how you approach every conversation.",
@@ -482,6 +483,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       },
       {
         id: 'helpline',
+        label: 'Helpline',
         title: 'Talk through something specific',
         tag: 'Communication Helpline',
         desc: "Choose an aspect of yourself you wish was more visible, or a conversation you need to have. We\u2019ll unpack it together and even role-play different approaches.",
@@ -490,6 +492,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       },
       {
         id: 'facilitator',
+        label: 'Facilitator',
         title: 'Bring another person in',
         tag: 'Facilitated Conversation',
         desc: "I\u2019ll act as a neutral third party in a conversation between you and someone else — making sure both of you get the same chance to be heard.",
@@ -1217,6 +1220,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         try { return localStorage.getItem('fu_theme') === 'dark' ? 'dark' : 'light'; }
         catch { return 'light'; }
       });
+      const [showModeMenu, setShowModeMenu] = React.useState(false);
 
       React.useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -1439,6 +1443,24 @@ Remember: you are holding space for two people to feel heard by each other. Your
         setTextInput('');
       };
 
+      const handleSwitchMode = (pathId) => {
+        setShowModeMenu(false);
+        const path = NEXT_STEPS.find(p => p.id === pathId);
+        if (!path || !profile) return;
+        if (profile.path === pathId) return;
+        cancelSpeak();
+        const nextProfile = { ...profile, mode: path.mode, goal: path.goal, path: path.id };
+        setProfile(nextProfile);
+        profileRef.current = nextProfile;
+        saveProfile(nextProfile);
+        const greeting = buildGreeting(nextProfile);
+        startNewConversation([{ role: 'assistant', content: greeting }]);
+        setVoiceState('idle');
+        setInterimText('');
+        setTextInput('');
+        setError(null);
+      };
+
       const handleNewChat = () => {
         cancelSpeak();
         // Start a new conversation (profile persists, no need to redo quiz)
@@ -1548,10 +1570,35 @@ Remember: you are holding space for two people to feel heard by each other. Your
               )
             ),
             React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
-            profile?.mode && React.createElement('span', {
-              className: `mode-badge mode-badge-${profile.mode}`,
-              title: profile.mode === 'facilitator' ? 'Facilitating a conversation between two people' : 'Your one-on-one coach',
-            }, profile.mode === 'facilitator' ? 'Facilitator' : 'Coach'),
+            profile && React.createElement('div', { className: 'mode-switcher' },
+              React.createElement('button', {
+                className: `mode-switcher-btn mode-badge-${profile.mode}`,
+                onClick: () => setShowModeMenu(v => !v),
+                'aria-haspopup': 'menu',
+                'aria-expanded': showModeMenu,
+                title: 'Switch mode',
+              },
+                React.createElement('span', null,
+                  (NEXT_STEPS.find(p => p.id === profile.path) || { label: profile.mode === 'facilitator' ? 'Facilitator' : 'Coach' }).label
+                ),
+                React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round', className: `mode-switcher-chev ${showModeMenu ? 'open' : ''}` },
+                  React.createElement('polyline', { points: '6 9 12 15 18 9' })
+                )
+              ),
+              showModeMenu && React.createElement('div', { className: 'mode-menu-backdrop', onClick: () => setShowModeMenu(false) }),
+              showModeMenu && React.createElement('div', { className: 'mode-menu', role: 'menu' },
+                NEXT_STEPS.map(p => React.createElement('button', {
+                  key: p.id,
+                  className: `mode-menu-item ${profile.path === p.id ? 'mode-menu-item-active' : ''}`,
+                  onClick: () => handleSwitchMode(p.id),
+                  role: 'menuitem',
+                },
+                  React.createElement('span', { className: 'mode-menu-tag' }, p.tag),
+                  React.createElement('span', { className: 'mode-menu-title' }, p.title),
+                  React.createElement('span', { className: 'mode-menu-desc' }, p.desc),
+                ))
+              )
+            ),
           ),
           React.createElement('div', { className: 'header-right' },
             React.createElement('button', {

@@ -1596,3 +1596,133 @@ html, body {
 [data-theme="dark"] .history-overlay {
   background: rgba(var(--shadow-rgb), 0.6);
 }
+
+/* ===== MODE SWITCHER DROPDOWN ===== */
+.mode-switcher {
+  position: relative;
+  display: inline-flex;
+  margin-left: 4px;
+}
+
+.mode-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 4px 8px 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent-ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-switcher-btn:hover {
+  background: rgba(var(--accent-rgb), 0.22);
+  border-color: rgba(var(--accent-rgb), 0.4);
+}
+.mode-switcher-btn:active { transform: scale(0.97); }
+
+.mode-switcher-btn.mode-badge-facilitator {
+  background: rgba(var(--green-rgb), 0.15);
+  border-color: rgba(var(--green-rgb), 0.25);
+  color: var(--green-ink);
+}
+.mode-switcher-btn.mode-badge-facilitator:hover {
+  background: rgba(var(--green-rgb), 0.22);
+  border-color: rgba(var(--green-rgb), 0.4);
+}
+
+.mode-switcher-chev {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.mode-switcher-chev.open { transform: rotate(180deg); }
+
+.mode-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.mode-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  width: min(300px, calc(100vw - 32px));
+  background: var(--surface);
+  border: 1px solid var(--surface-2);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(var(--shadow-rgb), 0.15);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: modeMenuIn 0.16s ease-out;
+  overflow: hidden;
+}
+[data-theme="dark"] .mode-menu {
+  box-shadow: 0 10px 30px rgba(var(--shadow-rgb), 0.5);
+}
+
+@keyframes modeMenuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mode-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-menu-item:hover {
+  background: var(--surface-2);
+}
+.mode-menu-item-active {
+  background: var(--accent-dim);
+}
+.mode-menu-item-active:hover {
+  background: rgba(var(--accent-rgb), 0.25);
+}
+
+.mode-menu-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--accent-ink);
+}
+.mode-menu-item:nth-child(3) .mode-menu-tag {
+  color: var(--green-ink);
+}
+
+.mode-menu-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.mode-menu-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
