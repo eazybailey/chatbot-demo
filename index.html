@@ -158,100 +158,59 @@ VOICE & STYLE GUIDELINES:
 
       if (!profile) return base;
 
-      const modeMap = {
-        learn: 'learning communication skills and frameworks',
-        coach: 'getting help with a specific real conversation',
-        practice: 'practicing difficult conversations through role-play',
-        reflect: 'understanding their own communication style',
+      const goalMap = {
+        learn: 'They chose "Take some lessons" — they want to develop enhanced communication skills through short, structured teaching sessions with you. Offer to start with a foundational concept (e.g. the three roles in every conversation) or a specific skill they are curious about.',
+        helpline: 'They chose "Communication Helpline" — they have a specific aspect of themselves they wish was more visible to others, OR a particular conversation they want to plan or rehearse. Start by inviting them to choose: the aspect of themselves to explore, or a specific conversation to work through. Offer to role-play different approaches.',
       };
 
-      const explainerMap = {
-        improv: 'They tend to jump into explanations without a clear structure — they could benefit from learning to headline and provide context first.',
-        structured: 'They naturally headline and structure their explanations well — this is a strength to build on.',
-        context: 'They tend to over-explain with too much context — they could benefit from learning to headline first and be more concise.',
-        brief: 'They tend to under-explain and skip context — they could benefit from learning to fill in the picture more using frameworks like SAME or MRI.',
+      const areaLabelMap = {
+        home: 'home life',
+        family: 'family of origin',
+        friends: 'friendships and social life',
+        work: 'work life',
+        online: 'online spaces',
       };
 
-      const understanderMap = {
-        fix: 'Their instinct is to offer solutions immediately — a common pattern. Help them practice feeding back highlights and resisting the urge to fix.',
-        curious: 'They naturally ask questions to understand — a strong Understander trait. Help them also practice feeding back highlights in their own words.',
-        relate: 'They connect by sharing similar experiences — this builds rapport but can accidentally hijack. Help them balance sharing with focused listening.',
-        listen: 'They default to quiet listening — good patience, but they may appear passive. Help them practice active skills like feeding back highlights.',
+      const blameMap = {
+        them: 'When misunderstood, their instinct is to blame the other person. This is a sign of the Slippery Slope thinking — building a case against others. Gently help them try on personal responsibility as a more empowering frame.',
+        mixed: 'When misunderstood, they share the blame — sometimes themselves, sometimes the other. This is realistic. Help them go deeper on the moments when it is on them.',
+        me: 'When misunderstood, they take personal responsibility for making themselves understood. This is a mature, Dialogue-System-aligned mindset. Build on this strength.',
       };
 
-      const conflictMap = {
-        push: 'Under tension they push harder — a compete pattern. Help them practice getting curious about the other side and finding win-win outcomes.',
-        avoid: 'Under tension they back off — an avoidance pattern. Help them build confidence to stay in difficult conversations while managing emotions.',
-        compromise: 'Under tension they seek middle ground — a good instinct. Help them go deeper by understanding both sides fully before compromising.',
-        collaborate: 'Under tension they get curious — an excellent Conversation Manager instinct. Help them build on this strength.',
+      const aspectLabelMap = {
+        values: 'their values and moral code',
+        spiritual: 'their spiritual or religious side',
+        sexuality: 'their sexuality or identity',
+        health: 'their mental or physical health',
+        finances: 'their money worries and ambitions',
+        relationships: 'their relationship struggles',
+        passions: 'their passions and deep interests',
+        politics: 'their political views',
+        creative: 'their creative or artistic side',
+        ambition: 'their career goals and ambition',
+        history: 'their past and where they come from',
+        dreams: 'their dreams for the future',
       };
 
-      const challengeMap = {
-        heard: 'Their biggest struggle is being heard and understood — focus on Explainer skills like engaging attention, headlining, and checking for understanding.',
-        listening: 'Their biggest struggle is truly listening — focus on Understander skills, especially feeding back highlights and listening with an open mind.',
-        emotions: 'Their biggest struggle is navigating emotions — focus on Conversation Manager skills like monitoring emotional temperature and responding rather than reacting.',
-        starting: 'Their biggest struggle is starting and sustaining conversations — focus on preparation, sharing purpose, and building confidence through practice.',
-      };
-
-      const lifestageMap = {
-        student: 'Student or early career — navigating new relationships, finding their voice, and building communication habits that will serve them for life.',
-        building: 'Building their career — managing work relationships, handling feedback, and communicating with more stakeholders.',
-        established: 'Established professional or leader — leading teams, mentoring, managing upward, and handling high-stakes conversations.',
-        personal: 'Focused on personal life — parenting, romantic relationships, or navigating a life transition where communication is critical.',
-      };
-
-      const relationshipsMap = {
-        partner: 'Their most important conversations are with a partner or close family — deeply personal, emotionally charged, and with high stakes for the relationship.',
-        work: 'Their most important conversations are with colleagues or a boss — professional context where power dynamics, clarity, and diplomacy matter.',
-        social: 'Their most important conversations are with friends or social circle — where authenticity, boundaries, and social confidence are key.',
-        authority: 'Their most important conversations are with clients, students, or people they lead — where they need to inspire, guide, and listen across a power differential.',
-      };
-
-      const settingMap = {
-        'one-on-one': 'They find one-on-one conversations trickiest — the intensity and intimacy can feel overwhelming. Focus on preparation and managing emotional temperature.',
-        'small-group': 'They find small group discussions trickiest — managing turn-taking, being heard, and reading multiple people at once. Focus on Conversation Manager skills.',
-        'large-group': 'They find larger groups or presentations trickiest — the pressure of many listeners. Focus on Explainer skills like engaging attention and headlining.',
-        digital: 'They find digital communication trickiest (text, email, video calls) — where tone, body language, and turn-taking cues are missing. Focus on being explicit about context and checking for understanding.',
-      };
-
-      const confidenceMap = {
-        low: 'Low confidence — they tend to avoid important conversations entirely. Start very gently, build small wins, and focus on preparation skills to reduce anxiety.',
-        moderate: 'Moderate confidence — they get through difficult conversations but find them stressful and often ruminate afterwards. Help them build frameworks to feel more in control.',
-        good: 'Good confidence — they handle most conversations well but recognise blind spots. Challenge them with nuance and help them see patterns they might miss.',
-        high: 'High confidence — they are already a capable communicator looking to fine-tune. Push them on advanced skills like reading social undercurrents and coaching others to play better.',
-      };
-
-      const emotionsMap = {
-        shutdown: 'When emotions run high, they tend to shut down and go quiet — the words stop coming. Help them practice staying present and using simple frameworks to keep talking even when it feels hard.',
-        flood: 'When emotions run high, they tend to over-share or over-react — saying things they later regret. Help them practice the "count to ten" principle and responding rather than reacting.',
-        deflect: 'When emotions run high, they deflect with humour or change the subject — avoiding the emotional core. Help them build courage to stay with difficult feelings in conversation.',
-        regulate: 'When emotions run high, they can usually stay grounded — a real strength. Help them use this self-regulation to also help others manage their emotions in conversation.',
-      };
-
-      const slipperyslopeMap = {
-        ruminate: 'After a breakdown they ruminate — replaying the conversation and getting stuck in what they should have said. This is the Slippery Slope in action. Help them redirect that energy into preparation for repair.',
-        blame: 'After a breakdown they focus on what the other person did wrong — building a case. This is classic Slippery Slope (giving it your own spin → assumptions → conclusions). Help them practice seeing the other perspective first.',
-        repair: 'After a breakdown they try to repair — reaching out to clear things up. This is an excellent instinct. Help them refine their repair skills and make those conversations more effective.',
-        'move-on': 'After a breakdown they move on and hope it blows over — avoiding reopening the wound. This can leave unresolved tension. Help them build confidence to initiate repair conversations.',
-      };
+      const fu = profile.feelUnderstood || {};
+      const areaEntries = Object.entries(fu.areas || {}).filter(([, v]) => typeof v === 'number');
+      areaEntries.sort((a, b) => a[1] - b[1]);
+      const leastArea = areaEntries[0] ? areaLabelMap[areaEntries[0][0]] : null;
+      const leastAreaScore = areaEntries[0] ? areaEntries[0][1] : null;
+      const areaRatingsText = areaEntries.map(([k, v]) => `${areaLabelMap[k] || k} ${v}/5`).join(', ') || 'none rated';
+      const aspectsList = (fu.aspects || []).map(v => aspectLabelMap[v]).filter(Boolean);
+      const aspectsText = aspectsList.length ? aspectsList.join('; ') : 'none named yet';
 
       const profileContext = `
 
-USER PROFILE — PERSONALISE YOUR COACHING:
-- Name: ${profile.name}
-- Life stage: ${lifestageMap[profile.lifestage] || ''}
-- Key relationships: ${relationshipsMap[profile.relationships] || ''}
-- Tricky setting: ${settingMap[profile.setting] || ''}
-- Primary interest: ${modeMap[profile.goal] || 'general communication improvement'}
-- Confidence level: ${confidenceMap[profile.confidence] || ''}
-- Explaining style: ${explainerMap[profile.explainer] || ''}
-- Listening style: ${understanderMap[profile.understander] || ''}
-- Emotional pattern: ${emotionsMap[profile.emotions] || ''}
-- Conflict approach: ${conflictMap[profile.conflict] || ''}
-- After a breakdown: ${slipperyslopeMap[profile.slipperyslope] || ''}
-- Key challenge: ${challengeMap[profile.challenge] || ''}
+USER PROFILE — FROM THEIR FEEL UNDERSTOOD QUESTIONNAIRE:
+- Name: ${profile.name || 'friend'}
+- Chosen path: ${goalMap[profile.goal] || 'general exploration of how to feel more understood'}
+- Where they feel least understood (1 = poorly, 5 = well): ${areaRatingsText}${leastArea ? ` — their lowest is their ${leastArea} at ${leastAreaScore}/5` : ''}.
+- Blame mindset when misunderstood: ${blameMap[fu.blame] || 'not yet clear — explore with them.'}
+- Sides of themselves they feel are least recognised: ${aspectsText}.
 
-IMPORTANT: Address the user by their name naturally (not every message, but occasionally). Tailor your coaching to their full profile — their life stage, who they communicate with, and the settings they find hardest all shape the examples, scenarios, and language you use. Lean into their strengths, gently work on their growth areas. Match your coaching intensity to their confidence level. Start with their primary interest but be flexible. Reference their specific patterns when relevant (e.g., "I know you mentioned you tend to shut down when emotions run high — let's work on that"). Use their relationship context to make examples feel personal and relevant.`;
+IMPORTANT: This user just completed the Feel Understood questionnaire. The whole reason they are here is to feel more understood — model that first. In your very first message, warmly greet them by name, briefly reflect back that you have heard them (referencing their least-understood area OR one of the unseen aspects they named), and then offer the first concrete step that matches their chosen path. Do NOT simply launch into a lesson or advice — make them feel heard first. Use their name occasionally but not every message. Let their questionnaire answers surface naturally over the conversation — don't dump them all at once.`;
 
       return base + profileContext;
     };
@@ -347,16 +306,29 @@ Remember: you are holding space for two people to feel heard by each other. Your
     };
 
     const buildCoachGreeting = (profile) => {
-      if (!profile) return "Hey! Welcome to Feel Understood. I'm your Conversation Coach. Want to learn a communication skill, get help with a tricky conversation, or jump into a role-play? What's on your mind?";
+      if (!profile) return "Hey! Welcome to Feel Understood. I'm your Conversation Coach. What would you like to work on?";
 
-      const goalGreetings = {
-        learn: `Hey ${profile.name}! Great to meet you. You said you're keen to learn new communication skills — I love that. The Dialogue System is packed with practical stuff. Want to start with the three roles we all play in every conversation, or is there a specific skill you're curious about?`,
-        coach: `Hey ${profile.name}! Good to have you here. You mentioned you've got a specific conversation you'd like help with — I'm all ears. Tell me what's going on and we'll work through it together.`,
-        practice: `Hey ${profile.name}! Welcome — you're here to practice, and that's the best way to get better. Think of a conversation you've got coming up or one that didn't go well, and we can role-play it. What scenario would be most useful for you?`,
-        reflect: `Hey ${profile.name}! I'm glad you want to explore your communication style — self-awareness is where it all starts. Let me ask you this: think about your last few important conversations. Do you notice any patterns in how they went?`,
+      const name = profile.name || 'friend';
+      const fu = profile.feelUnderstood || {};
+      const areaLabels = {
+        home: 'home life',
+        family: 'family of origin',
+        friends: 'friendships and social life',
+        work: 'work life',
+        online: 'online spaces',
       };
+      const entries = Object.entries(fu.areas || {}).filter(([, v]) => typeof v === 'number');
+      entries.sort((a, b) => a[1] - b[1]);
+      const leastArea = entries[0] ? areaLabels[entries[0][0]] : null;
+      const leastPhrase = leastArea ? `I know your ${leastArea} is where feeling understood is toughest right now. ` : '';
 
-      return goalGreetings[profile.goal] || `Hey ${profile.name}! Great to meet you. Welcome to Feel Understood — I'm your Conversation Coach, here to help you have better conversations. What would you like to work on?`;
+      if (profile.goal === 'helpline') {
+        return `Hey ${name} — thanks for sharing all of that with me. ${leastPhrase}So tell me: is there a particular side of yourself you wish was more visible to the people around you, or a specific conversation that\u2019s been weighing on you? We\u2019ll take it from there together.`;
+      }
+      if (profile.goal === 'learn') {
+        return `Hey ${name}! Great to have you here. ${leastPhrase}I\u2019d love to teach you some skills that\u2019ll change how those conversations go. We could start with the three roles we all play in every conversation \u2014 the Explainer, the Understander, and the Conversation Manager. Want to begin there, or is there a specific skill you\u2019re curious about?`;
+      }
+      return `Hey ${name}! Thanks for walking through that with me. ${leastPhrase}What would you like to explore first?`;
     };
 
     const buildFacilitatorGreeting = (profile) => {
@@ -364,324 +336,240 @@ Remember: you are holding space for two people to feel heard by each other. Your
     };
 
     // ── Quiz Data ──
-    // The first two screens (splash + mode-select) are common to both modes.
-    // After the user picks a mode, we show a mode-specific question set.
+    // The Feel Understood questionnaire. Based on the brief by the expert behind
+    // "The Dialogue System" — designed to give the user an epiphany moment about
+    // the importance of feeling understood. Three sections, each followed by a
+    // reflection. At the end we offer three next-step paths that map onto the
+    // two conversation modes (coach vs facilitator).
 
-    const COMMON_SCREENS = [
+    const FU_AREA_LABELS = {
+      home: 'home life',
+      family: 'family of origin',
+      friends: 'friendships and social life',
+      work: 'work life',
+      online: 'online spaces',
+    };
+
+    const FU_ASPECT_LABELS = {
+      values: 'your values and moral code',
+      spiritual: 'your spiritual or religious side',
+      sexuality: 'your sexuality or identity',
+      health: 'your mental or physical health',
+      finances: 'your money worries and ambitions',
+      relationships: 'your relationship struggles',
+      passions: 'your passions and deep interests',
+      politics: 'your political views',
+      creative: 'your creative or artistic side',
+      ambition: 'your career goals and ambition',
+      history: 'your past and where you come from',
+      dreams: 'your dreams for the future',
+    };
+
+    const FEEL_UNDERSTOOD_SCREENS = [
       {
         id: 'welcome',
         type: 'splash',
       },
       {
-        id: 'mode-select',
-        type: 'mode-select',
-        title: 'How would you like to use Feel Understood?',
-        subtitle: 'You can switch any time — pick the experience that fits right now.',
-      },
-    ];
-
-    const COACH_SCREENS = [
-      {
         id: 'name',
         type: 'name-input',
-        title: 'What should we call you?',
-        subtitle: 'Your coach will use your name to personalise the experience.',
+        title: 'First — what should we call you?',
+        subtitle: 'This is a personal journey. Your name helps make it yours.',
       },
       {
-        id: 'lifestage',
-        type: 'choice',
-        title: 'Where are you in life right now?',
-        subtitle: 'Your life stage shapes the conversations that matter most.',
-        options: [
-          { value: 'student', label: 'Student or early career', desc: 'Navigating new relationships and finding your voice' },
-          { value: 'building', label: 'Building my career', desc: 'Growing professionally and managing work relationships' },
-          { value: 'established', label: 'Established professional or leader', desc: 'Leading teams, mentoring, or managing stakeholders' },
-          { value: 'personal', label: 'Focused on personal life', desc: 'Parenting, relationships, or a life transition' },
+        id: 'fu-intro',
+        type: 'intro',
+        title: 'A quick questionnaire — in three parts',
+        subtitle: 'No right answers. Just what\u2019s true for you.',
+        body: "Feeling understood is the oxygen of every relationship. Before we talk, I\u2019d like to get a real sense of where that\u2019s working in your life — and where it isn\u2019t. Three short sections. A few taps each. Then I\u2019ll reflect it all back to you.",
+        ctaLabel: "Let's begin",
+      },
+      {
+        id: 'areas',
+        type: 'scale-list',
+        section: 'Part 1 of 3',
+        title: 'Where in your life do you feel least understood?',
+        subtitle: "Rate how understood you feel in each area. 1 = poorly understood most of the time. 5 = well understood most of the time.",
+        insight: 'Skip any area that doesn\u2019t really apply to you.',
+        scale: { low: 'Poorly', high: 'Well' },
+        areas: [
+          { value: 'home', label: 'Home life', desc: 'Partner, household, people you live with' },
+          { value: 'family', label: 'Family of origin', desc: 'Parents, siblings, extended family' },
+          { value: 'friends', label: 'Friends and social life', desc: 'Close friends and wider social circle' },
+          { value: 'work', label: 'Work life', desc: 'Colleagues, boss, clients' },
+          { value: 'online', label: 'Online spaces', desc: 'Group chats, social media, digital life' },
         ],
       },
       {
-        id: 'relationships',
+        id: 'fu-summary-1',
+        type: 'summary',
+        section: 'Reflection',
+        from: 'areas',
+      },
+      {
+        id: 'blame',
         type: 'choice',
-        title: 'Which conversations matter most to you right now?',
-        subtitle: 'We communicate differently with different people.',
-        insight: 'The Dialogue System teaches that every relationship has its own "theme and variations" — patterns that repeat.',
+        section: 'Part 2 of 3',
+        title: "When you\u2019re misunderstood or overlooked — who do you instinctively blame?",
+        subtitle: 'Be honest with yourself. One instinct usually shows up more than the others.',
+        insight: "The Dialogue System says misunderstanding is the norm, not the exception. The real question is what you do about it.",
         options: [
-          { value: 'partner', label: 'Partner or close family', desc: 'The people you share your life with' },
-          { value: 'work', label: 'Colleagues or boss', desc: 'The people you work alongside every day' },
-          { value: 'social', label: 'Friends or social circle', desc: 'The people you choose to spend time with' },
-          { value: 'authority', label: 'Clients, students, or people I lead', desc: 'People who look to you for guidance' },
+          { value: 'them', label: 'Them, most of the time', desc: "I\u2019m almost always a clear and interesting communicator. If people don\u2019t get me, that\u2019s on them." },
+          { value: 'mixed', label: 'Sometimes me, sometimes them', desc: "There are moments when I don\u2019t express my thoughts and feelings clearly enough to be easily understood." },
+          { value: 'me', label: 'I take responsibility', desc: "I believe it\u2019s on me to make sure I\u2019m understood. When it matters, I politely persist until my point has landed." },
         ],
       },
       {
-        id: 'setting',
-        type: 'choice',
-        title: 'Where do you find conversations trickiest?',
-        subtitle: 'The setting changes everything about how we communicate.',
-        insight: 'Conversation Managers adapt their approach based on the setting — one-on-one is very different from a group.',
-        options: [
-          { value: 'one-on-one', label: 'One-on-one conversations', desc: 'Intense, personal, nowhere to hide' },
-          { value: 'small-group', label: 'Small group discussions', desc: 'Meetings, dinner tables, team chats' },
-          { value: 'large-group', label: 'Larger groups or presentations', desc: 'Speaking up when many people are listening' },
-          { value: 'digital', label: 'Text, email, or video calls', desc: 'When tone and body language are missing' },
-        ],
+        id: 'fu-summary-2',
+        type: 'summary',
+        section: 'Reflection',
+        from: 'blame',
       },
       {
-        id: 'goal',
-        type: 'choice',
-        title: 'What would help you most right now?',
-        subtitle: 'This helps your coach know where to start.',
+        id: 'aspects',
+        type: 'multi-select',
+        section: 'Part 3 of 3',
+        title: 'Which sides of you feel least recognised or appreciated?',
+        subtitle: 'Pick any that ring true. Choose as many as you like.',
+        insight: "Often we\u2019re understood for only a slice of who we really are. Naming the unseen parts is the first step to being more fully known.",
         options: [
-          { value: 'learn', label: 'Learn new skills', desc: 'Discover frameworks that make every conversation better' },
-          { value: 'coach', label: 'Get help with a conversation', desc: "Work through something that's on your mind" },
-          { value: 'practice', label: 'Practice a tricky conversation', desc: 'Role-play with your coach and get feedback' },
-          { value: 'reflect', label: 'Understand my style', desc: 'Discover patterns in how you communicate' },
-        ],
-      },
-      {
-        id: 'confidence',
-        type: 'choice',
-        title: 'How confident do you feel in important conversations?',
-        subtitle: 'Honest self-awareness is where growth begins.',
-        insight: 'The Dialogue System says misunderstanding is the norm, not the exception — so even confident communicators have room to grow.',
-        options: [
-          { value: 'low', label: "I usually avoid them", desc: "I'll put off a difficult conversation as long as I can" },
-          { value: 'moderate', label: "I manage, but it's stressful", desc: 'I get through them but often replay them in my head afterwards' },
-          { value: 'good', label: "I'm fairly confident", desc: 'I handle most conversations well but have blind spots' },
-          { value: 'high', label: "I'm comfortable, I want to fine-tune", desc: 'I want to go from good to great' },
-        ],
-      },
-      {
-        id: 'explainer',
-        type: 'choice',
-        title: 'When you need to explain something important, you usually...',
-        subtitle: 'Everyone has a natural explaining style. There are no wrong answers.',
-        insight: 'The Dialogue System identifies the Explainer as one of three roles we play in every conversation.',
-        options: [
-          { value: 'improv', label: 'Jump right in and figure it out as I talk' },
-          { value: 'structured', label: 'Lead with the headline, then fill in details' },
-          { value: 'context', label: 'Set the scene with lots of background first' },
-          { value: 'brief', label: 'Keep it short — less is more' },
-        ],
-      },
-      {
-        id: 'understander',
-        type: 'choice',
-        title: 'Someone tells you about a tough situation. Your first instinct?',
-        subtitle: 'How we respond when others share matters more than we think.',
-        insight: 'The Understander role is about truly getting the other person — not just hearing them.',
-        options: [
-          { value: 'fix', label: 'Offer advice or a solution' },
-          { value: 'curious', label: 'Ask questions to understand more' },
-          { value: 'relate', label: 'Share a similar experience of my own' },
-          { value: 'listen', label: 'Just listen and let them talk' },
-        ],
-      },
-      {
-        id: 'emotions',
-        type: 'choice',
-        title: 'When emotions run high in a conversation, what usually happens?',
-        subtitle: 'Emotional awareness is a superpower in dialogue.',
-        insight: 'The Slippery Slope: an incident → your spin → assumptions → unwarranted conclusions → acting on the mess. Catching it early changes everything.',
-        options: [
-          { value: 'shutdown', label: 'I go quiet and shut down', desc: 'The words just stop coming' },
-          { value: 'flood', label: 'I say too much and regret it later', desc: 'Emotions take over and I over-share or over-react' },
-          { value: 'deflect', label: 'I use humour or change the subject', desc: 'I steer away from the emotional intensity' },
-          { value: 'regulate', label: 'I can usually stay grounded', desc: 'I notice the emotion but can still think clearly' },
-        ],
-      },
-      {
-        id: 'conflict',
-        type: 'choice',
-        title: 'When a conversation gets tense, you tend to...',
-        subtitle: 'Tension is where conversations are won or lost.',
-        insight: 'The Conversation Manager looks after the health of the conversation itself.',
-        options: [
-          { value: 'push', label: 'Push my point harder' },
-          { value: 'avoid', label: 'Back off to keep the peace' },
-          { value: 'compromise', label: 'Find the middle ground' },
-          { value: 'collaborate', label: 'Get curious about their side' },
-        ],
-      },
-      {
-        id: 'slipperyslope',
-        type: 'choice',
-        title: 'After a conversation goes wrong, you most often...',
-        subtitle: 'What we do after a breakdown matters as much as the breakdown itself.',
-        insight: 'The Dialogue System emphasises repairing conversations — catching mistakes and taking responsibility.',
-        options: [
-          { value: 'ruminate', label: 'Replay it over and over in my head', desc: 'I get stuck in what I should have said' },
-          { value: 'blame', label: 'Focus on what the other person did wrong', desc: 'I build a case for why they were the problem' },
-          { value: 'repair', label: 'Try to go back and fix it', desc: 'I reach out to clear things up' },
-          { value: 'move-on', label: 'Move on and hope it blows over', desc: 'I avoid reopening the wound' },
-        ],
-      },
-      {
-        id: 'challenge',
-        type: 'choice',
-        title: "What's hardest for you in conversations?",
-        subtitle: 'Knowing your challenge is the first step to growth.',
-        options: [
-          { value: 'heard', label: 'Being heard and understood' },
-          { value: 'listening', label: 'Truly listening without jumping ahead' },
-          { value: 'emotions', label: 'Navigating emotions and tension' },
-          { value: 'starting', label: 'Starting or keeping conversations going' },
+          { value: 'values', label: 'My values and moral code' },
+          { value: 'spiritual', label: 'My spiritual or religious side' },
+          { value: 'sexuality', label: 'My sexuality or identity' },
+          { value: 'health', label: 'My mental or physical health' },
+          { value: 'finances', label: 'My money worries or ambitions' },
+          { value: 'relationships', label: 'My relationship struggles' },
+          { value: 'passions', label: 'My passions and deep interests' },
+          { value: 'politics', label: 'My political views' },
+          { value: 'creative', label: 'My creative or artistic side' },
+          { value: 'ambition', label: 'My career goals and ambition' },
+          { value: 'history', label: 'My past and where I come from' },
+          { value: 'dreams', label: 'My dreams for the future' },
         ],
       },
       {
         id: 'profile',
-        type: 'profile-reveal',
+        type: 'fu-reveal',
+      },
+      {
+        id: 'next-steps',
+        type: 'fu-next-steps',
       },
     ];
 
-    // ── Facilitator quiz is intentionally short.
-    //    The AI gathers names and deep context live in the conversation.
-    const FACILITATOR_SCREENS = [
+    // The three next-step paths offered after the questionnaire. Each maps
+    // onto a mode + goal that the chat AI then uses to tailor its opening turn.
+    const NEXT_STEPS = [
       {
-        id: 'relationship',
-        type: 'choice',
-        title: "What's your relationship?",
-        subtitle: 'Helps your facilitator set the right tone for both of you.',
-        insight: 'In Facilitator Mode, I act as a neutral mediator between two people. I ask each of you to say your name before you speak so I always know who is talking.',
-        options: [
-          { value: 'partners', label: 'Partners or spouses', desc: 'Romantic or life partners navigating something together' },
-          { value: 'family', label: 'Family members', desc: 'Parent/child, siblings, or other family' },
-          { value: 'friends', label: 'Close friends', desc: 'Friends wanting to clear the air or go deeper' },
-          { value: 'coworkers', label: 'Colleagues or co-founders', desc: 'A working relationship that needs better communication' },
-        ],
+        id: 'lessons',
+        title: 'Take some lessons',
+        tag: 'Conversation Coach',
+        desc: "Boost your communication skills with me as your teacher. Short, fun sessions that change how you approach every conversation.",
+        mode: 'coach',
+        goal: 'learn',
       },
       {
-        id: 'focus',
-        type: 'choice',
-        title: 'What do you want to work on together today?',
-        subtitle: 'Your facilitator will lean in this direction.',
-        options: [
-          { value: 'understanding', label: 'Feel more understood by each other', desc: 'We keep missing each other — help us actually hear what the other means' },
-          { value: 'conflict', label: 'Work through a specific conflict', desc: 'Something unresolved keeps coming up — we need help navigating it' },
-          { value: 'planning', label: 'Make a decision or plan together', desc: 'We need to align on something important' },
-          { value: 'connection', label: 'Reconnect and deepen our bond', desc: 'Things are okay — we just want to have a better conversation' },
-        ],
+        id: 'helpline',
+        title: 'Talk through something specific',
+        tag: 'Communication Helpline',
+        desc: "Choose an aspect of yourself you wish was more visible, or a conversation you need to have. We\u2019ll unpack it together and even role-play different approaches.",
+        mode: 'coach',
+        goal: 'helpline',
       },
       {
-        id: 'tone',
-        type: 'choice',
-        title: 'How should your facilitator show up?',
-        subtitle: 'Pick the style that fits the two of you right now.',
-        insight: 'Facilitators adapt to the room. I will match your preference but adjust if the conversation needs something different.',
-        options: [
-          { value: 'gentle', label: 'Gentle and careful', desc: 'Move slowly, prioritise emotional safety, soft landings' },
-          { value: 'direct', label: 'Warm but direct', desc: "Name what you see clearly — we're ready to be honest" },
-          { value: 'balanced', label: 'Balanced — gentle on feelings, direct on patterns', desc: 'Meet us where we are' },
-        ],
-      },
-      {
-        id: 'profile',
-        type: 'profile-reveal',
+        id: 'facilitator',
+        title: 'Bring another person in',
+        tag: 'Facilitated Conversation',
+        desc: "I\u2019ll act as a neutral third party in a conversation between you and someone else — making sure both of you get the same chance to be heard.",
+        mode: 'facilitator',
+        goal: null,
       },
     ];
 
-    // Assemble the full quiz flow based on the chosen mode.
-    // Before a mode is picked, only the splash + mode-select screens are shown.
-    const getQuizScreens = (mode) => {
-      if (mode === 'coach') return [...COMMON_SCREENS, ...COACH_SCREENS];
-      if (mode === 'facilitator') return [...COMMON_SCREENS, ...FACILITATOR_SCREENS];
-      return COMMON_SCREENS;
+    // ── Feel Understood Profile Analysis ──
+    const BLAME_PROFILES = {
+      them: {
+        label: 'The "It\u2019s their problem" school',
+        desc: "You tend to put the weight on the other side. That can feel empowering, but it often keeps the same conversations going in circles. The Dialogue System would gently invite you to try on a different frame.",
+      },
+      mixed: {
+        label: 'The "Shared responsibility" school',
+        desc: "You see both sides \u2014 sometimes it\u2019s on you, sometimes it\u2019s on them. That\u2019s realistic, and it\u2019s also where growth lives. The question is what you do when you spot your own part.",
+      },
+      me: {
+        label: 'The "I\u2019ll make it land" school',
+        desc: "You take ownership of being understood. That\u2019s a rare mindset \u2014 and it\u2019s exactly where the Dialogue System says mastery begins.",
+      },
     };
 
-    // ── Profile Analysis ──
-    const analyzeProfile = (answers, mode) => {
-      if (mode === 'facilitator') return analyzeFacilitatorProfile(answers);
-      return analyzeCoachProfile(answers);
+    const analyzeFeelUnderstoodProfile = (answers) => {
+      const areas = answers.areas || {};
+      const entries = Object.entries(areas).filter(([, v]) => typeof v === 'number');
+      entries.sort((a, b) => a[1] - b[1]);
+      const lowest = entries[0] || null;
+      const avg = entries.length
+        ? entries.reduce((s, [, v]) => s + v, 0) / entries.length
+        : null;
+
+      return {
+        leastAreaKey: lowest ? lowest[0] : null,
+        leastAreaLabel: lowest ? FU_AREA_LABELS[lowest[0]] : null,
+        leastAreaScore: lowest ? lowest[1] : null,
+        avgScore: avg,
+        blame: BLAME_PROFILES[answers.blame] || null,
+        blameKey: answers.blame || null,
+        aspects: (answers.aspects || []).map(v => FU_ASPECT_LABELS[v]).filter(Boolean),
+        aspectKeys: answers.aspects || [],
+      };
     };
 
-    const analyzeFacilitatorProfile = (answers) => {
-      const focusMap = {
-        understanding: { label: 'Understanding Each Other', desc: "I'll help each of you hear what the other is really saying — before responding." },
-        conflict: { label: 'Navigating Conflict', desc: "I'll slow the pace, name the Slippery Slope when I see it, and help you find each other again." },
-        planning: { label: 'Aligning Together', desc: "I'll help you share purpose, take turns cleanly, and co-create an outcome you both own." },
-        connection: { label: 'Deepening Connection', desc: "I'll invite you both to share a little more, reflect a little deeper, and notice what's already working." },
-      };
-
-      const toneMap = {
-        gentle: { label: 'Gentle Facilitator', desc: 'Soft pace. Emotional safety first. I will take care of both of you.' },
-        direct: { label: 'Direct Facilitator', desc: "I'll name what I see clearly — including tension, spin, or assumptions — with warmth." },
-        balanced: { label: 'Balanced Facilitator', desc: 'Warm on feelings, honest on patterns. Matching the temperature of the room.' },
-      };
-
-      const relationshipLabel = {
-        partners: 'for the two of you',
-        family: 'for your family',
-        friends: 'for your friendship',
-        coworkers: 'for your working relationship',
-      };
-
-      const strength = toneMap[answers.tone] || toneMap.balanced;
-      const growth = focusMap[answers.focus] || focusMap.understanding;
-      const context = relationshipLabel[answers.relationship] || '';
-
-      return { strength, growth, context };
+    // Builds the short reflection shown between questionnaire sections.
+    const buildFeelUnderstoodSummary = (fromId, answers, name) => {
+      const whoName = (name || '').trim() || 'friend';
+      if (fromId === 'areas') {
+        const a = analyzeFeelUnderstoodProfile(answers);
+        if (!a.leastAreaLabel) {
+          return {
+            heading: 'Thank you.',
+            body: "Take a breath. When you\u2019re ready, let\u2019s explore the next layer.",
+          };
+        }
+        const gap = a.leastAreaScore <= 2
+          ? "Feeling overlooked there takes a real toll \u2014 and it\u2019s almost always fixable with better dialogue."
+          : a.leastAreaScore === 3
+          ? "That\u2019s the kind of in-between feeling that quietly drains a relationship over time."
+          : "Even a small shortfall here is worth taking seriously \u2014 feeling fully understood is a game-changer.";
+        return {
+          heading: `So, ${whoName} \u2014 here\u2019s what I\u2019m hearing.`,
+          body: `Of all the parts of your life, it\u2019s your ${a.leastAreaLabel} where you feel least understood right now. ${gap}`,
+        };
+      }
+      if (fromId === 'blame') {
+        const blame = BLAME_PROFILES[answers.blame];
+        if (!blame) return { heading: 'Noted.', body: "Let\u2019s move on." };
+        return { heading: blame.label, body: blame.desc };
+      }
+      return { heading: '', body: '' };
     };
 
-    const analyzeCoachProfile = (answers) => {
-      const strengthMap = {
-        structured: { label: 'Clear Communicator', desc: 'You naturally structure your thoughts before sharing — a key Explainer skill that many people struggle with.' },
-        curious: { label: 'Natural Questioner', desc: 'You instinctively ask questions to understand — the foundation of being a great Understander.' },
-        collaborate: { label: 'Collaborative Navigator', desc: 'When things get tense, you lean in with curiosity — a hallmark of skilled Conversation Managers.' },
-        compromise: { label: 'Bridge Builder', desc: 'You instinctively look for common ground — a valuable skill for keeping conversations productive.' },
-        listen: { label: 'Patient Listener', desc: 'You give people space to express themselves — a gift in a world where everyone wants to talk.' },
-        relate: { label: 'Empathic Connector', desc: "You build bridges by sharing your own experiences — this creates rapport and trust." },
-        context: { label: 'Thorough Explainer', desc: 'You make sure people have the full picture — attention to context is a real strength.' },
-        brief: { label: 'Concise Communicator', desc: 'You get to the point efficiently — people appreciate clarity and brevity.' },
-        improv: { label: 'Spontaneous Communicator', desc: 'You think on your feet and speak naturally — this brings energy and authenticity to conversations.' },
-        fix: { label: 'Problem Solver', desc: 'You jump to help with solutions — people know they can count on you to take action.' },
-        push: { label: 'Assertive Communicator', desc: "You stand your ground under pressure — knowing what you want is a foundation to build on." },
-        avoid: { label: 'Harmony Keeper', desc: 'You value peace in relationships — this sensitivity to others is a real asset when channelled well.' },
-        regulate: { label: 'Emotionally Grounded', desc: 'You stay centred when emotions run high — this self-regulation is a rare and powerful skill.' },
-        repair: { label: 'Relationship Repairer', desc: 'When conversations break down, you reach out to fix things — a hallmark of skilled Conversation Managers.' },
-      };
-
-      const growthMap = {
-        heard: { label: 'Being Understood', desc: 'We\'ll work on Explainer skills — like engaging attention, headlining your message, and checking that your point landed.' },
-        listening: { label: 'Deep Listening', desc: "We'll practice Understander skills — especially feeding back what you've heard in your own words. It's the most powerful and underused skill." },
-        emotions: { label: 'Emotional Navigation', desc: "We'll build Conversation Manager skills — like reading the emotional temperature and responding rather than reacting." },
-        starting: { label: 'Conversation Confidence', desc: "We'll work on preparation and flow — learning to share purpose, manage turn-taking, and keep conversations alive." },
-      };
-
-      // Derive communication style label from life context
-      const contextLabel = {
-        partner: 'in close relationships',
-        work: 'at work',
-        social: 'in social settings',
-        authority: 'in leadership',
-      };
-
-      // Pick strength: prefer emotional/conflict strengths, then understander, then explainer
-      const strengthKey = answers.emotions === 'regulate' ? 'regulate'
-        : answers.slipperyslope === 'repair' ? 'repair'
-        : answers.conflict === 'collaborate' ? 'collaborate'
-        : answers.understander || answers.explainer || 'curious';
-      const strength = strengthMap[strengthKey] || strengthMap.curious;
-      const growth = growthMap[answers.challenge] || growthMap.heard;
-
-      const context = contextLabel[answers.relationships] || '';
-
-      return { strength, growth, context };
-    };
+    // The quiz is now a single unified Feel Understood flow.
+    const getQuizScreens = () => FEEL_UNDERSTOOD_SCREENS;
 
     // ── ProfileQuiz Component ──
+    // Runs the unified Feel Understood questionnaire end-to-end. The user
+    // chooses their next-step path (mode + goal) on the final screen, which
+    // is what hands the full profile back to the parent.
     const ProfileQuiz = ({ onComplete }) => {
       const [step, setStep] = React.useState(0);
-      const [answers, setAnswers] = React.useState({});
+      const [answers, setAnswers] = React.useState({ areas: {}, aspects: [] });
       const [name, setName] = React.useState('');
-      const [mode, setMode] = React.useState(null); // 'coach' | 'facilitator' | null
       const [animDir, setAnimDir] = React.useState('forward');
       const [animating, setAnimating] = React.useState(false);
       const nameInputRef = React.useRef(null);
 
-      const quizScreens = getQuizScreens(mode);
-      const screen = quizScreens[step] || COMMON_SCREENS[0];
-      // Progress based on the full flow length once a mode is chosen.
-      const totalSteps = mode ? quizScreens.length : 14; // approximate full coach length pre-selection
-      const progress = step / (totalSteps - 1);
+      const quizScreens = getQuizScreens();
+      const screen = quizScreens[step] || quizScreens[0];
+      const progress = step / (quizScreens.length - 1);
 
       React.useEffect(() => {
         if (screen.type === 'name-input' && nameInputRef.current) {
@@ -711,14 +599,21 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       const selectOption = (questionId, value) => {
         setAnswers(a => ({ ...a, [questionId]: value }));
-        // Auto-advance after a brief pause
         setTimeout(() => goNext(), 350);
       };
 
-      const selectMode = (chosenMode) => {
-        setMode(chosenMode);
-        // Auto-advance into the mode-specific question set
-        setTimeout(() => goNext(), 350);
+      const setAreaRating = (areaValue, rating) => {
+        setAnswers(a => ({ ...a, areas: { ...(a.areas || {}), [areaValue]: rating } }));
+      };
+
+      const toggleAspect = (aspectValue) => {
+        setAnswers(a => {
+          const current = a.aspects || [];
+          const next = current.includes(aspectValue)
+            ? current.filter(v => v !== aspectValue)
+            : [...current, aspectValue];
+          return { ...a, aspects: next };
+        });
       };
 
       const handleNameSubmit = (e) => {
@@ -726,15 +621,23 @@ Remember: you are holding space for two people to feel heard by each other. Your
         if (name.trim()) goNext();
       };
 
-      const handleFinish = () => {
-        // Facilitator mode has no name-input; coach does.
-        const profile = mode === 'facilitator'
-          ? { mode, ...answers }
-          : { mode, name: name.trim(), ...answers };
+      const handleFinishWithPath = (pathId) => {
+        const path = NEXT_STEPS.find(p => p.id === pathId) || NEXT_STEPS[0];
+        const profile = {
+          mode: path.mode,
+          goal: path.goal,
+          path: path.id,
+          name: name.trim(),
+          feelUnderstood: {
+            areas: answers.areas || {},
+            blame: answers.blame || null,
+            aspects: answers.aspects || [],
+          },
+        };
         onComplete(profile);
       };
 
-      const analysis = analyzeProfile(answers, mode);
+      const analysis = analyzeFeelUnderstoodProfile(answers);
 
       // ── Render current screen ──
       const renderScreen = () => {
@@ -748,86 +651,26 @@ Remember: you are holding space for two people to feel heard by each other. Your
               React.createElement('div', { className: 'quiz-splash-icon' },
                 React.createElement('img', { src: '/images/logo.svg', alt: 'Feel Understood' })
               ),
-              React.createElement('h1', { className: 'quiz-splash-title' }, 'Your conversations shape your life'),
+              React.createElement('h1', { className: 'quiz-splash-title' }, 'Feeling understood changes everything'),
               React.createElement('p', { className: 'quiz-splash-desc' },
-                "Train with a personal coach, or bring someone else along and let us facilitate the conversation together."
+                "When we feel truly understood, relationships deepen, trust grows, and life gets lighter. When we don't, everything feels harder than it should. Let's find out where that shows up for you."
               ),
               React.createElement('div', { className: 'quiz-splash-features' },
                 React.createElement('div', { className: 'quiz-splash-feat' },
                   React.createElement('span', { className: 'quiz-feat-dot' }),
-                  'Based on 30+ years of communication research'
+                  'A short, honest questionnaire to build your profile'
                 ),
                 React.createElement('div', { className: 'quiz-splash-feat' },
                   React.createElement('span', { className: 'quiz-feat-dot' }),
-                  'Two modes: solo coaching or live facilitation'
+                  'A personal reflection, just for you'
                 ),
                 React.createElement('div', { className: 'quiz-splash-feat' },
                   React.createElement('span', { className: 'quiz-feat-dot' }),
-                  'Personalised to how you actually communicate'
+                  'Three ways we can work on it together'
                 ),
               ),
               React.createElement('button', { className: 'quiz-cta', onClick: goNext }, "Let's Go"),
             )
-          );
-        }
-
-        if (screen.type === 'mode-select') {
-          return React.createElement('div', { className: `quiz-screen quiz-mode-select ${animClass}`, key: step },
-            React.createElement('h2', { className: 'quiz-title' }, screen.title),
-            React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
-            React.createElement('div', { className: 'mode-cards' },
-              React.createElement('button', {
-                className: `mode-card mode-card-coach ${mode === 'coach' ? 'mode-card-selected' : ''}`,
-                onClick: () => selectMode('coach'),
-              },
-                React.createElement('div', { className: 'mode-card-icon mode-icon-coach' },
-                  React.createElement('svg', { width: 28, height: 28, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-                    React.createElement('path', { d: 'M12 2L2 7l10 5 10-5-10-5z' }),
-                    React.createElement('path', { d: 'M2 17l10 5 10-5' }),
-                    React.createElement('path', { d: 'M2 12l10 5 10-5' }),
-                  )
-                ),
-                React.createElement('div', { className: 'mode-card-body' },
-                  React.createElement('span', { className: 'mode-card-pill' }, 'Just You'),
-                  React.createElement('h3', { className: 'mode-card-title' }, 'Coach Mode'),
-                  React.createElement('p', { className: 'mode-card-desc' },
-                    'Your personal coach, teacher, trainer, and practice buddy. Learn communication skills, work through real conversations, and role-play tricky scenarios.'
-                  ),
-                  React.createElement('ul', { className: 'mode-card-list' },
-                    React.createElement('li', null, 'Learn & teach communication concepts'),
-                    React.createElement('li', null, 'Coach you through real challenges'),
-                    React.createElement('li', null, 'Role-play scenarios with feedback'),
-                    React.createElement('li', null, 'Quizzes & modules (coming soon)'),
-                  ),
-                ),
-              ),
-              React.createElement('button', {
-                className: `mode-card mode-card-facilitator ${mode === 'facilitator' ? 'mode-card-selected' : ''}`,
-                onClick: () => selectMode('facilitator'),
-              },
-                React.createElement('div', { className: 'mode-card-icon mode-icon-facilitator' },
-                  React.createElement('svg', { width: 28, height: 28, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-                    React.createElement('circle', { cx: 9, cy: 7, r: 3 }),
-                    React.createElement('circle', { cx: 17, cy: 7, r: 3 }),
-                    React.createElement('path', { d: 'M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2' }),
-                    React.createElement('path', { d: 'M14 15h3a4 4 0 0 1 4 4v2' }),
-                  )
-                ),
-                React.createElement('div', { className: 'mode-card-body' },
-                  React.createElement('span', { className: 'mode-card-pill mode-card-pill-pair' }, 'Two People'),
-                  React.createElement('h3', { className: 'mode-card-title' }, 'Facilitator Mode'),
-                  React.createElement('p', { className: 'mode-card-desc' },
-                    "Bring another person. I'll act as a neutral mediator, helping both of you feel understood. Each person says their name before they speak so I always know who's talking."
-                  ),
-                  React.createElement('ul', { className: 'mode-card-list' },
-                    React.createElement('li', null, 'Mediate between two people live'),
-                    React.createElement('li', null, 'Remembers each person separately'),
-                    React.createElement('li', null, 'Helps surface the Slippery Slope'),
-                    React.createElement('li', null, 'Perfect for couples, family, co-founders'),
-                  ),
-                ),
-              ),
-            ),
           );
         }
 
@@ -855,8 +698,18 @@ Remember: you are holding space for two people to feel heard by each other. Your
           );
         }
 
+        if (screen.type === 'intro') {
+          return React.createElement('div', { className: `quiz-screen quiz-intro ${animClass}`, key: step },
+            React.createElement('h2', { className: 'quiz-title' }, screen.title),
+            React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
+            React.createElement('p', { className: 'quiz-intro-body' }, screen.body),
+            React.createElement('button', { className: 'quiz-cta', onClick: goNext }, screen.ctaLabel || 'Continue'),
+          );
+        }
+
         if (screen.type === 'choice') {
           return React.createElement('div', { className: `quiz-screen quiz-choice ${animClass}`, key: step },
+            screen.section && React.createElement('span', { className: 'quiz-section-label' }, screen.section),
             React.createElement('h2', { className: 'quiz-title' }, screen.title),
             React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
             React.createElement('div', { className: 'quiz-options' },
@@ -875,46 +728,140 @@ Remember: you are holding space for two people to feel heard by each other. Your
           );
         }
 
-        if (screen.type === 'profile-reveal') {
-          const isFacilitator = mode === 'facilitator';
-          const headerNode = isFacilitator
-            ? React.createElement('div', { className: 'quiz-reveal-header' },
-                React.createElement('div', { className: 'quiz-reveal-avatar quiz-reveal-avatar-pair' },
-                  React.createElement('svg', { width: 36, height: 36, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-                    React.createElement('circle', { cx: 9, cy: 7, r: 3 }),
-                    React.createElement('circle', { cx: 17, cy: 7, r: 3 }),
-                    React.createElement('path', { d: 'M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2' }),
-                    React.createElement('path', { d: 'M14 15h3a4 4 0 0 1 4 4v2' }),
-                  )
-                ),
-                React.createElement('h2', { className: 'quiz-reveal-name' }, 'Facilitator Mode'),
-                React.createElement('p', { className: 'quiz-reveal-tagline' }, analysis.context ? `How I will show up ${analysis.context}` : 'How I will show up'),
+        if (screen.type === 'scale-list') {
+          const areaRatings = answers.areas || {};
+          const allRated = screen.areas.every(a => typeof areaRatings[a.value] === 'number');
+          return React.createElement('div', { className: `quiz-screen quiz-scale-list ${animClass}`, key: step },
+            screen.section && React.createElement('span', { className: 'quiz-section-label' }, screen.section),
+            React.createElement('h2', { className: 'quiz-title' }, screen.title),
+            React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
+            React.createElement('div', { className: 'scale-list' },
+              screen.areas.map((area) =>
+                React.createElement('div', { className: 'scale-row', key: area.value },
+                  React.createElement('div', { className: 'scale-row-text' },
+                    React.createElement('span', { className: 'scale-row-label' }, area.label),
+                    area.desc && React.createElement('span', { className: 'scale-row-desc' }, area.desc),
+                  ),
+                  React.createElement('div', { className: 'scale-dots' },
+                    [1, 2, 3, 4, 5].map((n) =>
+                      React.createElement('button', {
+                        key: n,
+                        'aria-label': `${area.label}: ${n} of 5`,
+                        className: `scale-dot ${areaRatings[area.value] === n ? 'scale-dot-selected' : ''} ${areaRatings[area.value] >= n ? 'scale-dot-filled' : ''}`,
+                        onClick: () => setAreaRating(area.value, n),
+                      }, n)
+                    )
+                  ),
+                )
               )
-            : React.createElement('div', { className: 'quiz-reveal-header' },
-                React.createElement('div', { className: 'quiz-reveal-avatar' }, name.trim().charAt(0).toUpperCase()),
-                React.createElement('h2', { className: 'quiz-reveal-name' }, name.trim()),
-                React.createElement('p', { className: 'quiz-reveal-tagline' }, analysis.context ? `Your Communication Profile ${analysis.context}` : 'Your Communication Profile'),
-              );
+            ),
+            React.createElement('div', { className: 'scale-legend' },
+              React.createElement('span', null, `1 · ${screen.scale.low}`),
+              React.createElement('span', null, `5 · ${screen.scale.high}`),
+            ),
+            screen.insight && React.createElement('p', { className: 'quiz-insight' }, screen.insight),
+            React.createElement('button', {
+              className: `quiz-cta ${allRated ? '' : 'quiz-cta-disabled'}`,
+              disabled: !allRated,
+              onClick: goNext,
+            }, allRated ? 'Continue' : 'Rate each area to continue'),
+          );
+        }
 
-          const strengthBadge = isFacilitator ? 'My Style' : 'Your Strength';
-          const growthBadge = isFacilitator ? 'Our Focus' : 'Growth Area';
-          const ctaLabel = isFacilitator ? 'Begin Together' : 'Meet Your Coach';
+        if (screen.type === 'multi-select') {
+          const selected = answers.aspects || [];
+          const hasAny = selected.length > 0;
+          return React.createElement('div', { className: `quiz-screen quiz-multi-select ${animClass}`, key: step },
+            screen.section && React.createElement('span', { className: 'quiz-section-label' }, screen.section),
+            React.createElement('h2', { className: 'quiz-title' }, screen.title),
+            React.createElement('p', { className: 'quiz-subtitle' }, screen.subtitle),
+            React.createElement('div', { className: 'quiz-chips' },
+              screen.options.map((opt) =>
+                React.createElement('button', {
+                  key: opt.value,
+                  className: `quiz-chip ${selected.includes(opt.value) ? 'quiz-chip-selected' : ''}`,
+                  onClick: () => toggleAspect(opt.value),
+                }, opt.label)
+              )
+            ),
+            screen.insight && React.createElement('p', { className: 'quiz-insight' }, screen.insight),
+            React.createElement('button', {
+              className: `quiz-cta ${hasAny ? '' : 'quiz-cta-disabled'}`,
+              disabled: !hasAny,
+              onClick: goNext,
+            }, hasAny ? `Continue (${selected.length} selected)` : 'Pick at least one to continue'),
+          );
+        }
 
-          return React.createElement('div', { className: `quiz-screen quiz-reveal ${animClass}`, key: step },
-            headerNode,
-            React.createElement('div', { className: 'quiz-reveal-cards' },
-              React.createElement('div', { className: 'quiz-reveal-card quiz-strength-card' },
-                React.createElement('span', { className: 'quiz-card-badge quiz-badge-strength' }, strengthBadge),
-                React.createElement('h3', null, analysis.strength.label),
-                React.createElement('p', null, analysis.strength.desc),
+        if (screen.type === 'summary') {
+          const s = buildFeelUnderstoodSummary(screen.from, answers, name);
+          return React.createElement('div', { className: `quiz-screen quiz-summary ${animClass}`, key: step },
+            screen.section && React.createElement('span', { className: 'quiz-section-label' }, screen.section),
+            React.createElement('div', { className: 'quiz-summary-card' },
+              React.createElement('div', { className: 'quiz-summary-avatar' },
+                React.createElement('img', { src: '/images/icon-avatar.svg', alt: '', width: 28, height: 28, className: 'doodle-icon' })
               ),
-              React.createElement('div', { className: 'quiz-reveal-card quiz-growth-card' },
-                React.createElement('span', { className: 'quiz-card-badge quiz-badge-growth' }, growthBadge),
-                React.createElement('h3', null, analysis.growth.label),
-                React.createElement('p', null, analysis.growth.desc),
+              React.createElement('h2', { className: 'quiz-summary-heading' }, s.heading),
+              React.createElement('p', { className: 'quiz-summary-body' }, s.body),
+            ),
+            React.createElement('button', { className: 'quiz-cta', onClick: goNext }, 'Keep going'),
+          );
+        }
+
+        if (screen.type === 'fu-reveal') {
+          const initial = (name.trim().charAt(0) || '?').toUpperCase();
+          const aspectsText = analysis.aspects.length
+            ? analysis.aspects.slice(0, 3).join(', ') + (analysis.aspects.length > 3 ? `, and ${analysis.aspects.length - 3} more` : '')
+            : "nothing you flagged today — but come back to this when something surfaces.";
+          return React.createElement('div', { className: `quiz-screen quiz-reveal ${animClass}`, key: step },
+            React.createElement('div', { className: 'quiz-reveal-header' },
+              React.createElement('div', { className: 'quiz-reveal-avatar' }, initial),
+              React.createElement('h2', { className: 'quiz-reveal-name' }, name.trim() || 'Your profile'),
+              React.createElement('p', { className: 'quiz-reveal-tagline' }, 'Your Feel Understood profile'),
+            ),
+            React.createElement('div', { className: 'quiz-reveal-cards' },
+              analysis.leastAreaLabel && React.createElement('div', { className: 'quiz-reveal-card quiz-strength-card' },
+                React.createElement('span', { className: 'quiz-card-badge quiz-badge-strength' }, 'Where it hurts most'),
+                React.createElement('h3', null, `Your ${analysis.leastAreaLabel}`),
+                React.createElement('p', null, `This is the area of your life where you feel least understood right now. We\u2019ll come back to it.`),
+              ),
+              analysis.blame && React.createElement('div', { className: 'quiz-reveal-card quiz-growth-card' },
+                React.createElement('span', { className: 'quiz-card-badge quiz-badge-growth' }, 'Your mindset'),
+                React.createElement('h3', null, analysis.blame.label),
+                React.createElement('p', null, analysis.blame.desc),
+              ),
+              React.createElement('div', { className: 'quiz-reveal-card quiz-aspects-card' },
+                React.createElement('span', { className: 'quiz-card-badge quiz-badge-aspects' }, 'Sides of you that feel unseen'),
+                React.createElement('h3', null, `${analysis.aspects.length || 'No'} aspect${analysis.aspects.length === 1 ? '' : 's'} named`),
+                React.createElement('p', null, aspectsText),
               ),
             ),
-            React.createElement('button', { className: 'quiz-cta quiz-cta-final', onClick: handleFinish }, ctaLabel),
+            React.createElement('p', { className: 'quiz-reveal-outro' },
+              "Feeling understood is the oxygen of every relationship. On the next screen I\u2019ll offer three ways we can work on it together."
+            ),
+            React.createElement('button', { className: 'quiz-cta quiz-cta-final', onClick: goNext }, 'See my options'),
+          );
+        }
+
+        if (screen.type === 'fu-next-steps') {
+          return React.createElement('div', { className: `quiz-screen quiz-next-steps ${animClass}`, key: step },
+            React.createElement('span', { className: 'quiz-section-label' }, 'Three ways to go from here'),
+            React.createElement('h2', { className: 'quiz-title' }, `Where would you like to start, ${name.trim() || 'friend'}?`),
+            React.createElement('p', { className: 'quiz-subtitle' }, "Pick one. You can always come back and choose another."),
+            React.createElement('div', { className: 'next-step-cards' },
+              NEXT_STEPS.map((step) =>
+                React.createElement('button', {
+                  key: step.id,
+                  className: `next-step-card next-step-card-${step.id}`,
+                  onClick: () => handleFinishWithPath(step.id),
+                },
+                  React.createElement('span', { className: 'next-step-tag' }, step.tag),
+                  React.createElement('h3', { className: 'next-step-title' }, step.title),
+                  React.createElement('p', { className: 'next-step-desc' }, step.desc),
+                  React.createElement('span', { className: 'next-step-arrow', 'aria-hidden': true }, '\u2192'),
+                )
+              )
+            ),
           );
         }
 
@@ -922,9 +869,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       return React.createElement('div', { className: 'quiz-container' },
-        // Progress bar (hidden on splash)
         step > 0 && React.createElement('div', { className: 'quiz-progress-wrap' },
-          step > 0 && React.createElement('button', {
+          React.createElement('button', {
             className: 'quiz-back-btn',
             onClick: goBack,
             'aria-label': 'Go back',
@@ -1703,7 +1649,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.6.0')
+          }, 'v1.7.0')
         )
       );
     };

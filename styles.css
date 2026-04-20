@@ -688,6 +688,275 @@ html, body {
   color: var(--green);
 }
 
+/* ===== FEEL UNDERSTOOD QUESTIONNAIRE ===== */
+
+/* Small label that sits above the title, e.g. "Part 1 of 3" */
+.quiz-section-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  align-self: flex-start;
+}
+
+/* Intro screen (text only) */
+.quiz-intro {
+  justify-content: center;
+}
+.quiz-intro-body {
+  font-size: 15px;
+  color: var(--text);
+  opacity: 0.9;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+/* Scale list: one row per area, 5 dots each */
+.scale-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.scale-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--surface-2);
+  border-radius: 14px;
+}
+.scale-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.scale-row-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+.scale-row-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.scale-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+.scale-dot {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid var(--surface-2);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.scale-dot:hover {
+  border-color: rgba(255, 210, 31, 0.5);
+  color: var(--text);
+}
+.scale-dot:active { transform: scale(0.94); }
+.scale-dot-filled {
+  background: rgba(255, 210, 31, 0.12);
+  color: var(--accent);
+  border-color: rgba(255, 210, 31, 0.4);
+}
+.scale-dot-selected {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.scale-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0 4px 16px;
+}
+
+/* Multi-select chips */
+.quiz-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.quiz-chip {
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--surface-2);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.quiz-chip:hover {
+  border-color: rgba(255, 210, 31, 0.35);
+}
+.quiz-chip:active { transform: scale(0.97); }
+.quiz-chip-selected {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Section reflection / summary card */
+.quiz-summary {
+  justify-content: center;
+}
+.quiz-summary-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-2);
+  border-radius: 18px;
+  padding: 24px 22px;
+  margin-bottom: 28px;
+  position: relative;
+  animation: fadeInUp 0.5s ease-out;
+}
+.quiz-summary-avatar {
+  position: absolute;
+  top: -18px;
+  left: 22px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bg);
+}
+.quiz-summary-heading {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.25;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.quiz-summary-body {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  opacity: 0.92;
+}
+
+/* Profile reveal extras (unseen-aspects card + outro) */
+.quiz-aspects-card {
+  background: rgba(138, 180, 248, 0.06);
+  border: 1px solid rgba(138, 180, 248, 0.18);
+}
+.quiz-badge-aspects {
+  background: rgba(138, 180, 248, 0.15);
+  color: #8ab4f8;
+}
+.quiz-reveal-outro {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  text-align: center;
+  padding: 0 4px;
+}
+
+/* Next-steps cards */
+.quiz-next-steps {
+  padding-top: calc(12px + var(--safe-top));
+}
+.next-step-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+.next-step-card {
+  position: relative;
+  padding: 18px 46px 20px 18px;
+  background: var(--surface);
+  border: 1.5px solid var(--surface-2);
+  border-radius: 16px;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.next-step-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+.next-step-card:active { transform: scale(0.99); }
+.next-step-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.next-step-card-facilitator .next-step-tag {
+  background: rgba(171, 214, 0, 0.15);
+  color: var(--green);
+}
+.next-step-card-helpline .next-step-tag {
+  background: rgba(138, 180, 248, 0.15);
+  color: #8ab4f8;
+}
+.next-step-title {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+.next-step-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.next-step-arrow {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  font-size: 22px;
+  color: var(--accent);
+  opacity: 0.7;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.next-step-card:hover .next-step-arrow {
+  opacity: 1;
+  transform: translate(4px, -50%);
+}
+
 /* Quiz responsive */
 @media (max-width: 480px) {
   .quiz-splash-title { font-size: 26px; }
@@ -697,6 +966,10 @@ html, body {
   .quiz-name-input { font-size: 18px; }
   .mode-card-title { font-size: 20px; }
   .mode-card { padding: 16px; }
+  .scale-dot { height: 34px; font-size: 12px; }
+  .scale-row { padding: 12px 14px; }
+  .quiz-summary-heading { font-size: 20px; }
+  .next-step-title { font-size: 20px; }
 }
 
 /* ===== APP SHELL ===== */
