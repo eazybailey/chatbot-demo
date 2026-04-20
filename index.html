@@ -1196,6 +1196,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const [messages, setMessages] = React.useState(savedConvo ? savedConvo.messages : []);
       const [activeConvoId, setActiveConvoId] = React.useState(savedConvo ? savedConvo.id : null);
       const [showHistory, setShowHistory] = React.useState(false);
+      const [showModeSwitcher, setShowModeSwitcher] = React.useState(false);
       const [conversations, setConversations] = React.useState(() => loadConversations());
       const [voiceState, setVoiceState] = React.useState('idle');
       const [interimText, setInterimText] = React.useState('');
@@ -1437,6 +1438,39 @@ Remember: you are holding space for two people to feel heard by each other. Your
         }
       };
 
+      // Switch the active chat path (Lessons / Helpline / Facilitator) without
+      // re-running the questionnaire. Starts a fresh conversation with the
+      // greeting appropriate to the newly chosen path.
+      const handleSwitchPath = (pathId) => {
+        const path = NEXT_STEPS.find(p => p.id === pathId);
+        if (!path) return;
+        if (profile && profile.path === pathId) {
+          setShowModeSwitcher(false);
+          return;
+        }
+        cancelSpeak();
+        const updatedProfile = {
+          ...(profile || {}),
+          mode: path.mode,
+          goal: path.goal,
+          path: path.id,
+        };
+        setProfile(updatedProfile);
+        profileRef.current = updatedProfile;
+        saveProfile(updatedProfile);
+        const greeting = buildGreeting(updatedProfile);
+        startNewConversation([{ role: 'assistant', content: greeting }]);
+        setVoiceState('idle');
+        setInterimText('');
+        setTextInput('');
+        setError(null);
+        setShowModeSwitcher(false);
+        setTimeout(() => {
+          setVoiceState('speaking');
+          speak(greeting).then(() => setVoiceState('idle'));
+        }, 400);
+      };
+
       const handleStartOver = () => {
         cancelSpeak();
         setProfile(null);
@@ -1521,10 +1555,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
               )
             ),
             React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
-            profile?.mode && React.createElement('span', {
-              className: `mode-badge mode-badge-${profile.mode}`,
-              title: profile.mode === 'facilitator' ? 'Facilitating a conversation between two people' : 'Your one-on-one coach',
-            }, profile.mode === 'facilitator' ? 'Facilitator' : 'Coach'),
+            profile?.mode && React.createElement('button', {
+              className: `mode-badge mode-badge-${profile.path || profile.mode} mode-badge-btn`,
+              onClick: () => setShowModeSwitcher(true),
+              title: 'Switch mode',
+            },
+              (NEXT_STEPS.find(p => p.id === profile.path)?.tag) || (profile.mode === 'facilitator' ? 'Facilitator' : 'Coach'),
+              React.createElement('svg', { width: 10, height: 10, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true, style: { marginLeft: 4 } },
+                React.createElement('polyline', { points: '6 9 12 15 18 9' })
+              ),
+            ),
           ),
           React.createElement('button', {
             className: 'new-chat-btn',
@@ -1571,6 +1611,40 @@ Remember: you are holding space for two people to feel heard by each other. Your
               className: 'history-start-over-btn',
               onClick: handleStartOver,
             }, 'Reset Profile & Start Over'),
+          ),
+        ),
+
+        // Mode switcher sheet — lets the user swap between Lessons / Helpline / Facilitator
+        showModeSwitcher && React.createElement('div', {
+          className: 'mode-switcher-overlay',
+          onClick: () => setShowModeSwitcher(false),
+        }),
+        showModeSwitcher && React.createElement('div', { className: 'mode-switcher-sheet', role: 'dialog', 'aria-label': 'Switch mode' },
+          React.createElement('div', { className: 'mode-switcher-header' },
+            React.createElement('h3', null, 'Switch mode'),
+            React.createElement('button', {
+              className: 'mode-switcher-close',
+              onClick: () => setShowModeSwitcher(false),
+              'aria-label': 'Close',
+            }, '\u00D7'),
+          ),
+          React.createElement('p', { className: 'mode-switcher-sub' },
+            "Pick a different way to work together. This will start a fresh conversation \u2014 your profile and past chats stay."
+          ),
+          React.createElement('div', { className: 'next-step-cards mode-switcher-cards' },
+            NEXT_STEPS.map((path) => {
+              const active = profile?.path === path.id;
+              return React.createElement('button', {
+                key: path.id,
+                className: `next-step-card next-step-card-${path.id} ${active ? 'next-step-card-active' : ''}`,
+                onClick: () => handleSwitchPath(path.id),
+              },
+                React.createElement('span', { className: 'next-step-tag' }, active ? 'Current' : path.tag),
+                React.createElement('h3', { className: 'next-step-title' }, path.title),
+                React.createElement('p', { className: 'next-step-desc' }, path.desc),
+                !active && React.createElement('span', { className: 'next-step-arrow', 'aria-hidden': true }, '\u2192'),
+              );
+            })
           ),
         ),
 

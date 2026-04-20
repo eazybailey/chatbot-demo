@@ -1027,15 +1027,110 @@ html, body {
   margin-left: 4px;
   white-space: nowrap;
 }
-.mode-badge-coach {
+.mode-badge-coach,
+.mode-badge-lessons {
   background: rgba(255, 210, 31, 0.15);
   color: var(--accent);
   border: 1px solid rgba(255, 210, 31, 0.25);
+}
+.mode-badge-helpline {
+  background: rgba(138, 180, 248, 0.15);
+  color: #8ab4f8;
+  border: 1px solid rgba(138, 180, 248, 0.25);
 }
 .mode-badge-facilitator {
   background: rgba(171, 214, 0, 0.15);
   color: var(--green);
   border: 1px solid rgba(171, 214, 0, 0.25);
+}
+.mode-badge-btn {
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: filter 0.15s, transform 0.15s;
+}
+.mode-badge-btn:hover { filter: brightness(1.1); }
+.mode-badge-btn:active { transform: scale(0.96); }
+
+/* ===== MODE SWITCHER SHEET ===== */
+.mode-switcher-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 90;
+  animation: fadeIn 0.2s ease-out;
+}
+.mode-switcher-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 18px 18px calc(22px + var(--safe-bottom));
+  z-index: 100;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+  animation: sheetSlideUp 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mode-switcher-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.mode-switcher-header h3 {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 22px;
+  font-weight: 400;
+}
+.mode-switcher-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-family: inherit;
+}
+.mode-switcher-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.mode-switcher-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.mode-switcher-cards { margin-top: 4px; margin-bottom: 0; }
+.next-step-card-active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  cursor: default;
+}
+.next-step-card-active:hover {
+  transform: none;
+  box-shadow: none;
+}
+.next-step-card-active .next-step-tag {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 .facilitator-hint {
