@@ -302,13 +302,15 @@ html, body {
 }
 
 .quiz-splash-icon {
-  margin-bottom: 28px;
+  margin: 0 auto 28px;
   width: 100%;
-  max-width: 320px;
+  max-width: 240px;
+  aspect-ratio: 1 / 1;
 }
 .quiz-splash-icon img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
 }
 
 .quiz-splash-title {
@@ -1743,12 +1745,16 @@ html, body {
 
 /* Dark-mode: desaturate colored decorative SVGs to stay greyscale */
 [data-theme="dark"] .onboarding-logo img,
-[data-theme="dark"] .quiz-splash-icon img,
 [data-theme="dark"] .feature-icon img,
 [data-theme="dark"] .mode-card-icon img,
 [data-theme="dark"] .avatar img,
 [data-theme="dark"] .header-icon img {
   filter: grayscale(1) brightness(1.05);
+}
+
+/* Splash logo: black-on-white doodle — invert to white-on-black for dark mode */
+[data-theme="dark"] .quiz-splash-icon img {
+  filter: invert(1);
 }
 
 /* Light-mode: soften heavy shadows inherited from original dark theme */
