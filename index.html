@@ -1222,6 +1222,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
       });
       const [showModeMenu, setShowModeMenu] = React.useState(false);
       const [showBasecamp, setShowBasecamp] = React.useState(false);
+      const [showAbout, setShowAbout] = React.useState(false);
+      const [showInsights, setShowInsights] = React.useState(false);
 
       React.useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -1562,10 +1564,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
             React.createElement('button', {
               className: 'history-toggle-btn',
               onClick: () => setShowHistory(!showHistory),
-              'aria-label': 'Conversation history',
-              title: 'Conversation history',
+              'aria-label': 'Menu',
+              title: 'Menu',
             },
-              React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+              React.createElement('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
                 React.createElement('line', { x1: 3, y1: 6, x2: 21, y2: 6 }),
                 React.createElement('line', { x1: 3, y1: 12, x2: 21, y2: 12 }),
                 React.createElement('line', { x1: 3, y1: 18, x2: 21, y2: 18 }),
@@ -1577,60 +1579,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
               'aria-label': 'Basecamp — home',
               title: 'Basecamp',
             },
-              React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-                React.createElement('path', { d: 'M3 11l9-8 9 8' }),
-                React.createElement('path', { d: 'M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10' }),
+              React.createElement('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                React.createElement('path', { d: 'M3 20h18' }),
+                React.createElement('path', { d: 'M5 20L12 4l7 16' }),
+                React.createElement('path', { d: 'M12 4v16' }),
+                React.createElement('path', { d: 'M10 20l2-3 2 3' }),
               )
             ),
             React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
-            profile && React.createElement('div', { className: 'mode-switcher' },
-              React.createElement('button', {
-                className: `mode-switcher-btn mode-badge-${profile.mode}`,
-                onClick: () => setShowModeMenu(v => !v),
-                'aria-haspopup': 'menu',
-                'aria-expanded': showModeMenu,
-                title: 'Switch mode',
-              },
-                React.createElement('span', null,
-                  (NEXT_STEPS.find(p => p.id === profile.path) || { label: profile.mode === 'facilitator' ? 'Facilitator' : 'Coach' }).label
-                ),
-                React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round', className: `mode-switcher-chev ${showModeMenu ? 'open' : ''}` },
-                  React.createElement('polyline', { points: '6 9 12 15 18 9' })
-                )
-              ),
-              showModeMenu && React.createElement('div', { className: 'mode-menu-backdrop', onClick: () => setShowModeMenu(false) }),
-              showModeMenu && React.createElement('div', { className: 'mode-menu', role: 'menu' },
-                NEXT_STEPS.map(p => React.createElement('button', {
-                  key: p.id,
-                  className: `mode-menu-item ${profile.path === p.id ? 'mode-menu-item-active' : ''}`,
-                  onClick: () => handleSwitchMode(p.id),
-                  role: 'menuitem',
-                },
-                  React.createElement('span', { className: 'mode-menu-tag' }, p.tag),
-                  React.createElement('span', { className: 'mode-menu-title' }, p.title),
-                  React.createElement('span', { className: 'mode-menu-desc' }, p.desc),
-                ))
-              )
-            ),
           ),
           React.createElement('div', { className: 'header-right' },
-            React.createElement('button', {
-              className: 'theme-toggle-btn',
-              onClick: toggleTheme,
-              'aria-label': theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
-              title: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
-            },
-              theme === 'dark'
-                // Sun icon (currently dark, click to go light)
-                ? React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-                    React.createElement('circle', { cx: 12, cy: 12, r: 4 }),
-                    React.createElement('path', { d: 'M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41' }),
-                  )
-                // Moon icon (currently light, click to go dark)
-                : React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-                    React.createElement('path', { d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' }),
-                  )
-            ),
             React.createElement('button', {
               className: 'new-chat-btn',
               onClick: handleNewChat,
@@ -1692,18 +1650,39 @@ Remember: you are holding space for two people to feel heard by each other. Your
           ),
         ),
 
-        // History drawer
+        // Navigation drawer (modes, conversations, about/insights, theme toggle)
         showHistory && React.createElement('div', { className: 'history-overlay', onClick: () => setShowHistory(false) }),
         React.createElement('div', { className: `history-drawer ${showHistory ? 'history-open' : ''}` },
           React.createElement('div', { className: 'history-header' },
-            React.createElement('h3', null, 'Conversations'),
+            React.createElement('h3', null, 'Menu'),
             React.createElement('button', {
               className: 'history-close-btn',
               onClick: () => setShowHistory(false),
-              'aria-label': 'Close history',
+              'aria-label': 'Close menu',
             }, '\u00D7'),
           ),
-          React.createElement('div', { className: 'history-list' },
+          React.createElement('div', { className: 'drawer-scroll' },
+          // Modes section — switch between the 3 paths
+          profile && React.createElement('div', { className: 'drawer-section', key: 'modes' },
+            React.createElement('div', { className: 'drawer-section-label' }, 'Mode'),
+            NEXT_STEPS.map(p => React.createElement('button', {
+              key: p.id,
+              className: `drawer-mode-item drawer-mode-${p.id} ${profile.path === p.id ? 'drawer-mode-item-active' : ''}`,
+              onClick: () => { handleSwitchMode(p.id); setShowHistory(false); },
+            },
+              React.createElement('span', { className: 'drawer-mode-dot' }),
+              React.createElement('span', { className: 'drawer-mode-text' },
+                React.createElement('span', { className: 'drawer-mode-label' }, p.label),
+                React.createElement('span', { className: 'drawer-mode-sub' }, p.tag),
+              ),
+              profile.path === p.id && React.createElement('span', { className: 'drawer-mode-check', 'aria-hidden': true }, 'Active'),
+            )),
+          ),
+
+          // Conversations section
+          React.createElement('div', { className: 'drawer-section', key: 'convos' },
+            React.createElement('div', { className: 'drawer-section-label' }, 'Conversations'),
+            React.createElement('div', { className: 'history-list' },
             conversations.length === 0
               ? React.createElement('p', { className: 'history-empty' }, 'No conversations yet')
               : conversations.map(c =>
@@ -1724,12 +1703,139 @@ Remember: you are holding space for two people to feel heard by each other. Your
                     }, '\u00D7'),
                   )
                 )
+            ),
           ),
+
+          // More section — About, Insights
+          React.createElement('div', { className: 'drawer-section', key: 'more' },
+            React.createElement('div', { className: 'drawer-section-label' }, 'More'),
+            React.createElement('button', {
+              className: 'drawer-link',
+              onClick: () => { setShowAbout(true); setShowHistory(false); },
+            },
+              React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                React.createElement('circle', { cx: 12, cy: 12, r: 10 }),
+                React.createElement('line', { x1: 12, y1: 8, x2: 12, y2: 8 }),
+                React.createElement('polyline', { points: '11 12 12 12 12 16 13 16' }),
+              ),
+              React.createElement('span', null, 'About'),
+            ),
+            React.createElement('button', {
+              className: 'drawer-link',
+              onClick: () => { setShowInsights(true); setShowHistory(false); },
+            },
+              React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                React.createElement('path', { d: 'M3 3v18h18' }),
+                React.createElement('path', { d: 'M7 15l3-4 3 2 4-6' }),
+              ),
+              React.createElement('span', null, 'Insights'),
+            ),
+          ),
+          ), // end drawer-scroll
+
           React.createElement('div', { className: 'history-footer' },
+            React.createElement('button', {
+              className: 'drawer-theme-toggle',
+              onClick: toggleTheme,
+              'aria-label': theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+            },
+              theme === 'dark'
+                ? React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('circle', { cx: 12, cy: 12, r: 4 }),
+                    React.createElement('path', { d: 'M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41' }),
+                  )
+                : React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('path', { d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' }),
+                  ),
+              React.createElement('span', null, theme === 'dark' ? 'Light mode' : 'Dark mode'),
+            ),
             React.createElement('button', {
               className: 'history-start-over-btn',
               onClick: handleStartOver,
             }, 'Reset Profile & Start Over'),
+          ),
+        ),
+
+        // About screen
+        showAbout && React.createElement('div', { className: 'info-screen' },
+          React.createElement('button', {
+            className: 'info-close',
+            onClick: () => setShowAbout(false),
+            'aria-label': 'Close about',
+          },
+            React.createElement('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+              React.createElement('line', { x1: 18, y1: 6, x2: 6, y2: 18 }),
+              React.createElement('line', { x1: 6, y1: 6, x2: 18, y2: 18 }),
+            )
+          ),
+          React.createElement('div', { className: 'info-inner' },
+            React.createElement('div', { className: 'info-eyebrow' }, 'About'),
+            React.createElement('h1', { className: 'info-title' }, 'Feel Understood'),
+            React.createElement('p', { className: 'info-lede' },
+              'A voice-first coach for the conversations that matter. Slow down, notice, and choose how you want to show up.'
+            ),
+            React.createElement('div', { className: 'info-card' },
+              React.createElement('h3', null, 'The Dialogue System'),
+              React.createElement('p', null,
+                'This app is built on the Dialogue System framework by Gerard Egan and Andrew Bailey — a practical approach to the three roles in every conversation: Explainer, Understander, and Conversation Manager.'
+              ),
+            ),
+            React.createElement('div', { className: 'info-card' },
+              React.createElement('h3', null, 'Three ways to use it'),
+              React.createElement('ul', { className: 'info-list' },
+                React.createElement('li', null, React.createElement('strong', null, 'Coach'), ' — lessons and practice on the skills of effective dialogue.'),
+                React.createElement('li', null, React.createElement('strong', null, 'Helpline'), ' — bring a specific conversation you want to plan, unpack, or rehearse.'),
+                React.createElement('li', null, React.createElement('strong', null, 'Facilitator'), ' — invite another person in; I hold neutral space so you both feel heard.'),
+              ),
+            ),
+            React.createElement('p', { className: 'info-footnote' },
+              'Your conversations stay on this device. No account required.'
+            ),
+          ),
+        ),
+
+        // Insights screen
+        showInsights && React.createElement('div', { className: 'info-screen' },
+          React.createElement('button', {
+            className: 'info-close',
+            onClick: () => setShowInsights(false),
+            'aria-label': 'Close insights',
+          },
+            React.createElement('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+              React.createElement('line', { x1: 18, y1: 6, x2: 6, y2: 18 }),
+              React.createElement('line', { x1: 6, y1: 6, x2: 18, y2: 18 }),
+            )
+          ),
+          React.createElement('div', { className: 'info-inner' },
+            React.createElement('div', { className: 'info-eyebrow' }, 'Insights'),
+            React.createElement('h1', { className: 'info-title' }, 'Your practice, at a glance'),
+            React.createElement('p', { className: 'info-lede' },
+              'A quiet window on the work you’ve been doing here.'
+            ),
+            React.createElement('div', { className: 'info-stats' },
+              React.createElement('div', { className: 'info-stat' },
+                React.createElement('span', { className: 'info-stat-num' }, conversations.length),
+                React.createElement('span', { className: 'info-stat-label' }, conversations.length === 1 ? 'conversation' : 'conversations'),
+              ),
+              React.createElement('div', { className: 'info-stat' },
+                React.createElement('span', { className: 'info-stat-num' },
+                  conversations.reduce((sum, c) => sum + (c.messages?.length || 0), 0)
+                ),
+                React.createElement('span', { className: 'info-stat-label' }, 'messages exchanged'),
+              ),
+              React.createElement('div', { className: 'info-stat' },
+                React.createElement('span', { className: 'info-stat-num-sm' },
+                  profile ? (NEXT_STEPS.find(p => p.id === profile.path)?.label || '—') : '—'
+                ),
+                React.createElement('span', { className: 'info-stat-label' }, 'current mode'),
+              ),
+            ),
+            React.createElement('div', { className: 'info-card' },
+              React.createElement('h3', null, 'Coming soon'),
+              React.createElement('p', null,
+                'Patterns across your conversations — recurring themes, the skills you lean on, and where growth is showing up. For now, the best insight is the one you notice in the moment.'
+              ),
+            ),
           ),
         ),
 
