@@ -1142,6 +1142,20 @@ html, body {
 }
 .new-chat-btn:hover { background: rgba(var(--accent-rgb), 0.25); }
 
+.basecamp-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--green-ink);
+  background: rgba(var(--green-rgb), 0.15);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.basecamp-btn:hover { background: rgba(var(--green-rgb), 0.25); }
+
 /* ===== HISTORY DRAWER ===== */
 .history-overlay {
   position: fixed;
