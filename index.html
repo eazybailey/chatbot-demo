@@ -1846,9 +1846,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
             helpline: { label: 'Helpline', text: 'Unpacking a conversation that matters.' },
             facilitator: { label: 'Facilitator Mode', text: 'Each of you, say your name before you speak — e.g. "Sarah: I felt..."' },
           };
-          const h = hints[profile.path];
-          if (!h) return null;
-          return React.createElement('div', { className: `mode-hint mode-hint-${profile.path}` },
+          // Fall back to mode if path is missing or unknown (e.g. profiles saved before paths existed)
+          const pathKey = hints[profile.path]
+            ? profile.path
+            : (profile.mode === 'facilitator' ? 'facilitator' : 'lessons');
+          const h = hints[pathKey];
+          return React.createElement('div', { className: `mode-hint mode-hint-${pathKey}` },
             React.createElement('strong', null, h.label + ' · '),
             h.text,
           );
