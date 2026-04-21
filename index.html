@@ -1839,11 +1839,23 @@ Remember: you are holding space for two people to feel heard by each other. Your
           ),
         ),
 
-        // Facilitator hint banner — reminds users to say their name
-        profile?.mode === 'facilitator' && React.createElement('div', { className: 'facilitator-hint' },
-          React.createElement('strong', null, 'Facilitator Mode · '),
-          'Each of you, say your name before you speak — e.g. "Sarah: I felt..."'
-        ),
+        // Mode indicator banner — shows which mode you're currently in
+        profile && (() => {
+          const hints = {
+            lessons: { label: 'Coach Mode', text: 'Learning the skills of dialogue.' },
+            helpline: { label: 'Helpline', text: 'Unpacking a conversation that matters.' },
+            facilitator: { label: 'Facilitator Mode', text: 'Each of you, say your name before you speak — e.g. "Sarah: I felt..."' },
+          };
+          // Fall back to mode if path is missing or unknown (e.g. profiles saved before paths existed)
+          const pathKey = hints[profile.path]
+            ? profile.path
+            : (profile.mode === 'facilitator' ? 'facilitator' : 'lessons');
+          const h = hints[pathKey];
+          return React.createElement('div', { className: `mode-hint mode-hint-${pathKey}` },
+            React.createElement('strong', null, h.label + ' · '),
+            h.text,
+          );
+        })(),
 
         // Messages
         React.createElement('main', { className: 'chat-area' },
