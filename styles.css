@@ -1,5 +1,4 @@
 /* Feel Understood — Your Conversation Coach — App Styles */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Patrick+Hand&display=swap');
 
 :root {
   /* Light mode — happy, positive, approachable */
@@ -53,7 +52,7 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
@@ -96,7 +95,7 @@ html, body {
   font-weight: 400;
   margin-bottom: 8px;
   letter-spacing: 0.5px;
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
 }
 
 .onboarding-sub {
@@ -313,7 +312,7 @@ html, body {
 }
 
 .quiz-splash-title {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 30px;
   font-weight: 400;
   line-height: 1.2;
@@ -380,7 +379,7 @@ html, body {
 
 /* Quiz titles */
 .quiz-title {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 26px;
   font-weight: 400;
   line-height: 1.25;
@@ -509,11 +508,11 @@ html, body {
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
 }
 
 .quiz-reveal-name {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 28px;
   font-weight: 400;
   margin-bottom: 4px;
@@ -676,7 +675,7 @@ html, body {
 }
 
 .mode-card-title {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 22px;
   font-weight: 400;
   line-height: 1.1;
@@ -884,7 +883,7 @@ html, body {
   color: var(--on-accent);
 }
 .quiz-summary-heading {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 22px;
   font-weight: 400;
   line-height: 1.25;
@@ -967,7 +966,7 @@ html, body {
   color: #8ab4f8;
 }
 .next-step-title {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 22px;
   font-weight: 400;
   line-height: 1.2;
@@ -1854,7 +1853,7 @@ html, body {
 }
 
 .basecamp-title {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 36px;
   font-weight: 400;
   line-height: 1.15;
@@ -1907,7 +1906,7 @@ html, body {
 }
 
 .basecamp-prompt {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 22px;
   color: var(--text);
   text-align: center;
@@ -2145,7 +2144,7 @@ html, body {
 }
 
 .info-title {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 34px;
   font-weight: 400;
   line-height: 1.15;
@@ -2239,13 +2238,13 @@ html, body {
   text-align: center;
 }
 .info-stat-num {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 36px;
   line-height: 1;
   color: var(--accent-ink);
 }
 .info-stat-num-sm {
-  font-family: 'Patrick Hand', cursive;
+  font-family: Arial, sans-serif;
   font-size: 22px;
   line-height: 1.1;
   color: var(--accent-ink);
