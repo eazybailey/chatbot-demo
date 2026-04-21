@@ -1,15 +1,14 @@
-const CACHE_NAME = 'feel-understood-v10';
+const CACHE_NAME = 'feel-understood-v11';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
   '/manifest.json',
-  '/images/favicon.svg',
-  '/images/logo.svg',
+  '/images/logo-feel-understood.png',
+  '/images/favicon-64.png',
   '/images/icon-192.png',
   '/images/icon-512.png',
   '/images/apple-touch-icon.png',
-  '/images/icon-app.svg',
   '/images/icon-learn.svg',
   '/images/icon-coach.svg',
   '/images/icon-practice.svg',
