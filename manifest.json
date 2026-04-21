@@ -1,7 +1,7 @@
 {
-  "name": "Feel Understood — Your Conversation Coach",
+  "name": "Feel Understood — Your Conversation Partner",
   "short_name": "Feel Understood",
-  "description": "Feel Understood — Your Conversation Coach. Practice better conversations with AI.",
+  "description": "Feel Understood — Your Conversation Partner. Practice better conversations with AI.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

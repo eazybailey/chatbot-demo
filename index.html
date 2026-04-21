@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Feel Understood">
-  <meta name="description" content="Feel Understood — Your Conversation Coach. Practice better conversations with AI. Learn, get coached, and role-play real scenarios.">
-  <title>Feel Understood — Your Conversation Coach</title>
+  <meta name="description" content="Feel Understood — Your Conversation Partner. Practice better conversations with AI. Learn, get coached, and role-play real scenarios.">
+  <title>Feel Understood — Your Conversation Partner</title>
   <script>
     // Apply persisted theme before render to avoid flash. Defaults to light.
     (function() {
@@ -318,7 +318,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
     };
 
     const buildCoachGreeting = (profile) => {
-      if (!profile) return "Hey! Welcome to Feel Understood. I'm your Conversation Coach. What would you like to work on?";
+      if (!profile) return "Hey! Welcome to Feel Understood. I'm your Conversation Partner. What would you like to work on?";
 
       const name = profile.name || 'friend';
       const fu = profile.feelUnderstood || {};
@@ -1573,7 +1573,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
                 React.createElement('line', { x1: 3, y1: 18, x2: 21, y2: 18 }),
               )
             ),
-            React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
+            React.createElement('div', { className: 'header-title-wrap' },
+              React.createElement('span', { className: 'header-title' }, 'Feel Understood'),
+              React.createElement('span', { className: 'header-subtitle' }, 'Your Conversation Partner'),
+            ),
           ),
           React.createElement('div', { className: 'header-right' },
             profile && React.createElement('button', {
