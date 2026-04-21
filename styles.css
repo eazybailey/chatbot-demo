@@ -1083,20 +1083,34 @@ html, body {
   border: 1px solid rgba(var(--green-rgb), 0.25);
 }
 
-.facilitator-hint {
+.mode-hint {
   font-size: 12px;
   color: var(--text-dim);
-  background: rgba(var(--green-rgb), 0.08);
-  border-bottom: 1px solid rgba(var(--green-rgb), 0.18);
   padding: 8px 16px;
   text-align: center;
   line-height: 1.4;
   flex-shrink: 0;
+  border-bottom: 1px solid transparent;
 }
-.facilitator-hint strong {
-  color: var(--green-ink);
-  font-weight: 600;
+.mode-hint strong { font-weight: 600; }
+
+.mode-hint-lessons {
+  background: var(--surface-2);
+  border-bottom-color: var(--surface-2);
 }
+.mode-hint-lessons strong { color: var(--text); }
+
+.mode-hint-helpline {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-bottom-color: rgba(var(--accent-rgb), 0.2);
+}
+.mode-hint-helpline strong { color: var(--accent-ink); }
+
+.mode-hint-facilitator {
+  background: rgba(var(--green-rgb), 0.08);
+  border-bottom-color: rgba(var(--green-rgb), 0.18);
+}
+.mode-hint-facilitator strong { color: var(--green-ink); }
 
 .history-toggle-btn {
   background: none;
