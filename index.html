@@ -1470,6 +1470,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
         setMessages([]);
         setActiveConvoId(null);
         saveToStorage(STORAGE_KEYS.activeId, null);
+        saveToStorage(STORAGE_KEYS.appMode, null);
+        setAppMode(null);
         setVoiceState('idle');
         setInterimText('');
         setTextInput('');
@@ -1513,7 +1515,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         saveToStorage(STORAGE_KEYS.appMode, mode);
         setAppMode(mode);
       };
-      if (!appMode && !profile && !savedConvo) {
+      if (!appMode && !profile && !started) {
         return React.createElement(LandingGate, {
           onChooseBeta: () => chooseAppMode('beta'),
           onChooseFull: () => chooseAppMode('full'),
