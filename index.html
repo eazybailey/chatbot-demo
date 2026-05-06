@@ -1214,6 +1214,17 @@ Remember: you are holding space for two people to feel heard by each other. Your
       }, []);
 
       const [appMode, setAppMode] = React.useState(() => loadFromStorage(STORAGE_KEYS.appMode, null));
+      // Synchronously detect whether a service worker is controlling this
+      // page. If not (fresh install, cleared site data, manually
+      // unregistered in DevTools), force the Beta gate on this load —
+      // regardless of any persisted profile or conversation state. The SW
+      // calls clients.claim() on activate, so for normal returning users
+      // controller is non-null at first paint and we never override.
+      const [forceGate, setForceGate] = React.useState(() => {
+        try {
+          return !!navigator.serviceWorker && !navigator.serviceWorker.controller;
+        } catch { return false; }
+      });
       const [started, setStarted] = React.useState(!!savedConvo);
       const [profile, setProfile] = React.useState(savedProfile);
       const [messages, setMessages] = React.useState(savedConvo ? savedConvo.messages : []);
@@ -1250,20 +1261,6 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const inputRef = React.useRef(null);
       const { start: startRec, stop: stopRec, supported: sttSupported } = useSpeechRecognition();
       const { speak, speakStreaming, cancel: cancelSpeak } = useSpeechSynthesis();
-
-      // If no service worker is registered, treat the user as fresh and
-      // surface the Beta landing gate. This means a user who clears site
-      // data, disables/unregisters the SW in DevTools, or visits in a
-      // private window will see the gate again.
-      React.useEffect(() => {
-        if (!navigator.serviceWorker) return;
-        navigator.serviceWorker.getRegistrations().then(regs => {
-          if (regs.length === 0) {
-            saveToStorage(STORAGE_KEYS.appMode, null);
-            setAppMode(null);
-          }
-        }).catch(() => {});
-      }, []);
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
       React.useEffect(() => { profileRef.current = profile; }, [profile]);
@@ -1566,8 +1563,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const chooseAppMode = (mode) => {
         saveToStorage(STORAGE_KEYS.appMode, mode);
         setAppMode(mode);
+        setForceGate(false);
       };
-      if (!appMode && !profile && !started) {
+      if (forceGate || (!appMode && !profile && !started)) {
         return React.createElement(LandingGate, {
           onChooseBeta: () => chooseAppMode('beta'),
           onChooseFull: () => chooseAppMode('full'),
@@ -1797,6 +1795,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
                 const next = isBeta ? 'full' : 'beta';
                 saveToStorage(STORAGE_KEYS.appMode, next);
                 setAppMode(next);
+                setForceGate(false);
                 setShowHistory(false);
               },
               title: isBeta ? 'Switch to full version' : 'Switch to beta',
