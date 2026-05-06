@@ -2373,20 +2373,20 @@ html, body {
 }
 .gate-dev-link {
   display: inline-block;
-  margin-top: 64px;
-  font-size: 12px;
+  margin-top: 72px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--text-dim);
-  opacity: 0.55;
+  opacity: 0.35;
   background: none;
   border: none;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
   font-family: inherit;
   padding: 6px 10px;
   transition: opacity 0.15s ease;
 }
-.gate-dev-link:hover { opacity: 0.95; }
+.gate-dev-link:hover { opacity: 0.85; }
 
 @media (max-width: 480px) {
   .gate-title { font-size: 32px; }
