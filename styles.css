@@ -2287,6 +2287,24 @@ html, body {
   .info-stat-num-sm { font-size: 18px; }
 }
 
+/* Discrete dev-toggle inside drawer footer — flips between beta and full */
+.drawer-dev-toggle {
+  display: block;
+  margin: 12px auto 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0.35;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: opacity 0.15s ease;
+}
+.drawer-dev-toggle:hover { opacity: 0.85; }
+
 /* ── Landing Gate (Beta vs Full) ── */
 .gate-screen {
   min-height: 100dvh;

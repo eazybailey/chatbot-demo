@@ -1803,6 +1803,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
               className: 'history-start-over-btn',
               onClick: handleStartOver,
             }, 'Reset Profile & Start Over'),
+            React.createElement('button', {
+              className: 'drawer-dev-toggle',
+              onClick: () => {
+                const next = isBeta ? 'full' : 'beta';
+                saveToStorage(STORAGE_KEYS.appMode, next);
+                setAppMode(next);
+                setShowHistory(false);
+              },
+              title: isBeta ? 'Switch to full version' : 'Switch to beta',
+            }, isBeta ? '· dev ·' : '· beta ·'),
           ),
         ),
 
