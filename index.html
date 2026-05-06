@@ -39,6 +39,7 @@
       conversations: 'fu_conversations',
       activeId: 'fu_active_conversation',
       profile: 'fu_profile',
+      appMode: 'fu_app_mode',
     };
     const MAX_CONVERSATIONS = 50;
 
@@ -570,11 +571,37 @@ Remember: you are holding space for two people to feel heard by each other. Your
     // The quiz is now a single unified Feel Understood flow.
     const getQuizScreens = () => FEEL_UNDERSTOOD_SCREENS;
 
+    // ── LandingGate Component ──
+    // Shown once before anything else. Lets a tester enter the stripped-down
+    // Beta, or a developer enter the full app via a small link at the bottom.
+    const LandingGate = ({ onChooseBeta, onChooseFull }) => {
+      return React.createElement('div', { className: 'gate-screen' },
+        React.createElement('div', { className: 'gate-inner' },
+          React.createElement('span', { className: 'gate-eyebrow' }, 'Beta'),
+          React.createElement('h1', { className: 'gate-title' }, 'Feel Understood'),
+          React.createElement('p', { className: 'gate-lede' },
+            "We’re testing a stripped-down version. You’ll build a quick Feel Understood profile, then go straight into the Communication Helpline — a place to talk through a conversation that matters."
+          ),
+          React.createElement('button', {
+            className: 'gate-cta',
+            onClick: onChooseBeta,
+          }, 'Try the Beta'),
+          React.createElement('p', { className: 'gate-note' },
+            "Takes 2–3 minutes. Your conversations stay on this device."
+          ),
+          React.createElement('button', {
+            className: 'gate-dev-link',
+            onClick: onChooseFull,
+          }, 'developer access →'),
+        )
+      );
+    };
+
     // ── ProfileQuiz Component ──
-    // Runs the unified Feel Understood questionnaire end-to-end. The user
-    // chooses their next-step path (mode + goal) on the final screen, which
-    // is what hands the full profile back to the parent.
-    const ProfileQuiz = ({ onComplete }) => {
+    // Runs the unified Feel Understood questionnaire end-to-end. In the full
+    // app the user chooses one of three paths on a final screen. In beta we
+    // skip that screen and auto-launch the Helpline path from the reveal.
+    const ProfileQuiz = ({ onComplete, betaMode }) => {
       const [step, setStep] = React.useState(0);
       const [answers, setAnswers] = React.useState({ areas: {}, aspects: [] });
       const [name, setName] = React.useState('');
@@ -582,7 +609,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const [animating, setAnimating] = React.useState(false);
       const nameInputRef = React.useRef(null);
 
-      const quizScreens = getQuizScreens();
+      // In beta mode, skip the final 3-card path-chooser screen — we auto-launch
+      // the Helpline path straight from the reveal.
+      const quizScreens = React.useMemo(() => {
+        const all = getQuizScreens();
+        return betaMode ? all.filter(s => s.type !== 'fu-next-steps') : all;
+      }, [betaMode]);
       const screen = quizScreens[step] || quizScreens[0];
       const progress = step / (quizScreens.length - 1);
 
@@ -852,9 +884,14 @@ Remember: you are holding space for two people to feel heard by each other. Your
               ),
             ),
             React.createElement('p', { className: 'quiz-reveal-outro' },
-              "Feeling understood is the oxygen of every relationship. On the next screen I\u2019ll offer three ways we can work on it together."
+              betaMode
+                ? "Feeling understood is the oxygen of every relationship. Let\u2019s start with a conversation that matters to you."
+                : "Feeling understood is the oxygen of every relationship. On the next screen I\u2019ll offer three ways we can work on it together."
             ),
-            React.createElement('button', { className: 'quiz-cta quiz-cta-final', onClick: goNext }, 'See my options'),
+            React.createElement('button', {
+              className: 'quiz-cta quiz-cta-final',
+              onClick: betaMode ? () => handleFinishWithPath('helpline') : goNext,
+            }, betaMode ? 'Start' : 'See my options'),
           );
         }
 
@@ -1206,6 +1243,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         return loadConversations().find(c => c.id === savedActiveId) || null;
       }, []);
 
+      const [appMode, setAppMode] = React.useState(() => loadFromStorage(STORAGE_KEYS.appMode, null));
       const [started, setStarted] = React.useState(!!savedConvo);
       const [profile, setProfile] = React.useState(savedProfile);
       const [messages, setMessages] = React.useState(savedConvo ? savedConvo.messages : []);
@@ -1533,9 +1571,26 @@ Remember: you are holding space for two people to feel heard by each other. Your
         }
       };
 
+      // ── Landing Gate (Beta vs Full) ──
+      // Shown only on the very first visit, before any profile or conversation
+      // exists. Once the user picks a version it’s persisted to localStorage so
+      // testers always re-enter into the same experience.
+      const chooseAppMode = (mode) => {
+        saveToStorage(STORAGE_KEYS.appMode, mode);
+        setAppMode(mode);
+      };
+      if (!appMode && !profile && !savedConvo) {
+        return React.createElement(LandingGate, {
+          onChooseBeta: () => chooseAppMode('beta'),
+          onChooseFull: () => chooseAppMode('full'),
+        });
+      }
+
+      const isBeta = appMode === 'beta';
+
       // ── Onboarding Quiz ──
       if (!started) {
-        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete });
+        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete, betaMode: isBeta });
       }
 
       const statusLabel = {
@@ -1579,7 +1634,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
             ),
           ),
           React.createElement('div', { className: 'header-right' },
-            profile && React.createElement('button', {
+            profile && !isBeta && React.createElement('button', {
               className: 'basecamp-btn',
               onClick: () => setShowBasecamp(true),
               title: 'Basecamp',
@@ -1657,8 +1712,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
             }, '\u00D7'),
           ),
           React.createElement('div', { className: 'drawer-scroll' },
-          // Modes section — switch between the 3 paths
-          profile && React.createElement('div', { className: 'drawer-section', key: 'modes' },
+          // Modes section — switch between the 3 paths (hidden in beta)
+          profile && !isBeta && React.createElement('div', { className: 'drawer-section', key: 'modes' },
             React.createElement('div', { className: 'drawer-section-label' }, 'Mode'),
             NEXT_STEPS.map(p => React.createElement('button', {
               key: p.id,
@@ -1775,7 +1830,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
                 'This app is built on the Dialogue System framework by Gerard Egan and Andrew Bailey — a practical approach to the three roles in every conversation: Explainer, Understander, and Conversation Manager.'
               ),
             ),
-            React.createElement('div', { className: 'info-card' },
+            !isBeta && React.createElement('div', { className: 'info-card' },
               React.createElement('h3', null, 'Three ways to use it'),
               React.createElement('ul', { className: 'info-list' },
                 React.createElement('li', null, React.createElement('strong', null, 'Coach'), ' — lessons and practice on the skills of effective dialogue.'),
