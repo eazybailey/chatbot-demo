@@ -899,8 +899,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
         // ms of silence after the last interim/final before we treat the
         // user as done speaking. The browser default is ~1s — too quick;
-        // 2.5s leaves room for a thoughtful pause.
-        const SILENCE_MS = 2500;
+        // 2s leaves room for a thoughtful pause without lingering.
+        const SILENCE_MS = 2000;
 
         let accumulatedFinal = '';
         let lastInterim = '';
@@ -1250,6 +1250,20 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const inputRef = React.useRef(null);
       const { start: startRec, stop: stopRec, supported: sttSupported } = useSpeechRecognition();
       const { speak, speakStreaming, cancel: cancelSpeak } = useSpeechSynthesis();
+
+      // If no service worker is registered, treat the user as fresh and
+      // surface the Beta landing gate. This means a user who clears site
+      // data, disables/unregisters the SW in DevTools, or visits in a
+      // private window will see the gate again.
+      React.useEffect(() => {
+        if (!navigator.serviceWorker) return;
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          if (regs.length === 0) {
+            saveToStorage(STORAGE_KEYS.appMode, null);
+            setAppMode(null);
+          }
+        }).catch(() => {});
+      }, []);
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
       React.useEffect(() => { profileRef.current = profile; }, [profile]);
