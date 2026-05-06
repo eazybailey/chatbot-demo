@@ -460,14 +460,6 @@ Remember: you are holding space for two people to feel heard by each other. Your
           { value: 'dreams', label: 'My dreams for the future' },
         ],
       },
-      {
-        id: 'profile',
-        type: 'fu-reveal',
-      },
-      {
-        id: 'next-steps',
-        type: 'fu-next-steps',
-      },
     ];
 
     // The three next-step paths offered after the questionnaire. Each maps
@@ -599,10 +591,11 @@ Remember: you are holding space for two people to feel heard by each other. Your
     };
 
     // ── ProfileQuiz Component ──
-    // Runs the unified Feel Understood questionnaire end-to-end. In the full
-    // app the user chooses one of three paths on a final screen. In beta we
-    // skip that screen and auto-launch the Helpline path from the reveal.
-    const ProfileQuiz = ({ onComplete, betaMode }) => {
+    // Runs the unified Feel Understood questionnaire end-to-end. After the
+    // last question we drop the user straight into the Communication Helpline
+    // — the reveal and path-chooser screens were removed so the conversation
+    // with the AI starts as quickly as possible.
+    const ProfileQuiz = ({ onComplete }) => {
       const [step, setStep] = React.useState(0);
       const [answers, setAnswers] = React.useState({ areas: {}, aspects: [] });
       const [name, setName] = React.useState('');
@@ -610,14 +603,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const [animating, setAnimating] = React.useState(false);
       const nameInputRef = React.useRef(null);
 
-      // In beta mode, skip the final 3-card path-chooser screen — we auto-launch
-      // the Helpline path straight from the reveal.
-      const quizScreens = React.useMemo(() => {
-        const all = getQuizScreens();
-        return betaMode ? all.filter(s => s.type !== 'fu-next-steps') : all;
-      }, [betaMode]);
+      const quizScreens = getQuizScreens();
       const screen = quizScreens[step] || quizScreens[0];
       const progress = step / (quizScreens.length - 1);
+      const isLastStep = step >= quizScreens.length - 1;
 
       React.useEffect(() => {
         if (screen.type === 'name-input' && nameInputRef.current) {
@@ -684,8 +673,6 @@ Remember: you are holding space for two people to feel heard by each other. Your
         };
         onComplete(profile);
       };
-
-      const analysis = analyzeFeelUnderstoodProfile(answers);
 
       // ── Render current screen ──
       const renderScreen = () => {
@@ -819,6 +806,13 @@ Remember: you are holding space for two people to feel heard by each other. Your
         if (screen.type === 'multi-select') {
           const selected = answers.aspects || [];
           const hasAny = selected.length > 0;
+          // When this is the last screen of the quiz we drop the user straight
+          // into the Helpline conversation rather than advancing to another
+          // reveal/chooser screen.
+          const ctaLabel = hasAny
+            ? (isLastStep ? 'Start the conversation' : `Continue (${selected.length} selected)`)
+            : 'Pick at least one to continue';
+          const ctaAction = isLastStep ? () => handleFinishWithPath('helpline') : goNext;
           return React.createElement('div', { className: `quiz-screen quiz-multi-select ${animClass}`, key: step },
             screen.section && React.createElement('span', { className: 'quiz-section-label' }, screen.section),
             React.createElement('h2', { className: 'quiz-title' }, screen.title),
@@ -836,8 +830,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
             React.createElement('button', {
               className: `quiz-cta ${hasAny ? '' : 'quiz-cta-disabled'}`,
               disabled: !hasAny,
-              onClick: goNext,
-            }, hasAny ? `Continue (${selected.length} selected)` : 'Pick at least one to continue'),
+              onClick: ctaAction,
+            }, ctaLabel),
           );
         }
 
@@ -856,67 +850,6 @@ Remember: you are holding space for two people to feel heard by each other. Your
           );
         }
 
-        if (screen.type === 'fu-reveal') {
-          const initial = (name.trim().charAt(0) || '?').toUpperCase();
-          const aspectsText = analysis.aspects.length
-            ? analysis.aspects.slice(0, 3).join(', ') + (analysis.aspects.length > 3 ? `, and ${analysis.aspects.length - 3} more` : '')
-            : "nothing you flagged today — but come back to this when something surfaces.";
-          return React.createElement('div', { className: `quiz-screen quiz-reveal ${animClass}`, key: step },
-            React.createElement('div', { className: 'quiz-reveal-header' },
-              React.createElement('div', { className: 'quiz-reveal-avatar' }, initial),
-              React.createElement('h2', { className: 'quiz-reveal-name' }, name.trim() || 'Your profile'),
-              React.createElement('p', { className: 'quiz-reveal-tagline' }, 'Your Feel Understood profile'),
-            ),
-            React.createElement('div', { className: 'quiz-reveal-cards' },
-              analysis.leastAreaLabel && React.createElement('div', { className: 'quiz-reveal-card quiz-strength-card' },
-                React.createElement('span', { className: 'quiz-card-badge quiz-badge-strength' }, 'Where it hurts most'),
-                React.createElement('h3', null, `Your ${analysis.leastAreaLabel}`),
-                React.createElement('p', null, `This is the area of your life where you feel least understood right now. We\u2019ll come back to it.`),
-              ),
-              analysis.blame && React.createElement('div', { className: 'quiz-reveal-card quiz-growth-card' },
-                React.createElement('span', { className: 'quiz-card-badge quiz-badge-growth' }, 'Your mindset'),
-                React.createElement('h3', null, analysis.blame.label),
-                React.createElement('p', null, analysis.blame.desc),
-              ),
-              React.createElement('div', { className: 'quiz-reveal-card quiz-aspects-card' },
-                React.createElement('span', { className: 'quiz-card-badge quiz-badge-aspects' }, 'Sides of you that feel unseen'),
-                React.createElement('h3', null, `${analysis.aspects.length || 'No'} aspect${analysis.aspects.length === 1 ? '' : 's'} named`),
-                React.createElement('p', null, aspectsText),
-              ),
-            ),
-            React.createElement('p', { className: 'quiz-reveal-outro' },
-              betaMode
-                ? "Feeling understood is the oxygen of every relationship. Let\u2019s start with a conversation that matters to you."
-                : "Feeling understood is the oxygen of every relationship. On the next screen I\u2019ll offer three ways we can work on it together."
-            ),
-            React.createElement('button', {
-              className: 'quiz-cta quiz-cta-final',
-              onClick: betaMode ? () => handleFinishWithPath('helpline') : goNext,
-            }, betaMode ? 'Start' : 'See my options'),
-          );
-        }
-
-        if (screen.type === 'fu-next-steps') {
-          return React.createElement('div', { className: `quiz-screen quiz-next-steps ${animClass}`, key: step },
-            React.createElement('span', { className: 'quiz-section-label' }, 'Three ways to go from here'),
-            React.createElement('h2', { className: 'quiz-title' }, `Where would you like to start, ${name.trim() || 'friend'}?`),
-            React.createElement('p', { className: 'quiz-subtitle' }, "Pick one. You can always come back and choose another."),
-            React.createElement('div', { className: 'next-step-cards' },
-              NEXT_STEPS.map((step) =>
-                React.createElement('button', {
-                  key: step.id,
-                  className: `next-step-card next-step-card-${step.id}`,
-                  onClick: () => handleFinishWithPath(step.id),
-                },
-                  React.createElement('span', { className: 'next-step-tag' }, step.tag),
-                  React.createElement('h3', { className: 'next-step-title' }, step.title),
-                  React.createElement('p', { className: 'next-step-desc' }, step.desc),
-                  React.createElement('span', { className: 'next-step-arrow', 'aria-hidden': true }, '\u2192'),
-                )
-              )
-            ),
-          );
-        }
 
         return null;
       };
@@ -1591,7 +1524,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       // ── Onboarding Quiz ──
       if (!started) {
-        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete, betaMode: isBeta });
+        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete });
       }
 
       const statusLabel = {
