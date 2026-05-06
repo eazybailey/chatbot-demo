@@ -876,13 +876,17 @@ Remember: you are holding space for two people to feel heard by each other. Your
     // ── Speech Recognition Hook ──
     const useSpeechRecognition = () => {
       const recognitionRef = React.useRef(null);
+      const sessionRef = React.useRef(null);
       const [supported, setSupported] = React.useState(true);
 
       React.useEffect(() => {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) { setSupported(false); return; }
         const r = new SR();
-        r.continuous = false;
+        // continuous: don't let the browser auto-stop on its own short pause
+        // (~1s) — we manage end-of-speech ourselves with a longer silence
+        // debounce so the user can pause to think without being cut off.
+        r.continuous = true;
         r.interimResults = true;
         r.lang = 'en-US';
         recognitionRef.current = r;
@@ -892,26 +896,58 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const start = (onInterim, onFinal, onError) => {
         const r = recognitionRef.current;
         if (!r) { onError('not-supported'); return; }
+
+        // ms of silence after the last interim/final before we treat the
+        // user as done speaking. The browser default is ~1s — too quick;
+        // 2.5s leaves room for a thoughtful pause.
+        const SILENCE_MS = 2500;
+
+        let accumulatedFinal = '';
+        let lastInterim = '';
+        let silenceTimer = null;
+        let committed = false;
+
+        const commit = () => {
+          if (committed) return;
+          committed = true;
+          if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+          const finalText = (accumulatedFinal + ' ' + lastInterim).trim();
+          try { r.stop(); } catch(e) {}
+          onFinal(finalText);
+        };
+
+        const resetSilenceTimer = () => {
+          if (silenceTimer) clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(commit, SILENCE_MS);
+        };
+
+        sessionRef.current = { commit };
+
         r.onresult = (e) => {
-          let interim = '', final = '';
+          let interimNow = '';
           for (let i = e.resultIndex; i < e.results.length; i++) {
             const t = e.results[i][0].transcript;
-            if (e.results[i].isFinal) final += t;
-            else interim += t;
+            if (e.results[i].isFinal) accumulatedFinal += t + ' ';
+            else interimNow += t;
           }
-          if (interim) onInterim(interim);
-          if (final) onFinal(final);
+          lastInterim = interimNow;
+          onInterim((accumulatedFinal + ' ' + interimNow).trim());
+          resetSilenceTimer();
         };
         r.onerror = (e) => {
           if (e.error === 'no-speech' || e.error === 'aborted') return;
           onError(e.error);
         };
-        r.onend = () => {};
+        r.onend = () => { commit(); };
         try { r.start(); } catch(e) { onError(e.message || 'start-failed'); }
       };
 
       const stop = () => {
-        try { recognitionRef.current?.stop(); } catch(e) {}
+        // Manual stop (user tapped the mic): commit immediately rather than
+        // waiting for the silence timer.
+        const session = sessionRef.current;
+        if (session) session.commit();
+        else { try { recognitionRef.current?.stop(); } catch(e) {} }
       };
 
       return { start, stop, supported };
@@ -1309,9 +1345,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
                   // Priority 1: sentence endings (.!?)
                   // Priority 2: clause breaks (,;:—–) if buffer > 40 chars
                   // Priority 3: any content if buffer > 80 chars (force split at word boundary)
+                  // First chunk uses lower thresholds so audio starts as
+                  // quickly as possible \u2014 subsequent chunks are looser to
+                  // keep prosody natural.
+                  const isFirstChunk = !streamSpeaker;
+                  const clauseThreshold = isFirstChunk ? 22 : 40;
+                  const forceThreshold = isFirstChunk ? 45 : 80;
+
                   let fireChunk = null;
                   const sentenceMatch = sentenceBuffer.match(/^([\s\S]*?[.!?])[\s]?/);
-                  const clauseMatch = sentenceBuffer.length > 40 && sentenceBuffer.match(/^([\s\S]*?[,;:\u2014\u2013])[\s]?/);
+                  const clauseMatch = sentenceBuffer.length > clauseThreshold && sentenceBuffer.match(/^([\s\S]*?[,;:\u2014\u2013])[\s]?/);
 
                   if (sentenceMatch) {
                     fireChunk = sentenceMatch[1].trim();
@@ -1319,10 +1362,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
                   } else if (clauseMatch) {
                     fireChunk = clauseMatch[1].trim();
                     sentenceBuffer = sentenceBuffer.slice(clauseMatch[0].length);
-                  } else if (sentenceBuffer.length > 80) {
+                  } else if (sentenceBuffer.length > forceThreshold) {
                     // Force split at last word boundary
-                    const wordBreak = sentenceBuffer.lastIndexOf(' ', 80);
-                    const splitAt = wordBreak > 20 ? wordBreak : 80;
+                    const wordBreak = sentenceBuffer.lastIndexOf(' ', forceThreshold);
+                    const splitAt = wordBreak > 15 ? wordBreak : forceThreshold;
                     fireChunk = sentenceBuffer.slice(0, splitAt).trim();
                     sentenceBuffer = sentenceBuffer.slice(splitAt);
                   }
@@ -1373,12 +1416,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
         if (voiceState === 'processing') return;
 
         if (voiceState === 'listening') {
+          // Manual stop — onFinal fires synchronously from commit()
           stopRec();
-          if (interimText.trim()) {
-            sendToClaude(interimText.trim());
-          } else {
-            setVoiceState('idle');
-          }
           return;
         }
 
@@ -1390,7 +1429,6 @@ Remember: you are holding space for two people to feel heard by each other. Your
           (interim) => setInterimText(interim),
           (final) => {
             setInterimText('');
-            stopRec();
             if (final.trim()) sendToClaude(final.trim());
             else setVoiceState('idle');
           },
