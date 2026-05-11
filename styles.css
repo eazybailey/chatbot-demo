@@ -12,8 +12,8 @@
   --text-dim: #6b6b6b;
   --red: #e74c3c;
   --red-rgb: 231, 76, 60;
-  --green: #7cb518;
-  --green-rgb: 124, 181, 24;
+  --green: #abd601;
+  --green-rgb: 171, 214, 1;
   --blue-rgb: 88, 148, 224;
   --shadow-rgb: 0, 0, 0;
   --on-accent: #1a1a1a;
@@ -1607,8 +1607,9 @@ html, body {
 }
 
 .mic-btn.speaking {
-  background: var(--accent);
+  background: var(--green);
   color: var(--on-accent);
+  box-shadow: 0 0 18px rgba(var(--green-rgb), 0.35);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
