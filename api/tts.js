@@ -40,7 +40,7 @@ export default async function handler(req) {
         input: input,
         voice: voice || 'nova',
         response_format: 'mp3',
-        speed: 1.0,
+        speed: 1.1,
       }),
     });
 
