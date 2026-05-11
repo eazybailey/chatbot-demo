@@ -1064,6 +1064,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
     const useSpeechSynthesis = () => {
       const audioRef = React.useRef(null);
       const cancelledRef = React.useRef(false);
+      // Generation counter shared across all speakStreaming sessions. When a
+      // new session starts it claims the next generation; older sessions
+      // detect they're stale and bail. Without this, a fresh session
+      // resetting cancelledRef would let a paused old loop resume playback
+      // on top of the new audio — the "echo" bug.
+      const streamGenRef = React.useRef(0);
 
       const speak = async (text) => {
         cancelledRef.current = false;
@@ -1093,6 +1099,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       const speakStreaming = () => {
         cancelledRef.current = false;
+        const myGen = ++streamGenRef.current;
+        const isStale = () => cancelledRef.current || myGen !== streamGenRef.current;
         const queue = [];
         let playIndex = 0;
         let playing = false;
@@ -1104,10 +1112,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
           if (playing) return;
           playing = true;
           while (playIndex < queue.length) {
-            if (cancelledRef.current) break;
+            if (isStale()) break;
             try {
               const buf = await queue[playIndex];
-              if (cancelledRef.current) break;
+              if (isStale()) break;
               await playAudioBuffer(buf, audioRef);
             } catch (e) { /* skip failed chunk */ }
             playIndex++;
@@ -1117,6 +1125,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         };
 
         const addSentence = (sentence) => {
+          if (isStale()) return;
           queue.push(fetchTTSBuffer(sentence.trim()));
           tryPlay();
         };
