@@ -2220,16 +2220,55 @@ html, body {
   padding: 18px 20px;
 }
 .info-card h3 {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text);
   margin: 0 0 8px;
 }
 .info-card p {
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--text-dim);
   margin: 0;
+}
+.info-card p + p {
+  margin-top: 10px;
+}
+.info-card em {
+  font-style: italic;
+  color: var(--text);
+}
+
+.info-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.info-prose p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  margin: 0;
+}
+.info-prose em {
+  font-style: italic;
+  color: var(--text);
+}
+
+.info-divider {
+  border: none;
+  border-top: 1px solid var(--surface-2);
+  margin: 8px 0;
+  width: 100%;
+}
+
+.info-section-title {
+  font-family: Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  margin: 4px 0 0;
 }
 
 .info-list {
