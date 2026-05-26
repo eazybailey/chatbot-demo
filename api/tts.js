@@ -40,7 +40,7 @@ export default async function handler(req) {
         input: input,
         voice: voice || 'shimmer',
         response_format: 'mp3',
-        speed: 1.08,
+        speed: 1.0,
       }),
     });
 
