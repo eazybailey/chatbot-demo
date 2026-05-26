@@ -1281,10 +1281,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
         const greeting = buildGreeting(quizProfile);
         startNewConversation([{ role: 'assistant', content: greeting }]);
         setStarted(true);
-        setTimeout(() => {
-          setVoiceState('speaking');
-          speak(greeting).then(() => setVoiceState('idle'));
-        }, 400);
+        setVoiceState('speaking');
+        speak(greeting).then(() => setVoiceState('idle'));
       };
 
       const sendToClaude = async (userText) => {
