@@ -971,7 +971,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: text, voice: 'nova' }),
+        body: JSON.stringify({ input: text, voice: 'shimmer' }),
       });
       if (!response.ok) throw new Error('TTS request failed: ' + response.status);
       return await response.arrayBuffer();
@@ -1339,8 +1339,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
                   // quickly as possible \u2014 subsequent chunks are looser to
                   // keep prosody natural.
                   const isFirstChunk = !streamSpeaker;
-                  const clauseThreshold = isFirstChunk ? 22 : 40;
-                  const forceThreshold = isFirstChunk ? 45 : 80;
+                  const clauseThreshold = isFirstChunk ? 12 : 40;
+                  const forceThreshold = isFirstChunk ? 28 : 80;
 
                   let fireChunk = null;
                   const sentenceMatch = sentenceBuffer.match(/^([\s\S]*?[.!?])[\s]?/);

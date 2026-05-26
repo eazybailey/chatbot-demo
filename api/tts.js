@@ -36,11 +36,11 @@ export default async function handler(req) {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'tts-1',
+        model: 'tts-1-hd',
         input: input,
-        voice: voice || 'nova',
+        voice: voice || 'shimmer',
         response_format: 'mp3',
-        speed: 1.1,
+        speed: 1.0,
       }),
     });
 
