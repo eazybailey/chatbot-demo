@@ -319,29 +319,13 @@ Remember: you are holding space for two people to feel heard by each other. Your
     };
 
     const buildCoachGreeting = (profile) => {
-      if (!profile) return "Hey! Welcome to Feel Understood. I'm your Conversation Coach. What would you like to work on?";
+      if (!profile) {
+        return "Hey, welcome. I\u2019m your conversation coach. Before we go anywhere else, here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. What do you think gets in the way? Once we know that, we can talk about ways to change the situation together.";
+      }
 
       const name = profile.name || 'friend';
-      const fu = profile.feelUnderstood || {};
-      const areaLabels = {
-        home: 'home life',
-        family: 'family of origin',
-        friends: 'friendships and social life',
-        work: 'work life',
-        online: 'online spaces',
-      };
-      const entries = Object.entries(fu.areas || {}).filter(([, v]) => typeof v === 'number');
-      entries.sort((a, b) => a[1] - b[1]);
-      const leastArea = entries[0] ? areaLabels[entries[0][0]] : null;
-      const leastPhrase = leastArea ? `I know your ${leastArea} is where feeling understood is toughest right now. ` : '';
 
-      if (profile.goal === 'helpline') {
-        return `Hey ${name} — thanks for sharing all of that with me. ${leastPhrase}So tell me: is there a particular side of yourself you wish was more visible to the people around you, or a specific conversation that\u2019s been weighing on you? We\u2019ll take it from there together.`;
-      }
-      if (profile.goal === 'learn') {
-        return `Hey ${name}! Great to have you here. ${leastPhrase}I\u2019d love to teach you some skills that\u2019ll change how those conversations go. We could start with the three roles we all play in every conversation \u2014 the Explainer, the Understander, and the Conversation Manager. Want to begin there, or is there a specific skill you\u2019re curious about?`;
-      }
-      return `Hey ${name}! Thanks for walking through that with me. ${leastPhrase}What would you like to explore first?`;
+      return `Hi ${name}, I\u2019m really glad you\u2019re here. Here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Maybe they leave you feeling a little unseen, or you walk away wishing you\u2019d said something different. Who comes to mind \u2014 and what do you think gets in the way? Once we know that, we can talk about ways to change the situation together.`;
     };
 
     const buildFacilitatorGreeting = (profile) => {
