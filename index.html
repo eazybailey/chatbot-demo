@@ -319,29 +319,13 @@ Remember: you are holding space for two people to feel heard by each other. Your
     };
 
     const buildCoachGreeting = (profile) => {
-      if (!profile) return "Hey! Welcome to Feel Understood. I'm your Conversation Coach. What would you like to work on?";
+      if (!profile) {
+        return "Hey, welcome. I\u2019m your conversation coach. Before we go anywhere else, here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?";
+      }
 
       const name = profile.name || 'friend';
-      const fu = profile.feelUnderstood || {};
-      const areaLabels = {
-        home: 'home life',
-        family: 'family of origin',
-        friends: 'friendships and social life',
-        work: 'work life',
-        online: 'online spaces',
-      };
-      const entries = Object.entries(fu.areas || {}).filter(([, v]) => typeof v === 'number');
-      entries.sort((a, b) => a[1] - b[1]);
-      const leastArea = entries[0] ? areaLabels[entries[0][0]] : null;
-      const leastPhrase = leastArea ? `I know your ${leastArea} is where feeling understood is toughest right now. ` : '';
 
-      if (profile.goal === 'helpline') {
-        return `Hey ${name} — thanks for sharing all of that with me. ${leastPhrase}So tell me: is there a particular side of yourself you wish was more visible to the people around you, or a specific conversation that\u2019s been weighing on you? We\u2019ll take it from there together.`;
-      }
-      if (profile.goal === 'learn') {
-        return `Hey ${name}! Great to have you here. ${leastPhrase}I\u2019d love to teach you some skills that\u2019ll change how those conversations go. We could start with the three roles we all play in every conversation \u2014 the Explainer, the Understander, and the Conversation Manager. Want to begin there, or is there a specific skill you\u2019re curious about?`;
-      }
-      return `Hey ${name}! Thanks for walking through that with me. ${leastPhrase}What would you like to explore first?`;
+      return `Hi ${name}, I\u2019m really glad you\u2019re here. Here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Maybe they leave you feeling a little unseen, or you walk away wishing you\u2019d said something different. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?`;
     };
 
     const buildFacilitatorGreeting = (profile) => {
@@ -447,7 +431,6 @@ Remember: you are holding space for two people to feel heard by each other. Your
         insight: "Often we\u2019re understood for only a slice of who we really are. Naming the unseen parts is the first step to being more fully known.",
         options: [
           { value: 'values', label: 'My values and moral code' },
-          { value: 'spiritual', label: 'My spiritual or religious side' },
           { value: 'sexuality', label: 'My sexuality or identity' },
           { value: 'health', label: 'My mental or physical health' },
           { value: 'finances', label: 'My money worries or ambitions' },
@@ -457,6 +440,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           { value: 'creative', label: 'My creative or artistic side' },
           { value: 'ambition', label: 'My career goals and ambition' },
           { value: 'history', label: 'My past and where I come from' },
+          { value: 'spiritual', label: 'My spiritual or religious side' },
           { value: 'dreams', label: 'My dreams for the future' },
         ],
       },
@@ -688,7 +672,29 @@ Remember: you are holding space for two people to feel heard by each other. Your
               ),
               React.createElement('h1', { className: 'quiz-splash-title' }, 'Feeling understood changes everything'),
               React.createElement('p', { className: 'quiz-splash-desc' },
-                "When we feel truly understood, relationships deepen, trust grows, and life gets lighter. When we don't, everything feels harder than it should. Let's find out where that shows up for you."
+                "Everyone wants to feel understood. It’s part of our nature and central to our happiness. When we feel understood, we feel valued, connected, appreciated. When we feel misunderstood or overlooked, we feel isolated, the world is a more threatening place."
+              ),
+              React.createElement('p', { className: 'quiz-splash-desc' },
+                "Ask anyone what they most want from a partner or friend, and it’s always the same. “I want to feel understood.”"
+              ),
+              React.createElement('p', { className: 'quiz-splash-desc' },
+                "Feeling understood is an essential ingredient of almost everything we most value in life, from healthy relationships to positive mental health. It builds trust and brings us closer, strengthens our self-belief and provides a sense of belonging. Feeling understood promotes collaboration over conflict."
+              ),
+              React.createElement('p', { className: 'quiz-splash-desc' },
+                "In a world obsessed with quick fixes and big data, feeling understood might sound soft or vague. The research says otherwise. It has measurable effects on how our bodies feel, how our brains work, how our relationships function, and how we navigate the world. In short, feeling understood is fundamental to our wellbeing."
+              ),
+              React.createElement('p', { className: 'quiz-splash-desc' },
+                "We can’t ever understand each other perfectly. But that’s not a reason for not trying. The desire to be known from the inside is universal. Meeting that need as best we can is one of the most important things we do for each other."
+              ),
+              React.createElement('p', { className: 'quiz-splash-desc' },
+                "Chat with me (now or later) if you want to discover more about what science says about the importance of feeling understood."
+              ),
+              React.createElement('ul', { className: 'quiz-splash-list' },
+                React.createElement('li', null, 'Why might feeling understood be more important than love?'),
+                React.createElement('li', null, 'Why are some people more sensitive to being misunderstood than others?'),
+                React.createElement('li', null, 'Why is feeling understood the key to romance?'),
+                React.createElement('li', null, 'What do brain scans reveal about the neural nature of feeling understood?'),
+                React.createElement('li', null, 'How does feeling understood protect against depression?'),
               ),
               React.createElement('button', { className: 'quiz-cta', onClick: goNext }, "Let's Go"),
             )
@@ -987,7 +993,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: text, voice: 'nova' }),
+        body: JSON.stringify({ input: text, voice: 'shimmer' }),
       });
       if (!response.ok) throw new Error('TTS request failed: ' + response.status);
       return await response.arrayBuffer();
@@ -1294,10 +1300,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
         const greeting = buildGreeting(quizProfile);
         startNewConversation([{ role: 'assistant', content: greeting }]);
         setStarted(true);
-        setTimeout(() => {
-          setVoiceState('speaking');
-          speak(greeting).then(() => setVoiceState('idle'));
-        }, 400);
+        setVoiceState('speaking');
+        speak(greeting).then(() => setVoiceState('idle'));
       };
 
       const sendToClaude = async (userText) => {
@@ -1355,8 +1359,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
                   // quickly as possible \u2014 subsequent chunks are looser to
                   // keep prosody natural.
                   const isFirstChunk = !streamSpeaker;
-                  const clauseThreshold = isFirstChunk ? 22 : 40;
-                  const forceThreshold = isFirstChunk ? 45 : 80;
+                  const clauseThreshold = isFirstChunk ? 12 : 40;
+                  const forceThreshold = isFirstChunk ? 28 : 80;
 
                   let fireChunk = null;
                   const sentenceMatch = sentenceBuffer.match(/^([\s\S]*?[.!?])[\s]?/);
@@ -1812,26 +1816,66 @@ Remember: you are holding space for two people to feel heard by each other. Your
           ),
           React.createElement('div', { className: 'info-inner' },
             React.createElement('div', { className: 'info-eyebrow' }, 'About'),
-            React.createElement('h1', { className: 'info-title' }, 'Feel Understood'),
-            React.createElement('p', { className: 'info-lede' },
-              'A voice-first coach for the conversations that matter. Slow down, notice, and choose how you want to show up.'
+            React.createElement('h1', { className: 'info-title' }, 'About Feel Understood'),
+            React.createElement('div', { className: 'info-prose' },
+              React.createElement('p', null,
+                'The aim of our not-for-profit campaign is simple. We want to help more people enjoy the benefits of feeling understood — an essential ingredient of a fulfilling life that often seems overlooked and in short supply.'
+              ),
+              React.createElement('p', null,
+                'On a grand scale, everyone agrees that the world would be a better place if there was more understanding in the air and less misunderstanding, more connection and less disconnection. This wouldn’t solve every problem, of course, but it would create more opportunities for cooperation and collaboration, and a greater appreciation of our similarities rather than our differences.'
+              ),
+              React.createElement('p', null,
+                'On a day-to-day level, we can individually make our lives richer in understanding by changing the way we approach conversations, particularly those we consider potentially difficult or challenging.'
+              ),
+              React.createElement('p', null,
+                'Put simply, the approach we’re promoting is an informal, everyday version of dialogue — true two-way communication that seeks clarity and shared understanding as its foundation and first principle.'
+              ),
+              React.createElement('p', null,
+                'Dialogic conversations like this are far more likely to happen if a certain set of skills are being used wisely in service of the interaction. There are, in fact, two sets of skills involved, because in a dialogic conversation you have two different but complementary aims. One aim is to feel understood by the other person. The other aim is to have the other person feel understood by you. Two different tasks, each requiring a specific set of skills to perform consistently well.'
+              ),
+              React.createElement('p', null,
+                'The Conversation Coach is a chatbot deeply trained in the skills and wisdom of dialogic conversation. As well as modelling these skills in its conversations with you, the Conversation Coach is also an endlessly patient teacher and a 24/7 source of advice on how to have better conversations. Imagine being able to rehearse a difficult conversation anytime, just before it happens.'
+              ),
+              React.createElement('p', null,
+                'We’ve trained the Conversation Coach with a unique collection of resources developed over 30 years of research and development in the field of interpersonal communication. Many of the core ideas are drawn from the co-authored works of Professor Gerard Egan and Andrew Bailey, both published and unpublished. Further back, we must also acknowledge Carl Rogers, the pioneer of counselling, who demonstrated to the world the remarkable therapeutic power of feeling understood.'
+              ),
+              React.createElement('p', null,
+                'The Conversation Coach’s training resources also include landmark papers published in leading science journals. In short, there is nothing gimmicky about our approach. It’s based on proven principles and practices, many from the world of counselling and all backed by science.'
+              ),
+            ),
+            React.createElement('hr', { className: 'info-divider' }),
+            React.createElement('h2', { className: 'info-section-title' }, 'Who’s Behind the Campaign?'),
+            React.createElement('div', { className: 'info-card' },
+              React.createElement('h3', null, 'Andrew Bailey'),
+              React.createElement('p', null,
+                'Andrew’s early career was spent as a journalist, mostly with Rolling Stone, and in the music business as an A&R manager. He then spent the rest of his career as a copywriter and creative director in the media industry. His first collaboration with Professor Gerard Egan was a series of books called ',
+                React.createElement('em', null, 'TalkWorks: How To Get More Out Of Life Through Better Conversations'),
+                '. Over a million copies were distributed nationally as part of the Millennium celebrations. The ideas in the books later became the basis of DVDs, theatre productions, and online courses for use in schools, teacher training, and businesses. A more recent collaboration with Gerry was ',
+                React.createElement('em', null, 'The Helping Conversation'),
+                ', published in 2022, a reader-friendly introduction to the skills of everyday counselling.'
+              ),
             ),
             React.createElement('div', { className: 'info-card' },
-              React.createElement('h3', null, 'The Dialogue System'),
+              React.createElement('h3', null, 'Professor Gerard Egan'),
               React.createElement('p', null,
-                'This app is built on the Dialogue System framework by Andrew Bailey — a practical approach to the three roles in every conversation: Explainer, Understander, and Conversation Manager.'
+                'Professor Gerard Egan, born in 1930, is an influential American psychologist whose career as a counsellor, author, and educator has spanned more than 60 years. His major work, ',
+                React.createElement('em', null, 'The Skilled Helper'),
+                ', was first published in 1975 and became a classic text in counselling training programmes. The book remains in print today, 50 years later — a remarkable achievement. Updated periodically with the latest studies, it is now in its 11th edition. Widely translated, Gerry’s books remain required reading for trainee counsellors and therapists throughout the world.'
               ),
             ),
-            !isBeta && React.createElement('div', { className: 'info-card' },
-              React.createElement('h3', null, 'Three ways to use it'),
-              React.createElement('ul', { className: 'info-list' },
-                React.createElement('li', null, React.createElement('strong', null, 'Coach'), ' — lessons and practice on the skills of effective dialogue.'),
-                React.createElement('li', null, React.createElement('strong', null, 'Helpline'), ' — bring a specific conversation you want to plan, unpack, or rehearse.'),
-                React.createElement('li', null, React.createElement('strong', null, 'Facilitator'), ' — invite another person in; I hold neutral space so you both feel heard.'),
+            React.createElement('div', { className: 'info-card' },
+              React.createElement('h3', null, 'Adam (Eazy) Bailey'),
+              React.createElement('p', null,
+                'Adam (Eazy) Bailey leads technology and digital innovation while advising on strategy. His career spans media, live events, digital commerce, and strategic consulting, bringing a commercially minded and entrepreneurial approach to organisations and projects. Eazy began his career at MTV, where he became Head of European Events, before moving into independent consulting across events, operations, and commercial strategy. He now specialises in technology-led and online ventures, combining expertise in digital infrastructure, e-commerce, product development, and strategic consulting to help organisations strengthen operations, sharpen strategic direction, and build effective digital platforms.'
               ),
             ),
-            React.createElement('p', { className: 'info-footnote' },
-              'Your conversations stay on this device. No account required.'
+            React.createElement('div', { className: 'info-card' },
+              React.createElement('h3', null, 'Adrian Hosford'),
+              React.createElement('p', null,
+                'Adrian became fascinated with the effectiveness and quality of human communication while developing the “It’s Good to Talk” campaign. He created the Communication Forum to research the subject in greater depth and commissioned ',
+                React.createElement('em', null, 'TalkWorks'),
+                ' to help make the skills and insights of better communication widely available. His work continues to focus on improving the quality of human communication so that more people can feel understood.'
+              ),
             ),
           ),
         ),

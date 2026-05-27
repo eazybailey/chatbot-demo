@@ -290,14 +290,15 @@ html, body {
 
 /* Splash screen */
 .quiz-splash {
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   text-align: center;
   padding-top: calc(24px + var(--safe-top));
 }
 
 .quiz-splash-content {
-  max-width: 340px;
+  max-width: 460px;
+  width: 100%;
   animation: fadeInUp 0.6s ease-out;
 }
 
@@ -317,15 +318,43 @@ html, body {
   font-size: 30px;
   font-weight: 400;
   line-height: 1.2;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: var(--text);
 }
 
 .quiz-splash-desc {
   font-size: 16px;
   color: var(--text-dim);
-  line-height: 1.5;
-  margin-bottom: 36px;
+  line-height: 1.55;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.quiz-splash-desc:last-of-type {
+  margin-bottom: 24px;
+}
+
+.quiz-splash-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.quiz-splash-list li {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.45;
+  padding-left: 18px;
+  position: relative;
+}
+.quiz-splash-list li::before {
+  content: '•';
+  color: var(--accent, #ffd21f);
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .quiz-splash-features {
@@ -2191,16 +2220,55 @@ html, body {
   padding: 18px 20px;
 }
 .info-card h3 {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text);
   margin: 0 0 8px;
 }
 .info-card p {
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--text-dim);
   margin: 0;
+}
+.info-card p + p {
+  margin-top: 10px;
+}
+.info-card em {
+  font-style: italic;
+  color: var(--text);
+}
+
+.info-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.info-prose p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  margin: 0;
+}
+.info-prose em {
+  font-style: italic;
+  color: var(--text);
+}
+
+.info-divider {
+  border: none;
+  border-top: 1px solid var(--surface-2);
+  margin: 8px 0;
+  width: 100%;
+}
+
+.info-section-title {
+  font-family: Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  margin: 4px 0 0;
 }
 
 .info-list {
