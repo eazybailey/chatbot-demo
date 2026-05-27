@@ -320,12 +320,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
     const buildCoachGreeting = (profile) => {
       if (!profile) {
-        return "Hey, welcome. I\u2019m your conversation coach. Before we go anywhere else, here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. What do you think gets in the way? Once we know that, we can talk about ways to change the situation together.";
+        return "Hey, welcome. I\u2019m your conversation coach. Before we go anywhere else, here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?";
       }
 
       const name = profile.name || 'friend';
 
-      return `Hi ${name}, I\u2019m really glad you\u2019re here. Here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Maybe they leave you feeling a little unseen, or you walk away wishing you\u2019d said something different. Who comes to mind \u2014 and what do you think gets in the way? Once we know that, we can talk about ways to change the situation together.`;
+      return `Hi ${name}, I\u2019m really glad you\u2019re here. Here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Maybe they leave you feeling a little unseen, or you walk away wishing you\u2019d said something different. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?`;
     };
 
     const buildFacilitatorGreeting = (profile) => {
