@@ -945,6 +945,212 @@ Remember: you are holding space for two people to feel heard by each other. Your
       return { start, stop, supported };
     };
 
+    // ── MediaRecorder + Whisper Fallback ──
+    //
+    // iOS Chrome (CriOS), iOS Firefox (FxiOS), and iOS Edge (EdgiOS) all run
+    // on WKWebView but Apple does not expose webkitSpeechRecognition to those
+    // third-party browsers in regular browsing mode. The API may exist on the
+    // window but .start() silently fails or errors. The PWA standalone mode
+    // uses a different WKWebView context where it works — that's why "Add to
+    // Home Screen" fixes it.
+    //
+    // For those browsers, we record audio via MediaRecorder and transcribe
+    // via OpenAI Whisper. Same interface as useSpeechRecognition so the rest
+    // of the app doesn't care which one is active.
+    const useMediaRecorderSTT = () => {
+      const [supported, setSupported] = React.useState(true);
+      const recorderRef = React.useRef(null);
+      const streamRef = React.useRef(null);
+      const chunksRef = React.useRef([]);
+      const audioCtxRef = React.useRef(null);
+      const analyserRef = React.useRef(null);
+      const animRef = React.useRef(null);
+      const mimeRef = React.useRef('');
+      const onFinalRef = React.useRef(null);
+      const onErrorRef = React.useRef(null);
+      const onProcessingRef = React.useRef(null);
+      const startedAtRef = React.useRef(0);
+
+      React.useEffect(() => {
+        if (!navigator.mediaDevices?.getUserMedia || typeof window.MediaRecorder === 'undefined') {
+          setSupported(false);
+        }
+        return () => cleanup();
+      }, []);
+
+      const cleanup = () => {
+        if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
+        if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+        if (audioCtxRef.current) { try { audioCtxRef.current.close(); } catch(e) {} audioCtxRef.current = null; }
+        analyserRef.current = null;
+      };
+
+      const pickMime = () => {
+        const candidates = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4;codecs=mp4a.40.2',
+          'audio/mp4',
+          'audio/aac',
+        ];
+        for (const c of candidates) {
+          if (window.MediaRecorder.isTypeSupported && window.MediaRecorder.isTypeSupported(c)) return c;
+        }
+        return '';
+      };
+
+      const start = async (onInterim, onFinal, onError, onProcessing) => {
+        onFinalRef.current = onFinal;
+        onErrorRef.current = onError;
+        onProcessingRef.current = onProcessing || null;
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e) {
+          const name = e?.name || '';
+          if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+            onError('not-allowed');
+          } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+            onError('no-mic');
+          } else {
+            onError(e?.message || 'mic-failed');
+          }
+          return;
+        }
+        streamRef.current = stream;
+
+        const mime = pickMime();
+        mimeRef.current = mime;
+        let rec;
+        try {
+          rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+        } catch (e) {
+          cleanup();
+          onError('recorder-failed');
+          return;
+        }
+        recorderRef.current = rec;
+        chunksRef.current = [];
+        startedAtRef.current = Date.now();
+
+        rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+        rec.onerror = () => onErrorRef.current && onErrorRef.current('recorder-failed');
+        rec.onstop = async () => {
+          const chunks = chunksRef.current;
+          chunksRef.current = [];
+          cleanup();
+
+          const type = mimeRef.current || (chunks[0]?.type || 'audio/webm');
+          const ext = /mp4|aac|m4a/.test(type) ? 'mp4' : 'webm';
+          const blob = new Blob(chunks, { type });
+
+          // Reject too-short recordings (under ~400ms of audio is usually a mis-tap)
+          const duration = Date.now() - startedAtRef.current;
+          if (blob.size < 1500 || duration < 400) {
+            onFinalRef.current && onFinalRef.current('');
+            return;
+          }
+
+          if (onProcessingRef.current) onProcessingRef.current();
+
+          try {
+            const fd = new FormData();
+            fd.append('audio', blob, `audio.${ext}`);
+            const res = await fetch('/api/stt', { method: 'POST', body: fd });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              onErrorRef.current && onErrorRef.current(err.error || 'stt-failed');
+              return;
+            }
+            const data = await res.json();
+            onFinalRef.current && onFinalRef.current((data.text || '').trim());
+          } catch (e) {
+            onErrorRef.current && onErrorRef.current(e?.message || 'stt-failed');
+          }
+        };
+
+        // Silence detection so behavior matches the native SR path
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AC();
+          audioCtxRef.current = ctx;
+          const source = ctx.createMediaStreamSource(stream);
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 1024;
+          source.connect(analyser);
+          analyserRef.current = analyser;
+
+          const buf = new Uint8Array(analyser.frequencyBinCount);
+          const SILENCE_MS = 2000;
+          const SPEECH_RMS = 0.02;
+          const MIN_BEFORE_AUTOSTOP = 700;
+          let hasSpoken = false;
+          let lastSpeechAt = Date.now();
+
+          const tick = () => {
+            if (!analyserRef.current) return;
+            analyser.getByteTimeDomainData(buf);
+            let sum = 0;
+            for (let i = 0; i < buf.length; i++) {
+              const v = (buf[i] - 128) / 128;
+              sum += v * v;
+            }
+            const rms = Math.sqrt(sum / buf.length);
+            const now = Date.now();
+            if (rms > SPEECH_RMS) {
+              hasSpoken = true;
+              lastSpeechAt = now;
+            }
+            if (hasSpoken && now - startedAtRef.current > MIN_BEFORE_AUTOSTOP && now - lastSpeechAt > SILENCE_MS) {
+              stop();
+              return;
+            }
+            animRef.current = requestAnimationFrame(tick);
+          };
+          animRef.current = requestAnimationFrame(tick);
+        } catch (e) {
+          // Silence detection is best-effort — manual stop still works.
+        }
+
+        try { rec.start(); } catch (e) {
+          cleanup();
+          onError('recorder-failed');
+        }
+      };
+
+      const stop = () => {
+        const rec = recorderRef.current;
+        if (rec && rec.state !== 'inactive') {
+          try { rec.stop(); } catch (e) {}
+        } else {
+          cleanup();
+          onFinalRef.current && onFinalRef.current('');
+        }
+      };
+
+      return { start, stop, supported };
+    };
+
+    // ── Browser detection: which STT path to use ──
+    //
+    // iOS Chrome (CriOS) / Firefox (FxiOS) / Edge (EdgiOS) need the Whisper
+    // fallback. iOS Safari and the home-screen PWA can use native SR.
+    const needsRecorderFallback = () => {
+      if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const hasNativeSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      const isStandalone = window.navigator.standalone === true
+        || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+      // PWA standalone on iOS: native SR works, prefer it (lower latency, free).
+      if (isStandalone && hasNativeSR) return false;
+      if (isIOS && /CriOS|FxiOS|EdgiOS/.test(ua)) return true;
+      if (!hasNativeSR) return true;
+      return false;
+    };
+
     // ── TTS Audio (OpenAI TTS via Nova) ──
     //
     // iOS WebKit blocks HTMLAudioElement.play() unless called within the
@@ -1260,7 +1466,11 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const profileRef = React.useRef(profile);
       const activeConvoIdRef = React.useRef(activeConvoId);
       const inputRef = React.useRef(null);
-      const { start: startRec, stop: stopRec, supported: sttSupported } = useSpeechRecognition();
+      const useRecorderFallback = React.useMemo(() => needsRecorderFallback(), []);
+      const nativeSTT = useSpeechRecognition();
+      const recorderSTT = useMediaRecorderSTT();
+      const { start: startRec, stop: stopRec, supported: sttSupported } =
+        useRecorderFallback ? recorderSTT : nativeSTT;
       const { speak, speakStreaming, cancel: cancelSpeak } = useSpeechSynthesis();
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -1426,7 +1636,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
         if (voiceState === 'processing') return;
 
         if (voiceState === 'listening') {
-          // Manual stop — onFinal fires synchronously from commit()
+          // Manual stop. Native SR fires onFinal synchronously; Whisper path
+          // needs a network round-trip, so move to processing right away.
+          if (useRecorderFallback) {
+            setInterimText('');
+            setVoiceState('processing');
+          }
           stopRec();
           return;
         }
@@ -1445,15 +1660,26 @@ Remember: you are holding space for two people to feel heard by each other. Your
           (err) => {
             let msg;
             if (err === 'not-allowed' || err === 'service-not-allowed') {
-              msg = 'Mic not available here. Try Safari, or use the text input below.';
-            } else if (err === 'not-supported' || err === 'start-failed') {
+              msg = 'Mic permission denied. Enable it in your browser settings to use voice.';
+            } else if (err === 'no-mic') {
+              msg = 'No microphone detected on this device.';
+            } else if (err === 'not-supported' || err === 'start-failed' || err === 'recorder-failed') {
               msg = 'Voice not supported in this browser. Use the text input below.';
+            } else if (err === 'stt-failed') {
+              msg = 'Could not transcribe audio. Try again or use the text input.';
             } else {
               msg = `Speech error: ${err}`;
             }
             setError(msg);
+            setInterimText('');
             setVoiceState('idle');
             setTimeout(() => setError(null), 6000);
+          },
+          // onProcessing — fires when recorder stops and transcription begins
+          // (Whisper path only; native SR returns final synchronously).
+          () => {
+            setInterimText('');
+            setVoiceState('processing');
           }
         );
       };
@@ -2006,13 +2232,13 @@ Remember: you are holding space for two people to feel heard by each other. Your
           ),
 
           !sttSupported && React.createElement('p', { className: 'browser-warn' },
-            'Voice requires Chrome or Edge. Type below instead.'
+            'Voice not supported in this browser. Type below instead.'
           ),
 
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.7.0')
+          }, 'v1.8.0')
         )
       );
     };
