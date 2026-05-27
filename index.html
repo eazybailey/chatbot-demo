@@ -970,6 +970,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const onErrorRef = React.useRef(null);
       const onProcessingRef = React.useRef(null);
       const startedAtRef = React.useRef(0);
+      // Last computed RMS level [0..1ish] — read by WaveVisualizer for
+      // live "we can hear you" feedback during recording.
+      const levelRef = React.useRef(0);
 
       React.useEffect(() => {
         if (!navigator.mediaDevices?.getUserMedia || typeof window.MediaRecorder === 'undefined') {
@@ -983,6 +986,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
         if (audioCtxRef.current) { try { audioCtxRef.current.close(); } catch(e) {} audioCtxRef.current = null; }
         analyserRef.current = null;
+        levelRef.current = 0;
       };
 
       const pickMime = () => {
@@ -1097,6 +1101,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
               sum += v * v;
             }
             const rms = Math.sqrt(sum / buf.length);
+            levelRef.current = rms;
             const now = Date.now();
             if (rms > SPEECH_RMS) {
               hasSpoken = true;
@@ -1129,7 +1134,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
         }
       };
 
-      return { start, stop, supported };
+      const getLevel = () => levelRef.current;
+
+      return { start, stop, supported, getLevel };
     };
 
     // ── Browser detection: which STT path to use ──
@@ -1398,13 +1405,48 @@ Remember: you are holding space for two people to feel heard by each other. Your
     };
 
     // ── Wave Visualizer ──
-    const WaveVisualizer = () => {
+    //
+    // Without getLevel: bars run a fixed CSS animation (used on the native SR
+    // path where a live transcript already signals "we hear you").
+    //
+    // With getLevel: bars react to live mic RMS from the Whisper-path
+    // analyser. This is the affordance that tells the user the mic is on
+    // and picking them up — without it, recording feels dead.
+    const WaveVisualizer = ({ getLevel }) => {
+      const barRefs = React.useRef([]);
+      React.useEffect(() => {
+        if (!getLevel) return;
+        let raf;
+        let smoothed = 0;
+        const animate = () => {
+          // ~0.25 RMS is a normal speaking voice; scale to 0..1.
+          const raw = Math.min(1, getLevel() / 0.25);
+          // Asymmetric smoothing — snap up fast, decay slow — so the bars
+          // feel responsive on each syllable but don't flicker.
+          smoothed = raw > smoothed
+            ? smoothed * 0.3 + raw * 0.7
+            : smoothed * 0.85 + raw * 0.15;
+          for (let i = 0; i < barRefs.current.length; i++) {
+            const el = barRefs.current[i];
+            if (!el) continue;
+            // Slight per-bar phase so they don't all move in lockstep.
+            const wobble = 0.75 + 0.25 * Math.sin(Date.now() / 180 + i * 0.9);
+            const h = 4 + smoothed * 22 * wobble;
+            el.style.height = h + 'px';
+          }
+          raf = requestAnimationFrame(animate);
+        };
+        raf = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(raf);
+      }, [getLevel]);
+
       return React.createElement('div', { className: 'wave-viz' },
         ...[0,1,2,3,4,5,6].map(i =>
           React.createElement('div', {
             key: i,
-            className: 'wave-bar',
-            style: { animationDelay: `${i * 0.1}s` }
+            ref: el => { barRefs.current[i] = el; },
+            className: getLevel ? 'wave-bar reactive' : 'wave-bar',
+            style: getLevel ? null : { animationDelay: `${i * 0.1}s` }
           })
         )
       );
@@ -2188,7 +2230,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
         React.createElement('footer', { className: 'controls' },
           // Mic area
           React.createElement('div', { className: 'mic-area' },
-            voiceState === 'listening' && React.createElement(WaveVisualizer, {}),
+            voiceState === 'listening' && React.createElement(WaveVisualizer, {
+              getLevel: useRecorderFallback ? recorderSTT.getLevel : null,
+            }),
             React.createElement('button', {
               className: `mic-btn ${voiceState}`,
               onClick: handleMicClick,
@@ -2238,7 +2282,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.8.0')
+          }, 'v1.8.1')
         )
       );
     };

@@ -1664,6 +1664,14 @@ html, body {
   border-radius: 2px;
   animation: waveBar 0.8s ease-in-out infinite;
 }
+.wave-bar.reactive {
+  /* Height is driven by JS from live mic level — disable the keyframe
+     animation and let the inline style take over. Short transition keeps
+     motion smooth between RAF updates. */
+  animation: none;
+  height: 4px;
+  transition: height 60ms ease-out;
+}
 
 /* Text input */
 .text-form {

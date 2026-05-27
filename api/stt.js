@@ -34,7 +34,9 @@ export default async function handler(req) {
 
     const outgoing = new FormData();
     outgoing.append('file', audio, filename);
-    outgoing.append('model', 'whisper-1');
+    // gpt-4o-mini-transcribe is ~2x faster and ~½ the cost of whisper-1 with
+    // comparable accuracy on short English utterances.
+    outgoing.append('model', 'gpt-4o-mini-transcribe');
     outgoing.append('language', 'en');
     outgoing.append('response_format', 'json');
 
