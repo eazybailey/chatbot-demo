@@ -6,29 +6,10 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// Provider selection.
-// Prefer Groq (whisper-large-v3-turbo): ~5x faster, ~5x cheaper than OpenAI,
-// generous free tier. Falls back to OpenAI (gpt-4o-mini-transcribe) so this
-// keeps working if GROQ_API_KEY isn't set yet.
-function pickProvider() {
-  if (process.env.GROQ_API_KEY) {
-    return {
-      name: 'groq',
-      url: 'https://api.groq.com/openai/v1/audio/transcriptions',
-      key: process.env.GROQ_API_KEY,
-      model: 'whisper-large-v3-turbo',
-    };
-  }
-  if (process.env.OPENAI_API_KEY) {
-    return {
-      name: 'openai',
-      url: 'https://api.openai.com/v1/audio/transcriptions',
-      key: process.env.OPENAI_API_KEY,
-      model: 'gpt-4o-mini-transcribe',
-    };
-  }
-  return null;
-}
+// Groq Whisper Turbo. OpenAI-compatible API, ~5x faster than the real
+// OpenAI Whisper for ~5x less cost, plus a generous free tier.
+const GROQ_STT_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+const GROQ_STT_MODEL = 'whisper-large-v3-turbo';
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
@@ -42,9 +23,8 @@ export default async function handler(req) {
     });
   }
 
-  const provider = pickProvider();
-  if (!provider) {
-    return new Response(JSON.stringify({ error: 'No STT provider configured' }), {
+  if (!process.env.GROQ_API_KEY) {
+    return new Response(JSON.stringify({ error: 'GROQ_API_KEY not configured' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...CORS },
     });
@@ -66,14 +46,14 @@ export default async function handler(req) {
 
     const outgoing = new FormData();
     outgoing.append('file', audio, filename);
-    outgoing.append('model', provider.model);
+    outgoing.append('model', GROQ_STT_MODEL);
     outgoing.append('language', 'en');
     outgoing.append('response_format', 'json');
     outgoing.append('temperature', '0');
 
-    const response = await fetch(provider.url, {
+    const response = await fetch(GROQ_STT_URL, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${provider.key}` },
+      headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}` },
       body: outgoing,
     });
 
@@ -86,7 +66,7 @@ export default async function handler(req) {
     }
 
     const data = await response.json();
-    return new Response(JSON.stringify({ text: (data.text || '').trim(), provider: provider.name }), {
+    return new Response(JSON.stringify({ text: (data.text || '').trim(), provider: 'groq' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...CORS },
     });

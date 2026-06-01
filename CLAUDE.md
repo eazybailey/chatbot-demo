@@ -9,8 +9,8 @@ A voice-first Progressive Web App for practicing better conversations through AI
 | Frontend | React 18 (via CDN, no build step), Babel Standalone for JSX |
 | Backend | Vercel Edge Functions (Node.js) |
 | AI | Anthropic Claude API (claude-sonnet-4-20250514) |
-| TTS | OpenAI TTS API (tts-1 model, nova voice) |
-| STT | Web Speech API (SpeechRecognition) |
+| TTS | Groq Orpheus TTS (canopylabs/orpheus-v1-english, "autumn" voice) |
+| STT | Web Speech API (SpeechRecognition) on Safari/Android/desktop; Groq Whisper Turbo (whisper-large-v3-turbo) on iOS Chrome/Firefox/Edge |
 | Hosting | Vercel |
 | Styling | Vanilla CSS, Google Fonts (Inter, Patrick Hand) |
 | PWA | Service Worker, Web App Manifest |
@@ -22,7 +22,8 @@ chatbot-demo/
 ├── api/                       # Vercel serverless endpoints
 │   ├── chat.js               # Non-streaming Claude API (legacy)
 │   ├── chat-stream.js        # Streaming Claude API (primary, Edge Runtime)
-│   └── tts.js                # OpenAI TTS endpoint (Edge Runtime)
+│   ├── tts.js                # Groq Orpheus TTS endpoint (Edge Runtime)
+│   └── stt.js                # Groq Whisper Turbo STT endpoint (Edge Runtime)
 ├── images/                    # Icons, logos, doodle-style SVGs
 │   ├── favicon.svg
 │   ├── logo.svg
@@ -73,7 +74,8 @@ Users can interrupt at any point by tapping the mic during SPEAKING.
 |----------|---------|---------|
 | `POST /api/chat-stream` | Edge | Primary. Streams Claude responses as simplified SSE (`data: { text }`, then `data: [DONE]`) |
 | `POST /api/chat` | Node.js | Legacy non-streaming Claude call. Not actively used |
-| `POST /api/tts` | Edge | Converts text to MP3 audio via OpenAI TTS API |
+| `POST /api/tts` | Edge | Converts text to MP3 audio via Groq Orpheus TTS (200-char input limit per request) |
+| `POST /api/stt` | Edge | Transcribes audio via Groq Whisper Turbo (used by iOS Chrome / Firefox / Edge fallback path) |
 
 All endpoints accept JSON bodies and return CORS headers for all origins.
 
@@ -137,8 +139,8 @@ Responses are optimized for voice: concise (2-4 sentences), warm, no markdown/bu
 ## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...   # Required for Claude API
-OPENAI_API_KEY=sk-...          # Required for TTS
+ANTHROPIC_API_KEY=sk-ant-...   # Required for Claude API (the "brain")
+GROQ_API_KEY=gsk_...           # Required for voice stack (TTS + STT)
 ```
 
 ## Deployment
@@ -162,7 +164,7 @@ Hosted on **Vercel**. Config in `vercel.json`:
 
 **Dev**: `sharp@^0.34.5` (icon generation only)
 
-**External APIs**: Anthropic Claude, OpenAI TTS
+**External APIs**: Anthropic Claude (LLM), Groq (TTS + STT)
 
 ## Browser Support
 

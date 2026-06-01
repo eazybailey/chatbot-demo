@@ -1,46 +1,70 @@
 export const config = { runtime: 'edge' };
 
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// Groq Orpheus TTS. OpenAI-compatible endpoint, so request/response shape
+// matches what we used previously — just different model + voice IDs.
+//
+// English voices: autumn, diana, hannah, austin, daniel, troy
+// 'autumn' is the warm female default that most closely fills the role
+// 'shimmer' did on OpenAI.
+const GROQ_TTS_URL = 'https://api.groq.com/openai/v1/audio/speech';
+const GROQ_TTS_MODEL = 'canopylabs/orpheus-v1-english';
+const DEFAULT_VOICE = 'autumn';
+// Groq Orpheus has a 200-char hard limit per request. Keep margin.
+const MAX_INPUT_CHARS = 180;
+
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
+    return new Response(null, { status: 200, headers: CORS });
   }
 
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...CORS },
+    });
+  }
+
+  if (!process.env.GROQ_API_KEY) {
+    return new Response(JSON.stringify({ error: 'GROQ_API_KEY not configured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...CORS },
     });
   }
 
   try {
-    const { input, voice } = await req.json();
+    const { input, voice, speed } = await req.json();
 
     if (!input || !input.trim()) {
       return new Response(JSON.stringify({ error: 'No input text provided' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...CORS },
       });
     }
 
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    // Defensive truncation in case the client sends something longer than
+    // Groq's 200-char limit. Client already chunks; this is belt-and-braces.
+    const safeInput = input.length > MAX_INPUT_CHARS
+      ? input.slice(0, MAX_INPUT_CHARS).replace(/\s+\S*$/, '')
+      : input;
+
+    const response = await fetch(GROQ_TTS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'tts-1-hd',
-        input: input,
-        voice: voice || 'shimmer',
+        model: GROQ_TTS_MODEL,
+        input: safeInput,
+        voice: voice || DEFAULT_VOICE,
         response_format: 'mp3',
-        speed: 1.04,
+        speed: typeof speed === 'number' ? speed : 1.0,
       }),
     });
 
@@ -48,11 +72,10 @@ export default async function handler(req) {
       const err = await response.json().catch(() => ({}));
       return new Response(JSON.stringify({ error: err.error?.message || 'TTS request failed' }), {
         status: response.status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...CORS },
       });
     }
 
-    // Stream audio directly from OpenAI to client
     return new Response(response.body, {
       status: 200,
       headers: {
@@ -63,7 +86,7 @@ export default async function handler(req) {
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...CORS },
     });
   }
 }

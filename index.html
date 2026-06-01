@@ -1213,7 +1213,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: text, voice: 'shimmer' }),
+        body: JSON.stringify({ input: text, voice: 'autumn' }),
       });
       if (!response.ok) throw new Error('TTS request failed: ' + response.status);
       return await response.arrayBuffer();
@@ -1272,18 +1272,44 @@ Remember: you are holding space for two people to feel heard by each other. Your
       });
     };
 
-    // Splits text into sentences for chunked TTS
+    // Splits text into sentences for chunked TTS.
+    // Groq Orpheus has a 200-char per-request limit, so any chunk longer
+    // than MAX_TTS_CHARS gets split further on a word boundary.
+    const MAX_TTS_CHARS = 180;
+    const splitLong = (s) => {
+      if (s.length <= MAX_TTS_CHARS) return [s];
+      const out = [];
+      let rest = s;
+      while (rest.length > MAX_TTS_CHARS) {
+        // Prefer a clause break (,;:) near the limit, else a word boundary.
+        const window = rest.slice(0, MAX_TTS_CHARS);
+        let cut = Math.max(
+          window.lastIndexOf(', '),
+          window.lastIndexOf('; '),
+          window.lastIndexOf(': '),
+          window.lastIndexOf(' — '),
+        );
+        if (cut < MAX_TTS_CHARS * 0.5) cut = window.lastIndexOf(' ');
+        if (cut < 20) cut = MAX_TTS_CHARS; // give up, hard split
+        out.push(rest.slice(0, cut + 1).trim());
+        rest = rest.slice(cut + 1);
+      }
+      if (rest.trim()) out.push(rest.trim());
+      return out;
+    };
     const splitSentences = (text) => {
-      const parts = text.match(/[^.!?]+[.!?]+[\s]*/g);
-      if (!parts) return [text];
-      const result = [];
+      const parts = text.match(/[^.!?]+[.!?]+[\s]*/g) || [text];
+      const merged = [];
       for (const p of parts) {
-        if (result.length > 0 && result[result.length - 1].length < 20) {
-          result[result.length - 1] += p;
+        if (merged.length > 0 && merged[merged.length - 1].length < 20) {
+          merged[merged.length - 1] += p;
         } else {
-          result.push(p);
+          merged.push(p);
         }
       }
+      // Flatten with per-chunk length cap.
+      const result = [];
+      for (const m of merged) for (const piece of splitLong(m)) result.push(piece);
       return result;
     };
 
@@ -2322,7 +2348,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.9.0')
+          }, 'v2.0.0')
         )
       );
     };
