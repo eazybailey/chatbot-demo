@@ -9,7 +9,7 @@ A voice-first Progressive Web App for practicing better conversations through AI
 | Frontend | React 18 (via CDN, no build step), Babel Standalone for JSX |
 | Backend | Vercel Edge Functions (Node.js) |
 | AI | Anthropic Claude API (claude-sonnet-4-20250514) |
-| TTS | Groq Orpheus TTS (canopylabs/orpheus-v1-english, "autumn" voice) |
+| TTS | Groq Orpheus TTS (canopylabs/orpheus-v1-english, "diana" voice) |
 | STT | Web Speech API (SpeechRecognition) on Safari/Android/desktop; Groq Whisper Turbo (whisper-large-v3-turbo) on iOS Chrome/Firefox/Edge |
 | Hosting | Vercel |
 | Styling | Vanilla CSS, Google Fonts (Inter, Patrick Hand) |

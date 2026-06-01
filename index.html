@@ -1213,7 +1213,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: text, voice: 'autumn' }),
+        body: JSON.stringify({ input: text, voice: 'diana' }),
       });
       if (!response.ok) throw new Error('TTS request failed: ' + response.status);
       return await response.arrayBuffer();
@@ -2348,7 +2348,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.0.0')
+          }, 'v2.0.1')
         )
       );
     };
