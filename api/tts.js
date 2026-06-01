@@ -54,12 +54,13 @@ export default async function handler(req) {
       : input;
 
     // Keep the body minimal — Orpheus is stricter than OpenAI about
-    // extra params. Only include speed if explicitly requested and != 1.
+    // extra params. Orpheus only emits WAV (not mp3/ogg/flac), so the
+    // response_format is fixed.
     const body = {
       model: GROQ_TTS_MODEL,
       input: safeInput,
       voice: voice || DEFAULT_VOICE,
-      response_format: 'mp3',
+      response_format: 'wav',
     };
     if (typeof speed === 'number' && speed !== 1.0) body.speed = speed;
 
@@ -83,7 +84,7 @@ export default async function handler(req) {
     return new Response(response.body, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': 'audio/wav',
         'Access-Control-Allow-Origin': '*',
       },
     });
