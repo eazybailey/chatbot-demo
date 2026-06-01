@@ -1208,14 +1208,22 @@ Remember: you are holding space for two people to feel heard by each other. Your
     document.addEventListener('touchend', ensureAudioContext, true);
     document.addEventListener('click', ensureAudioContext, true);
 
-    // Fetches TTS audio as ArrayBuffer
+    // Fetches TTS audio as ArrayBuffer. On failure, throws an Error whose
+    // message contains the server's JSON error body so we can see what
+    // Groq actually rejected.
     const fetchTTSBuffer = async (text) => {
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: text, voice: 'diana' }),
       });
-      if (!response.ok) throw new Error('TTS request failed: ' + response.status);
+      if (!response.ok) {
+        let detail = '';
+        try { detail = JSON.stringify(await response.json()); } catch(e) {}
+        const msg = `TTS ${response.status}: ${detail || response.statusText}`;
+        console.error(msg);
+        throw new Error(msg);
+      }
       return await response.arrayBuffer();
     };
 
@@ -1323,8 +1331,15 @@ Remember: you are holding space for two people to feel heard by each other. Your
       // on top of the new audio — the "echo" bug.
       const streamGenRef = React.useRef(0);
 
+      // Surfaced TTS error — read by the App to show a banner when Groq
+      // fails so the failure mode is "no audio + error message" instead
+      // of the previous "robotic browser fallback that hides the bug".
+      const lastErrorRef = React.useRef(null);
+      const getLastError = () => lastErrorRef.current;
+
       const speak = async (text) => {
         cancelledRef.current = false;
+        lastErrorRef.current = null;
         try {
           const sentences = splitSentences(text);
           const ttsPromises = sentences.map(s => fetchTTSBuffer(s.trim()));
@@ -1336,21 +1351,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
           }
         } catch (err) {
           console.error('TTS error:', err);
-          // Last-resort fallback: browser built-in speech synthesis
-          if (!cancelledRef.current) {
-            return new Promise((resolve) => {
-              const u = new SpeechSynthesisUtterance(text);
-              u.rate = 1.0;
-              u.onend = resolve;
-              u.onerror = resolve;
-              speechSynthesis.speak(u);
-            });
-          }
+          lastErrorRef.current = err?.message || String(err);
+          // Deliberately no robotic SpeechSynthesisUtterance fallback —
+          // it masked real failures. Silence + an error banner is the
+          // honest signal.
         }
       };
 
       const speakStreaming = () => {
         cancelledRef.current = false;
+        lastErrorRef.current = null;
         const myGen = ++streamGenRef.current;
         const isStale = () => cancelledRef.current || myGen !== streamGenRef.current;
         const queue = [];
@@ -1369,7 +1379,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
               const buf = await queue[playIndex];
               if (isStale()) break;
               await playAudioBuffer(buf, audioRef);
-            } catch (e) { /* skip failed chunk */ }
+            } catch (e) {
+              console.error('Stream TTS chunk error:', e);
+              lastErrorRef.current = e?.message || String(e);
+            }
             playIndex++;
           }
           playing = false;
@@ -1403,7 +1416,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         speechSynthesis.cancel();
       };
 
-      return { speak, speakStreaming, cancel };
+      return { speak, speakStreaming, cancel, getLastError };
     };
 
     // ── Typing Indicator ──
@@ -1554,7 +1567,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const recorderSTT = useMediaRecorderSTT();
       const { start: startRec, stop: stopRec, supported: sttSupported } =
         useRecorderFallback ? recorderSTT : nativeSTT;
-      const { speak, speakStreaming, cancel: cancelSpeak } = useSpeechSynthesis();
+      const { speak, speakStreaming, cancel: cancelSpeak, getLastError: getTtsError } = useSpeechSynthesis();
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
       React.useEffect(() => { profileRef.current = profile; }, [profile]);
@@ -1594,7 +1607,14 @@ Remember: you are holding space for two people to feel heard by each other. Your
         startNewConversation([{ role: 'assistant', content: greeting }]);
         setStarted(true);
         setVoiceState('speaking');
-        speak(greeting).then(() => setVoiceState('idle'));
+        speak(greeting).then(() => {
+          setVoiceState('idle');
+          const ttsErr = getTtsError();
+          if (ttsErr) {
+            setError(`Voice failed: ${ttsErr}`);
+            setTimeout(() => setError(null), 10000);
+          }
+        });
       };
 
       const sendToClaude = async (userText) => {
@@ -1700,6 +1720,11 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Wait for all audio to finish playing
           if (streamSpeaker) {
             await streamSpeaker.finish();
+            const ttsErr = getTtsError();
+            if (ttsErr) {
+              setError(`Voice failed: ${ttsErr}`);
+              setTimeout(() => setError(null), 10000);
+            }
           }
           setVoiceState('idle');
         } catch (err) {
@@ -2348,7 +2373,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.0.1')
+          }, 'v2.0.2')
         )
       );
     };

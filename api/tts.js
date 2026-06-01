@@ -53,19 +53,23 @@ export default async function handler(req) {
       ? input.slice(0, MAX_INPUT_CHARS).replace(/\s+\S*$/, '')
       : input;
 
+    // Keep the body minimal — Orpheus is stricter than OpenAI about
+    // extra params. Only include speed if explicitly requested and != 1.
+    const body = {
+      model: GROQ_TTS_MODEL,
+      input: safeInput,
+      voice: voice || DEFAULT_VOICE,
+      response_format: 'mp3',
+    };
+    if (typeof speed === 'number' && speed !== 1.0) body.speed = speed;
+
     const response = await fetch(GROQ_TTS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: GROQ_TTS_MODEL,
-        input: safeInput,
-        voice: voice || DEFAULT_VOICE,
-        response_format: 'mp3',
-        speed: typeof speed === 'number' ? speed : 1.0,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
