@@ -6,6 +6,30 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// Provider selection.
+// Prefer Groq (whisper-large-v3-turbo): ~5x faster, ~5x cheaper than OpenAI,
+// generous free tier. Falls back to OpenAI (gpt-4o-mini-transcribe) so this
+// keeps working if GROQ_API_KEY isn't set yet.
+function pickProvider() {
+  if (process.env.GROQ_API_KEY) {
+    return {
+      name: 'groq',
+      url: 'https://api.groq.com/openai/v1/audio/transcriptions',
+      key: process.env.GROQ_API_KEY,
+      model: 'whisper-large-v3-turbo',
+    };
+  }
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      name: 'openai',
+      url: 'https://api.openai.com/v1/audio/transcriptions',
+      key: process.env.OPENAI_API_KEY,
+      model: 'gpt-4o-mini-transcribe',
+    };
+  }
+  return null;
+}
+
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: CORS });
@@ -14,6 +38,14 @@ export default async function handler(req) {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
+      headers: { 'Content-Type': 'application/json', ...CORS },
+    });
+  }
+
+  const provider = pickProvider();
+  if (!provider) {
+    return new Response(JSON.stringify({ error: 'No STT provider configured' }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json', ...CORS },
     });
   }
@@ -34,15 +66,14 @@ export default async function handler(req) {
 
     const outgoing = new FormData();
     outgoing.append('file', audio, filename);
-    // gpt-4o-mini-transcribe is ~2x faster and ~½ the cost of whisper-1 with
-    // comparable accuracy on short English utterances.
-    outgoing.append('model', 'gpt-4o-mini-transcribe');
+    outgoing.append('model', provider.model);
     outgoing.append('language', 'en');
     outgoing.append('response_format', 'json');
+    outgoing.append('temperature', '0');
 
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const response = await fetch(provider.url, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+      headers: { 'Authorization': `Bearer ${provider.key}` },
       body: outgoing,
     });
 
@@ -55,7 +86,7 @@ export default async function handler(req) {
     }
 
     const data = await response.json();
-    return new Response(JSON.stringify({ text: (data.text || '').trim() }), {
+    return new Response(JSON.stringify({ text: (data.text || '').trim(), provider: provider.name }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...CORS },
     });

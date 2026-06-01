@@ -891,8 +891,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
         // ms of silence after the last interim/final before we treat the
         // user as done speaking. The browser default is ~1s — too quick;
-        // 2s leaves room for a thoughtful pause without lingering.
-        const SILENCE_MS = 2000;
+        // 1.4s leaves room for a thoughtful pause without dragging.
+        const SILENCE_MS = 1400;
 
         let accumulatedFinal = '';
         let lastInterim = '';
@@ -1086,9 +1086,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
           analyserRef.current = analyser;
 
           const buf = new Uint8Array(analyser.frequencyBinCount);
-          const SILENCE_MS = 2000;
+          const SILENCE_MS = 1400;
           const SPEECH_RMS = 0.02;
-          const MIN_BEFORE_AUTOSTOP = 700;
+          const MIN_BEFORE_AUTOSTOP = 600;
+          const MAX_RECORDING_MS = 60_000;
           let hasSpoken = false;
           let lastSpeechAt = Date.now();
 
@@ -1106,6 +1107,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
             if (rms > SPEECH_RMS) {
               hasSpoken = true;
               lastSpeechAt = now;
+            }
+            // Hard cap on duration — prevents runaway recordings if the
+            // user walks away with the mic open.
+            if (now - startedAtRef.current > MAX_RECORDING_MS) {
+              stop();
+              return;
             }
             if (hasSpoken && now - startedAtRef.current > MIN_BEFORE_AUTOSTOP && now - lastSpeechAt > SILENCE_MS) {
               stop();
@@ -1482,6 +1489,14 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const [conversations, setConversations] = React.useState(() => loadConversations());
       const [voiceState, setVoiceState] = React.useState('idle');
       const [interimText, setInterimText] = React.useState('');
+      // True only on the Whisper path between "user stopped talking" and
+      // "transcript arrived". Drives a user-side dots bubble so the user
+      // sees their message is being processed (instead of the assistant
+      // typing indicator, which is misleading at this stage).
+      const [transcribing, setTranscribing] = React.useState(false);
+      // Sticky banner shown when the user has denied mic permission, so
+      // they understand why nothing happens on the next tap.
+      const [micBlocked, setMicBlocked] = React.useState(false);
       const [textInput, setTextInput] = React.useState('');
       const [error, setError] = React.useState(null);
       const [theme, setTheme] = React.useState(() => {
@@ -1690,19 +1705,24 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
         setVoiceState('listening');
         setInterimText('');
+        setTranscribing(false);
+        setMicBlocked(false);
         setError(null);
 
         startRec(
           (interim) => setInterimText(interim),
           (final) => {
             setInterimText('');
+            setTranscribing(false);
             if (final.trim()) sendToClaude(final.trim());
             else setVoiceState('idle');
           },
           (err) => {
             let msg;
-            if (err === 'not-allowed' || err === 'service-not-allowed') {
-              msg = 'Mic permission denied. Enable it in your browser settings to use voice.';
+            const blocked = err === 'not-allowed' || err === 'service-not-allowed';
+            if (blocked) {
+              msg = 'Microphone blocked. Tap the lock/site icon in the address bar to allow it, then try again.';
+              setMicBlocked(true);
             } else if (err === 'no-mic') {
               msg = 'No microphone detected on this device.';
             } else if (err === 'not-supported' || err === 'start-failed' || err === 'recorder-failed') {
@@ -1714,13 +1734,17 @@ Remember: you are holding space for two people to feel heard by each other. Your
             }
             setError(msg);
             setInterimText('');
+            setTranscribing(false);
             setVoiceState('idle');
-            setTimeout(() => setError(null), 6000);
+            // Non-permission errors auto-clear; permission errors persist
+            // via micBlocked banner until the user resolves them.
+            if (!blocked) setTimeout(() => setError(null), 6000);
           },
           // onProcessing — fires when recorder stops and transcription begins
           // (Whisper path only; native SR returns final synchronously).
           () => {
             setInterimText('');
+            setTranscribing(true);
             setVoiceState('processing');
           }
         );
@@ -2216,7 +2240,23 @@ Remember: you are holding space for two people to feel heard by each other. Your
           messages.map((m, i) =>
             React.createElement(MessageBubble, { key: i, role: m.role, content: m.content })
           ),
-          voiceState === 'processing' && React.createElement(TypingIndicator, {}),
+          // User-side "your speech is being transcribed" bubble (Whisper
+          // path only). Critical for affordance: without it, the gap
+          // between stop-talking and message-appearing feels broken.
+          transcribing && React.createElement('div', { className: 'msg-row user' },
+            React.createElement('div', { className: 'bubble interim-bubble transcribing-bubble' },
+              ...[0, 1, 2].map(i =>
+                React.createElement('div', {
+                  key: i,
+                  className: 'typing-dot',
+                  style: { animationDelay: `${i * 0.18}s` },
+                })
+              )
+            )
+          ),
+          // Assistant typing indicator — only when we're actually waiting
+          // on Claude, never during user-speech transcription.
+          voiceState === 'processing' && !transcribing && React.createElement(TypingIndicator, {}),
           interimText && React.createElement('div', { className: 'msg-row user' },
             React.createElement('div', { className: 'bubble interim-bubble' }, interimText)
           ),
@@ -2282,7 +2322,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v1.8.1')
+          }, 'v1.9.0')
         )
       );
     };
