@@ -1,9 +1,10 @@
 {
   "name": "chatbot-demo",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
-    "generate-icons": "node scripts/generate-icons.mjs"
+    "generate-icons": "node scripts/generate-icons.mjs",
+    "bump": "node scripts/bump-version.mjs"
   },
   "devDependencies": {
     "sharp": "^0.34.5"
