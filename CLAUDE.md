@@ -150,7 +150,7 @@ Hosted on **Vercel**. Config in `vercel.json`:
 
 ## PWA
 
-- Service Worker (`sw.js`) with cache name `conversation-coach-v3`
+- Service Worker (`sw.js`) with cache name `feel-understood-v<app-version>` (bumped automatically per release — see Versioning)
 - Static assets + CDN libs cached on install
 - API calls always network-first
 - Offline fallback to cached `/index.html`
@@ -169,6 +169,26 @@ Hosted on **Vercel**. Config in `vercel.json`:
 - **Full support**: Chrome, Edge, Safari (SpeechRecognition + SpeechSynthesis)
 - **No SpeechRecognition**: Firefox (text input fallback available)
 - **Recommended**: Chrome for best experience
+
+## Versioning
+
+`package.json` `version` is the **single source of truth**. The version appears
+in three places that must stay in sync: `package.json`, the on-screen label in
+`index.html` (`'vX.Y.Z'`), and the `CACHE_NAME` in `sw.js` (bumping it busts the
+PWA cache on each release).
+
+Never hand-edit these individually. Use the bumper, which updates all three at
+once and **refuses to ever go backwards** (the guard against version
+regressions):
+
+```
+npm run bump          # patch:  2.1.0 -> 2.1.1
+npm run bump minor    #         2.1.0 -> 2.2.0
+npm run bump major    #         2.1.0 -> 3.0.0
+npm run bump 2.5.0    # set an explicit (higher) version
+```
+
+Bump as part of any change you intend to deploy, then commit the result.
 
 ## Development Notes
 
