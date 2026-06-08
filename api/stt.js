@@ -7,24 +7,23 @@ const CORS = {
 };
 
 // Provider selection.
-// Prefer Groq (whisper-large-v3-turbo): ~5x faster, ~5x cheaper than OpenAI,
-// generous free tier. Falls back to OpenAI (gpt-4o-mini-transcribe) so this
-// keeps working if GROQ_API_KEY isn't set yet.
+// Prefer OpenAI (gpt-4o-mini-transcribe). Falls back to Groq
+// (whisper-large-v3-turbo) if only GROQ_API_KEY is set.
 function pickProvider() {
-  if (process.env.GROQ_API_KEY) {
-    return {
-      name: 'groq',
-      url: 'https://api.groq.com/openai/v1/audio/transcriptions',
-      key: process.env.GROQ_API_KEY,
-      model: 'whisper-large-v3-turbo',
-    };
-  }
   if (process.env.OPENAI_API_KEY) {
     return {
       name: 'openai',
       url: 'https://api.openai.com/v1/audio/transcriptions',
       key: process.env.OPENAI_API_KEY,
       model: 'gpt-4o-mini-transcribe',
+    };
+  }
+  if (process.env.GROQ_API_KEY) {
+    return {
+      name: 'groq',
+      url: 'https://api.groq.com/openai/v1/audio/transcriptions',
+      key: process.env.GROQ_API_KEY,
+      model: 'whisper-large-v3-turbo',
     };
   }
   return null;
