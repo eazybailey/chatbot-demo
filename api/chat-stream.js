@@ -52,6 +52,11 @@ export default async function handler(req) {
     const encoder = new TextEncoder();
 
     (async () => {
+      // Prime the connection so the first bytes flush immediately and no
+      // intermediary buffers while waiting for output. This is an SSE
+      // comment line (starts with ':'), which clients ignore.
+      await writer.write(encoder.encode(': stream-open\n\n'));
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -90,8 +95,13 @@ export default async function handler(req) {
       status: 200,
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        // no-transform stops proxies from compressing/buffering the stream;
+        // X-Accel-Buffering: no disables nginx-style proxy buffering. Both
+        // ensure deltas reach the client as they're produced, so voice can
+        // start on the first sentence instead of after the whole reply.
+        'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
         'Access-Control-Allow-Origin': '*',
       },
     });

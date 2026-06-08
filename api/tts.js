@@ -29,23 +29,34 @@ export default async function handler(req) {
       });
     }
 
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        // tts-1 (not tts-1-hd): the standard model is much faster to
-        // generate, which matters for per-sentence streaming on an edge
-        // function — the HD model's latency was causing gateway 504s.
-        model: 'tts-1',
-        input: input,
-        voice: voice || 'shimmer',
-        response_format: 'mp3',
-        speed: 1.04,
-      }),
-    });
+    // Abort a slow upstream ourselves (12s) so we return a clean 504 the
+    // client can retry, instead of hanging until the platform gateway
+    // kills the request (~25s) and produces an opaque 504.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    let response;
+    try {
+      response = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          // tts-1 (not tts-1-hd): the standard model is much faster to
+          // generate, which matters for per-sentence streaming on an edge
+          // function — the HD model's latency was causing gateway 504s.
+          model: 'tts-1',
+          input: input,
+          voice: voice || 'shimmer',
+          response_format: 'mp3',
+          speed: 1.04,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -64,9 +75,10 @@ export default async function handler(req) {
       },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const aborted = error?.name === 'AbortError';
+    return new Response(
+      JSON.stringify({ error: aborted ? 'TTS upstream timed out' : 'Internal server error' }),
+      { status: aborted ? 504 : 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
