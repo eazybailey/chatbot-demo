@@ -1,5 +1,20 @@
 # Voice Chatbot Implementation Plan for "Feel Understood — Your Conversation Coach"
 
+> ## ⚠️ Status: historical
+> This is the **original** implementation plan, kept for context. The app that
+> actually shipped diverged from it in several important ways. For the current,
+> accurate architecture see **`CLAUDE.md`** — it is the source of truth.
+>
+> **What changed vs. this plan:**
+> - **No separate `voice.html`.** The entire app is one single-page React PWA in `index.html`.
+> - **TTS is OpenAI `tts-1` (`shimmer` voice)** via `/api/tts`, not the browser's `SpeechSynthesis`.
+> - **STT is hybrid**: native `SpeechRecognition` where supported, with an OpenAI Whisper (`gpt-4o-mini-transcribe`) fallback via `/api/stt` for browsers that lack it.
+> - **Primary chat endpoint is `/api/chat-stream`** (SSE streaming, unbuffered), not the non-streaming `/api/chat`. TTS fires per sentence as the reply streams, so the voice starts on the first sentence.
+> - **Onboarding is the "Feel Understood" questionnaire** leading to three paths (Lessons / Helpline / Facilitator), mapping to `coach` and `facilitator` system-prompt modes — not the simple greeting prompt below.
+> - **Versioning** is managed by `npm run bump` (single source of truth in `package.json`; see `CLAUDE.md`).
+
+---
+
 ## Overview
 Add a ChatGPT-like voice interface to the Feel Understood project. Users will be able to have a spoken conversation with a Claude-powered conversation coach that helps them practice and improve their communication skills using the Dialogue System framework.
 
