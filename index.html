@@ -1211,13 +1211,24 @@ Remember: you are holding space for two people to feel heard by each other. Your
     // Fetches TTS audio as ArrayBuffer. On failure, throws an Error whose
     // message contains the server's JSON error body so the real cause
     // (auth, quota, bad payload, etc.) is visible instead of swallowed.
-    const fetchTTSBuffer = async (text) => {
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: text, voice: 'shimmer' }),
-      });
+    const fetchTTSBuffer = async (text, attempt = 0) => {
+      let response;
+      try {
+        response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: text, voice: 'shimmer' }),
+        });
+      } catch (netErr) {
+        // Network blip — retry once before giving up.
+        if (attempt === 0) return fetchTTSBuffer(text, 1);
+        throw netErr;
+      }
       if (!response.ok) {
+        // Gateway/server timeouts (502/503/504) are usually a slow or cold
+        // TTS upstream, not a permanent failure — retry once. Don't retry
+        // 4xx (bad input / auth), where a retry can't help.
+        if (response.status >= 500 && attempt === 0) return fetchTTSBuffer(text, 1);
         let detail = '';
         try { detail = JSON.stringify(await response.json()); } catch(e) {}
         const msg = `TTS ${response.status}: ${detail || response.statusText}`;
@@ -2346,7 +2357,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.1.0')
+          }, 'v2.1.1')
         )
       );
     };
