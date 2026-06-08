@@ -7,10 +7,10 @@ A voice-first Progressive Web App for practicing better conversations through AI
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 18 (via CDN, no build step), Babel Standalone for JSX |
-| Backend | Vercel Edge Functions (Node.js) |
+| Backend | Vercel Functions — Edge Runtime (`chat-stream`, `tts`, `stt`) + Node.js (`chat`, legacy) |
 | AI | Anthropic Claude API (claude-sonnet-4-20250514) |
-| TTS | OpenAI TTS API (tts-1 model, nova voice) |
-| STT | Web Speech API (SpeechRecognition) |
+| TTS | OpenAI TTS API (`tts-1` model, `shimmer` voice) |
+| STT | Native Web Speech API (`SpeechRecognition`) where supported; OpenAI Whisper (`gpt-4o-mini-transcribe`) fallback via `/api/stt` for browsers that lack it |
 | Hosting | Vercel |
 | Styling | Vanilla CSS, Google Fonts (Inter, Patrick Hand) |
 | PWA | Service Worker, Web App Manifest |
@@ -20,9 +20,10 @@ A voice-first Progressive Web App for practicing better conversations through AI
 ```
 chatbot-demo/
 ├── api/                       # Vercel serverless endpoints
-│   ├── chat.js               # Non-streaming Claude API (legacy)
+│   ├── chat.js               # Non-streaming Claude API (legacy, Node.js)
 │   ├── chat-stream.js        # Streaming Claude API (primary, Edge Runtime)
-│   └── tts.js                # OpenAI TTS endpoint (Edge Runtime)
+│   ├── tts.js                # OpenAI TTS endpoint (Edge Runtime)
+│   └── stt.js                # Speech-to-text endpoint — OpenAI Whisper, Groq fallback (Edge Runtime)
 ├── images/                    # Icons, logos, doodle-style SVGs
 │   ├── favicon.svg
 │   ├── logo.svg
@@ -34,14 +35,15 @@ chatbot-demo/
 │   ├── icon-coach.svg        # Feature icon (onboarding)
 │   └── icon-practice.svg     # Feature icon (onboarding)
 ├── scripts/
-│   └── generate-icons.mjs    # Sharp-based icon generation
+│   ├── generate-icons.mjs    # Sharp-based icon generation
+│   └── bump-version.mjs      # Single-source-of-truth version bumper (see Versioning)
 ├── index.html                # Entire app — single-page React PWA
 ├── styles.css                # Global styles (dark theme, animations)
 ├── sw.js                     # Service Worker (cache-first assets, network-first API)
 ├── manifest.json             # PWA manifest
 ├── vercel.json               # Vercel deployment config
-├── plan.md                   # Original implementation plan
-└── package.json              # Only dev dep: sharp for icon gen
+├── plan.md                   # Original implementation plan (historical — see its status note)
+└── package.json              # Dev dep: sharp for icon gen; "version" is the release source of truth
 ```
 
 ## Architecture
@@ -50,13 +52,15 @@ chatbot-demo/
 
 ```
 User speaks
-  → Browser SpeechRecognition (interim + final transcript)
-  → POST /api/chat-stream (SSE stream to Claude)
-  → Response streams back as text chunks
-  → Sentence buffer accumulates until punctuation or 80+ chars
-  → Each sentence → POST /api/tts (parallel fetch)
-  → Audio blobs played sequentially
-  → ~1-2s latency from speech end to first audio
+  → STT: native SpeechRecognition, or MediaRecorder → /api/stt (Whisper) fallback
+    (end-of-turn after ~2.2s of silence, or tap mic to end immediately)
+  → POST /api/chat-stream (SSE stream to Claude, sent unbuffered)
+  → Response streams back as text chunks, rendered live
+  → Sentence buffer fires TTS aggressively at natural breaks
+    (first chunk after ~28 chars so audio starts ASAP; looser thresholds after)
+  → Each chunk → POST /api/tts (parallel fetch, retried once on 429/5xx)
+  → Audio buffers played sequentially via AudioContext
+  → Voice starts on the first sentence, not after the whole reply
 ```
 
 ### Voice State Machine
@@ -71,16 +75,18 @@ Users can interrupt at any point by tapping the mic during SPEAKING.
 
 | Endpoint | Runtime | Purpose |
 |----------|---------|---------|
-| `POST /api/chat-stream` | Edge | Primary. Streams Claude responses as simplified SSE (`data: { text }`, then `data: [DONE]`) |
+| `POST /api/chat-stream` | Edge | Primary. Streams Claude responses as simplified SSE (`data: { text }`, then `data: [DONE]`). Sent unbuffered (`X-Accel-Buffering: no`, `no-transform`) so deltas arrive as produced |
+| `POST /api/tts` | Edge | Converts text → MP3 via OpenAI TTS. Aborts a slow upstream after 12s and returns a clean `504` so the client can retry |
+| `POST /api/stt` | Edge | Transcribes uploaded audio. Prefers OpenAI `gpt-4o-mini-transcribe`; falls back to Groq `whisper-large-v3-turbo` if only `GROQ_API_KEY` is set |
 | `POST /api/chat` | Node.js | Legacy non-streaming Claude call. Not actively used |
-| `POST /api/tts` | Edge | Converts text to MP3 audio via OpenAI TTS API |
 
-All endpoints accept JSON bodies and return CORS headers for all origins.
+All endpoints accept their respective bodies and return CORS headers for all origins.
 
 ### Request Formats
 
-**chat-stream**: `{ messages: [{role, content}], system: string, max_tokens: number }`
-**tts**: `{ input: string, voice: string }`
+**chat-stream**: JSON `{ messages: [{role, content}], system: string, max_tokens: number }`
+**tts**: JSON `{ input: string, voice: string }` → `audio/mpeg` stream
+**stt**: `multipart/form-data` with an `audio` file → JSON `{ text, provider }`
 
 ## Frontend Architecture
 
@@ -89,24 +95,26 @@ Single-page React app rendered entirely in `index.html` (no build tooling).
 ### Key Components
 
 - **`App`** — Root. Manages conversation state, voice state machine, streaming pipeline
-- **`OnboardingScreen`** — Welcome screen with feature highlights (Learn/Coach/Practice)
+- **Feel Understood onboarding** — A short questionnaire (`FEEL_UNDERSTOOD_SCREENS`) builds a profile, then offers three next-step paths (see Coaching Modes)
 - **`MessageBubble`** — Chat bubbles (user = yellow right-aligned, assistant = gray left-aligned)
 - **`TypingIndicator`** — Animated dots during processing
-- **`WaveVisualizer`** — 7 animated bars during listening
+- **`WaveVisualizer`** — Animated bars during listening; reacts to live mic level on the Whisper path
 
 ### Custom Hooks
 
-- **`useSpeechRecognition`** — Wraps native SpeechRecognition API, returns `{ start, stop, supported }`
-- **`useSpeechSynthesis`** — Manages TTS pipeline with `speak(text)`, `speakStreaming()`, and `cancel()`
+- **`useSpeechRecognition`** — Wraps native `SpeechRecognition`; manages its own ~2.2s silence debounce. Returns `{ start, stop, supported }`
+- **`useMediaRecorderSTT`** — Fallback for browsers without usable `SpeechRecognition` (iOS Chrome/Firefox/Edge). Records via `MediaRecorder`, does its own RMS-based silence detection, posts audio to `/api/stt`. Same interface plus `getLevel` for the visualizer
+- **`useSpeechSynthesis`** — Manages the TTS pipeline. Returns `{ speak, speakStreaming, cancel, getLastError }`. `getLastError` surfaces real TTS failures as a banner instead of masking them with a robotic browser voice
 
 ### State (React useState/useRef, no external library)
 
 - `started` — boolean, onboarding → chat transition
+- `profile` — the Feel Understood profile + selected `mode`/`goal`/`path`
 - `messages` — array of `{ role, content }`, full conversation history
 - `voiceState` — `'idle' | 'listening' | 'processing' | 'speaking'`
-- `interimText` — real-time transcription preview
+- `interimText` / `transcribing` — real-time transcription preview / Whisper-path "transcribing" state
 - `textInput` — fallback text input value
-- `error` — error message (auto-clears after 4s)
+- `error` — error message (voice failures persist ~10s; others auto-clear faster)
 
 ## Coaching Framework
 
@@ -119,12 +127,13 @@ The system prompt implements the **Dialogue System** by Gerard Egan & Andrew Bai
 
 ### Coaching Modes
 
-1. **Learn** — Explain communication concepts with vivid examples
-2. **Coach** — Analyze real conversation challenges
-3. **Practice** — Role-play difficult scenarios with feedback
-4. **Reflection** — Help users discover their communication style
+After the Feel Understood questionnaire, the user picks one of three paths, which map onto a system-prompt **mode** the chat AI uses to tailor its opening turn:
 
-Responses are optimized for voice: concise (2-4 sentences), warm, no markdown/bullets.
+1. **Lessons** (`mode: coach`, goal `learn`) — short teaching sessions on communication skills
+2. **Helpline** (`mode: coach`, goal `helpline`) — talk through a specific conversation or an aspect of yourself you want seen; can role-play approaches
+3. **Facilitator** (`mode: facilitator`) — the AI acts as a neutral third party in a conversation between the user and another person, making sure both are heard
+
+System prompts are built by `buildCoachSystemPrompt` and `buildFacilitatorSystemPrompt`. Responses are optimized for voice: concise (2–4 sentences), warm, no markdown/bullets.
 
 ## Styling
 
@@ -137,9 +146,12 @@ Responses are optimized for voice: concise (2-4 sentences), warm, no markdown/bu
 ## Environment Variables
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...   # Required for Claude API
-OPENAI_API_KEY=sk-...          # Required for TTS
+ANTHROPIC_API_KEY=sk-ant-...   # Required — Claude API (chat-stream, chat)
+OPENAI_API_KEY=sk-...          # Required — OpenAI TTS and primary Whisper STT
+GROQ_API_KEY=gsk_...           # Optional — STT fallback only (whisper-large-v3-turbo)
 ```
+
+If `OPENAI_API_KEY` is set, STT uses OpenAI; Groq is only used when OpenAI isn't configured.
 
 ## Deployment
 
@@ -152,9 +164,20 @@ Hosted on **Vercel**. Config in `vercel.json`:
 
 - Service Worker (`sw.js`) with cache name `feel-understood-v<app-version>` (bumped automatically per release — see Versioning)
 - Static assets + CDN libs cached on install
-- API calls always network-first
+- API calls always network-first, passed straight through (never cached/cloned, so streaming isn't buffered)
 - Offline fallback to cached `/index.html`
 - Installable to home screen (standalone display mode)
+
+## Voice Reliability & Tuning
+
+Key knobs and behaviors that keep the voice experience smooth (all in `index.html` unless noted):
+
+- **End-of-turn silence**: `SILENCE_MS = 2200` in both STT paths — how long to wait through a pause before treating the user as done. Tap the mic to end immediately.
+- **TTS model**: `tts-1` (not `tts-1-hd`) in `api/tts.js` — much faster to generate, which matters for per-sentence streaming on an edge function.
+- **TTS timeout**: `api/tts.js` aborts a slow OpenAI call after 12s → clean `504`, so the client retry fires fast instead of waiting for the platform gateway.
+- **TTS retry**: `fetchTTSBuffer` retries once on `429` (rate limit, longer backoff) or `5xx`/network errors. Other `4xx` are not retried.
+- **Resilient playback**: a single failed/slow sentence never silences the rest — `speak()` and `speakStreaming()` log the error (surfaced via the "Voice failed" banner) and keep going.
+- **Unbuffered streaming**: `api/chat-stream.js` sets `X-Accel-Buffering: no` + `Cache-Control: no-transform` and primes the connection so deltas reach the browser as Claude produces them. The client also carries incomplete SSE lines across reads so chunks split mid-line don't drop words.
 
 ## Dependencies
 
@@ -162,12 +185,13 @@ Hosted on **Vercel**. Config in `vercel.json`:
 
 **Dev**: `sharp@^0.34.5` (icon generation only)
 
-**External APIs**: Anthropic Claude, OpenAI TTS
+**External APIs**: Anthropic Claude (chat), OpenAI (TTS + primary Whisper STT), Groq (optional STT fallback)
 
 ## Browser Support
 
-- **Full support**: Chrome, Edge, Safari (SpeechRecognition + SpeechSynthesis)
-- **No SpeechRecognition**: Firefox (text input fallback available)
+- **Full support (native SpeechRecognition)**: Chrome, Edge, Safari, and the home-screen PWA
+- **Whisper fallback (MediaRecorder → /api/stt)**: iOS Chrome (CriOS), iOS Firefox (FxiOS), iOS Edge (EdgiOS) and other browsers without usable `SpeechRecognition`
+- **No mic support at all**: text input fallback is always available
 - **Recommended**: Chrome for best experience
 
 ## Versioning
@@ -195,5 +219,5 @@ Bump as part of any change you intend to deploy, then commit the result.
 - No build step — edit `index.html` and deploy
 - API functions in `api/` are auto-deployed as Vercel serverless functions
 - `scripts/generate-icons.mjs` regenerates PWA PNGs from `images/icon-app.svg` (run with `node scripts/generate-icons.mjs`)
-- Conversation history grows per session (max_tokens capped at 500 per response)
-- Original plan (`plan.md`) called for separate `voice.html` — consolidated into single `index.html` instead
+- Conversation history grows per session (`max_tokens` capped at 500 per response)
+- Original plan (`plan.md`) called for a separate `voice.html` and browser `SpeechSynthesis`/`SpeechRecognition` — the implementation diverged significantly (consolidated into a single `index.html`, OpenAI TTS + Whisper STT fallback, streaming pipeline). See `plan.md`'s status note for details.
