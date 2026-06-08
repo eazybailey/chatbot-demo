@@ -891,8 +891,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
         // ms of silence after the last interim/final before we treat the
         // user as done speaking. The browser default is ~1s — too quick;
-        // 1.4s leaves room for a thoughtful pause without dragging.
-        const SILENCE_MS = 1400;
+        // 2.2s leaves room for a thoughtful pause without dragging.
+        const SILENCE_MS = 2200;
 
         let accumulatedFinal = '';
         let lastInterim = '';
@@ -1086,7 +1086,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
           analyserRef.current = analyser;
 
           const buf = new Uint8Array(analyser.frequencyBinCount);
-          const SILENCE_MS = 1400;
+          // Match the native SR path: wait 2.2s of silence before auto-
+          // stopping, so a pause to think doesn't end the turn too soon.
+          const SILENCE_MS = 2200;
           const SPEECH_RMS = 0.02;
           const MIN_BEFORE_AUTOSTOP = 600;
           const MAX_RECORDING_MS = 60_000;
@@ -2364,7 +2366,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.1.2')
+          }, 'v2.1.3')
         )
       );
     };
