@@ -1221,14 +1221,20 @@ Remember: you are holding space for two people to feel heard by each other. Your
         });
       } catch (netErr) {
         // Network blip — retry once before giving up.
-        if (attempt === 0) return fetchTTSBuffer(text, 1);
+        if (attempt === 0) {
+          await new Promise(r => setTimeout(r, 300));
+          return fetchTTSBuffer(text, 1);
+        }
         throw netErr;
       }
       if (!response.ok) {
-        // Gateway/server timeouts (502/503/504) are usually a slow or cold
-        // TTS upstream, not a permanent failure — retry once. Don't retry
-        // 4xx (bad input / auth), where a retry can't help.
-        if (response.status >= 500 && attempt === 0) return fetchTTSBuffer(text, 1);
+        // Transient failures — retry once. 429 = rate limit (back off a
+        // little longer), 5xx = slow/cold upstream or our 12s abort. Don't
+        // retry other 4xx (bad input / auth), where a retry can't help.
+        if ((response.status === 429 || response.status >= 500) && attempt === 0) {
+          await new Promise(r => setTimeout(r, response.status === 429 ? 700 : 300));
+          return fetchTTSBuffer(text, 1);
+        }
         let detail = '';
         try { detail = JSON.stringify(await response.json()); } catch(e) {}
         const msg = `TTS ${response.status}: ${detail || response.statusText}`;
@@ -1325,20 +1331,21 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const speak = async (text) => {
         cancelledRef.current = false;
         lastErrorRef.current = null;
-        try {
-          const sentences = splitSentences(text);
-          const ttsPromises = sentences.map(s => fetchTTSBuffer(s.trim()));
-          for (let i = 0; i < sentences.length; i++) {
-            if (cancelledRef.current) return;
+        const sentences = splitSentences(text);
+        const ttsPromises = sentences.map(s => fetchTTSBuffer(s.trim()));
+        for (let i = 0; i < sentences.length; i++) {
+          if (cancelledRef.current) return;
+          try {
             const buf = await ttsPromises[i];
             if (cancelledRef.current) return;
             await playAudioBuffer(buf, audioRef);
+          } catch (err) {
+            // One sentence failing must not silence the rest — record the
+            // error (surfaced as a banner) and keep playing the remaining
+            // sentences. No robotic browser-voice fallback; it masked bugs.
+            console.error('TTS error:', err);
+            lastErrorRef.current = err?.message || String(err);
           }
-        } catch (err) {
-          console.error('TTS error:', err);
-          lastErrorRef.current = err?.message || String(err);
-          // Deliberately no robotic SpeechSynthesisUtterance fallback — it
-          // masked real failures. Silence + an error banner is honest.
         }
       };
 
@@ -2357,7 +2364,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.1.1')
+          }, 'v2.1.2')
         )
       );
     };
