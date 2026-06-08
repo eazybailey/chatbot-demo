@@ -36,7 +36,10 @@ export default async function handler(req) {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'tts-1-hd',
+        // tts-1 (not tts-1-hd): the standard model is much faster to
+        // generate, which matters for per-sentence streaming on an edge
+        // function — the HD model's latency was causing gateway 504s.
+        model: 'tts-1',
         input: input,
         voice: voice || 'shimmer',
         response_format: 'mp3',
