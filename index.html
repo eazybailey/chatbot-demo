@@ -214,6 +214,19 @@ VOICE & STYLE GUIDELINES:
       const aspectsList = (fu.aspects || []).map(v => aspectLabelMap[v]).filter(Boolean);
       const aspectsText = aspectsList.length ? aspectsList.join('; ') : 'none named yet';
 
+      // Beta onboarding skips the questionnaire entirely — don't tell the
+      // model to reference answers that don't exist.
+      const hasQuestionnaire = areaEntries.length > 0 || aspectsList.length > 0 || !!fu.blame;
+      if (!hasQuestionnaire) {
+        return base + `
+
+USER PROFILE:
+- Name: ${profile.name || 'friend'}
+- Chosen path: ${goalMap[profile.goal] || 'general exploration of how to feel more understood'}
+
+IMPORTANT: This user came straight to the conversation without filling in a questionnaire. In your very first message, warmly greet them by name and invite them directly into whatever conversation or situation matters to them right now. Use their name occasionally but not in every message.`;
+      }
+
       const profileContext = `
 
 USER PROFILE — FROM THEIR FEEL UNDERSTOOD QUESTIONNAIRE:
@@ -544,8 +557,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
       return { heading: '', body: '' };
     };
 
-    // The quiz is now a single unified Feel Understood flow.
-    const getQuizScreens = () => FEEL_UNDERSTOOD_SCREENS;
+    // Full flow: the unified Feel Understood questionnaire.
+    // Beta: the name screen is the only onboarding step — the user goes
+    // straight from "Try the Beta" to entering their name to the Helpline.
+    const getQuizScreens = (beta) => beta
+      ? FEEL_UNDERSTOOD_SCREENS.filter(s => s.type === 'name-input')
+      : FEEL_UNDERSTOOD_SCREENS;
 
     // ── LandingGate Component ──
     // Shown once before anything else. Lets a tester enter the stripped-down
@@ -579,7 +596,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
     // last question we drop the user straight into the Communication Helpline
     // — the reveal and path-chooser screens were removed so the conversation
     // with the AI starts as quickly as possible.
-    const ProfileQuiz = ({ onComplete }) => {
+    const ProfileQuiz = ({ onComplete, beta }) => {
       const [step, setStep] = React.useState(0);
       const [answers, setAnswers] = React.useState({ areas: {}, aspects: [] });
       const [name, setName] = React.useState('');
@@ -587,7 +604,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const [animating, setAnimating] = React.useState(false);
       const nameInputRef = React.useRef(null);
 
-      const quizScreens = getQuizScreens();
+      const quizScreens = getQuizScreens(beta);
       const screen = quizScreens[step] || quizScreens[0];
       const progress = step / (quizScreens.length - 1);
       const isLastStep = step >= quizScreens.length - 1;
@@ -639,7 +656,11 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       const handleNameSubmit = (e) => {
         e.preventDefault();
-        if (name.trim()) goNext();
+        if (!name.trim()) return;
+        // Beta: the name screen is the whole onboarding — drop straight
+        // into the Helpline conversation.
+        if (isLastStep) handleFinishWithPath('helpline');
+        else goNext();
       };
 
       const handleFinishWithPath = (pathId) => {
@@ -1196,7 +1217,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
     //   conversation.item.input_audio_transcription.delta → live interim text
     //   ...transcription.completed                        → finished turn
     //
-    // Server-side VAD ends a turn after ~700ms of silence (configured in
+    // Server-side VAD ends a turn after ~1.2s of silence (configured in
     // api/realtime-session.js) instead of the old 2.2s client debounce, and
     // the session stays open across turns — no tap-to-talk. Claude remains
     // the conversational brain; only the ears changed.
@@ -1953,11 +1974,26 @@ Remember: you are holding space for two people to feel heard by each other. Your
         const greeting = buildGreeting(quizProfile);
         startNewConversation([{ role: 'assistant', content: greeting }]);
         setStarted(true);
+
+        // Open the hands-free session right away so the user can answer —
+        // or barge in on the greeting — without ever tapping the mic.
+        if (realtime.supported && realtimeEnabledRef.current) startHandsFree();
+
+        // Speak the greeting through the gapless PCM path, sentence by
+        // sentence, so audio starts on the first network chunk instead of
+        // after the first full MP3 has been generated and downloaded.
         setVoiceState('speaking');
-        speak(greeting).then(() => {
-          // Only fall back to idle if we're still the active speaker — the
-          // user may have interrupted and already started a new listen.
-          setVoiceState(v => v === 'speaking' ? 'idle' : v);
+        const sp = speakStreaming();
+        for (const s of splitSentences(greeting)) {
+          const t = s.trim();
+          if (t) sp.addSentence(t);
+        }
+        sp.finish().then(() => {
+          // Only step down if we're still the active speaker — the user may
+          // have barged in and already be mid-turn.
+          setVoiceState(v => v === 'speaking'
+            ? (handsFreeRef.current ? 'listening' : 'idle')
+            : v);
           const ttsErr = getTtsError();
           if (ttsErr) {
             setError(`Voice failed: ${ttsErr}`);
@@ -2394,7 +2430,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       // ── Onboarding Quiz ──
       if (!started) {
-        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete });
+        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete, beta: isBeta });
       }
 
       const statusLabel = handsFree
@@ -2858,7 +2894,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.2.0')
+          }, 'v2.3.0')
         )
       );
     };

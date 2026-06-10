@@ -56,7 +56,7 @@ User taps mic ONCE → continuous hands-free session begins
   → Browser opens a WebRTC session directly to OpenAI's Realtime API
     (ephemeral client secret minted by POST /api/realtime-session)
   → Mic streams continuously; transcript deltas render as interim text
-  → Server-side VAD ends the turn after ~700ms of silence (no tap needed)
+  → Server-side VAD ends the turn after ~1.2s of silence (no tap needed)
   → POST /api/chat-stream (SSE stream to Claude, sent unbuffered)
   → Sentence buffer fires TTS at natural breaks (first chunk ~28 chars
     so audio starts ASAP; whole sentences after, for natural prosody)
@@ -86,7 +86,7 @@ Users interrupt during SPEAKING by just talking (hands-free) or tapping the mic 
 | Endpoint | Runtime | Purpose |
 |----------|---------|---------|
 | `POST /api/chat-stream` | Edge | Primary. Streams Claude responses as simplified SSE (`data: { text }`, then `data: [DONE]`). Sent unbuffered (`X-Accel-Buffering: no`, `no-transform`) so deltas arrive as produced |
-| `POST /api/realtime-session` | Edge | Mints a short-lived (10 min) OpenAI Realtime client secret for a hands-free transcription session (server VAD, 700ms end-of-turn). The browser then talks WebRTC directly to OpenAI |
+| `POST /api/realtime-session` | Edge | Mints a short-lived (10 min) OpenAI Realtime client secret for a hands-free transcription session (server VAD, 1.2s end-of-turn). The browser then talks WebRTC directly to OpenAI |
 | `POST /api/tts` | Edge | Converts text → audio via OpenAI TTS: raw PCM stream (`format: 'pcm'`, primary) or MP3 (default). Aborts a slow upstream after 12s and returns a clean `504` so the client can retry |
 | `POST /api/stt` | Edge | Transcribes uploaded audio (tap-to-talk fallback path). Prefers OpenAI `gpt-4o-mini-transcribe`; falls back to Groq `whisper-large-v3-turbo` if only `GROQ_API_KEY` is set |
 | `POST /api/chat` | Node.js | Legacy non-streaming Claude call. Not actively used |
@@ -107,7 +107,7 @@ Single-page React app rendered entirely in `index.html` (no build tooling).
 ### Key Components
 
 - **`App`** — Root. Manages conversation state, voice state machine, streaming pipeline
-- **Feel Understood onboarding** — A short questionnaire (`FEEL_UNDERSTOOD_SCREENS`) builds a profile, then offers three next-step paths (see Coaching Modes)
+- **Feel Understood onboarding** — A short questionnaire (`FEEL_UNDERSTOOD_SCREENS`) builds a profile, then offers three next-step paths (see Coaching Modes). **Beta mode skips the questionnaire**: "Try the Beta" → name input → straight into the Helpline (the system prompt gets a slim no-questionnaire profile). The greeting is spoken via the gapless PCM path and the hands-free session opens immediately, so the user can reply or barge in without tapping the mic
 - **`MessageBubble`** — Chat bubbles (user = yellow right-aligned, assistant = gray left-aligned)
 - **`TypingIndicator`** — Animated dots during processing
 - **`WaveVisualizer`** — Animated bars during listening; reacts to live mic level on the Whisper path
@@ -185,7 +185,7 @@ Hosted on **Vercel**. Config in `vercel.json`:
 
 Key knobs and behaviors that keep the voice experience smooth (all in `index.html` unless noted):
 
-- **End-of-turn silence (hands-free)**: `silence_duration_ms: 700` in `api/realtime-session.js` — server-VAD pause length before a turn ends. The dominant latency knob on the primary path.
+- **End-of-turn silence (hands-free)**: `silence_duration_ms: 1200` in `api/realtime-session.js` — server-VAD pause length before a turn ends. The dominant latency knob on the primary path: lower = snappier turn-taking, higher = more room to pause and think mid-sentence.
 - **End-of-turn silence (tap-to-talk)**: `SILENCE_MS = 2200` in both fallback STT paths — how long to wait through a pause before treating the user as done. Tap the mic to end immediately.
 - **Barge-in**: while the assistant speaks, `input_audio_buffer.speech_started` aborts the reply stream and playback. Relies on `echoCancellation: true` so the mic doesn't hear the assistant's own voice — verify on speakerphone-style devices.
 - **TTS model**: `tts-1` (not `tts-1-hd`) in `api/tts.js` — much faster to generate, which matters for per-sentence streaming on an edge function.

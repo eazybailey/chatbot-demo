@@ -3,9 +3,9 @@ export const config = { runtime: 'edge' };
 // Mints a short-lived client secret for an OpenAI Realtime *transcription*
 // session. The browser uses it to open a WebRTC connection directly to
 // OpenAI — mic audio streams there, live transcripts stream back, and
-// server-side VAD decides end-of-turn (~700ms of silence instead of the
-// old 2.2s client-side debounce). The real API key never leaves this
-// function.
+// server-side VAD decides end-of-turn (~1.2s of silence; long enough to
+// pause and think without being cut off). The real API key never leaves
+// this function.
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
@@ -48,12 +48,13 @@ export default async function handler(req) {
             input: {
               transcription: { model: 'gpt-4o-mini-transcribe', language: 'en' },
               // silence_duration_ms is the end-of-turn knob for the
-              // hands-free path — the realtime equivalent of SILENCE_MS.
+              // hands-free path. 1200ms leaves room for a thoughtful
+              // mid-sentence pause without feeling laggy at turn end.
               turn_detection: {
                 type: 'server_vad',
                 threshold: 0.5,
                 prefix_padding_ms: 300,
-                silence_duration_ms: 700,
+                silence_duration_ms: 1200,
               },
               noise_reduction: { type: 'near_field' },
             },
