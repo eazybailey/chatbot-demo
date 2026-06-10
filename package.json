@@ -1,6 +1,6 @@
 {
   "name": "chatbot-demo",
-  "version": "2.1.4",
+  "version": "2.4.2",
   "type": "module",
   "scripts": {
     "generate-icons": "node scripts/generate-icons.mjs",

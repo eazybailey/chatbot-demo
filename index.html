@@ -167,7 +167,11 @@ VOICE & STYLE GUIDELINES:
 - Ask one thoughtful follow-up question to keep the conversation going.
 - When giving feedback, balance what went well with what could improve.
 - Use the Dialogue System's own principles in YOUR conversation — model good dialogue by feeding back highlights, checking understanding, and showing genuine interest.
-- Never be preachy or condescending. The book itself says "you don't always have to be nice" — be real and direct when needed, but always respectful.`;
+- Never be preachy or condescending. The book itself says "you don't always have to be nice" — be real and direct when needed, but always respectful.
+
+SPOKEN vs SHOWN — TWO OUTPUT CHANNELS:
+Everything you write is spoken aloud by a voice engine — except an optional visual section. Formatting characters get read out loud literally ("asterisk", "dash"), which sounds robotic, so your spoken text must be plain natural speech only.
+When structure would genuinely help — a framework, a set of steps, options to compare — do NOT speak the list. Instead, after your spoken sentences, add a new line containing exactly [[VISUAL]] and put short markdown bullet points after it. That section is silently displayed on screen as a visual aid and never spoken. Refer to it naturally in your spoken text, e.g. "I've put the three roles on screen for you." Never say the marker, never describe the mechanics, and use the visual channel sparingly — only when seeing structure beats hearing it.`;
 
       if (!profile) return base;
 
@@ -213,6 +217,19 @@ VOICE & STYLE GUIDELINES:
       const areaRatingsText = areaEntries.map(([k, v]) => `${areaLabelMap[k] || k} ${v}/5`).join(', ') || 'none rated';
       const aspectsList = (fu.aspects || []).map(v => aspectLabelMap[v]).filter(Boolean);
       const aspectsText = aspectsList.length ? aspectsList.join('; ') : 'none named yet';
+
+      // Beta onboarding skips the questionnaire entirely — don't tell the
+      // model to reference answers that don't exist.
+      const hasQuestionnaire = areaEntries.length > 0 || aspectsList.length > 0 || !!fu.blame;
+      if (!hasQuestionnaire) {
+        return base + `
+
+USER PROFILE:
+- Name: ${profile.name || 'friend'}
+- Chosen path: ${goalMap[profile.goal] || 'general exploration of how to feel more understood'}
+
+IMPORTANT: This user came straight to the conversation without filling in a questionnaire. In your very first message, warmly greet them by name and invite them directly into whatever conversation or situation matters to them right now. Use their name occasionally but not in every message.`;
+      }
 
       const profileContext = `
 
@@ -309,6 +326,7 @@ VOICE & STYLE:
 - When it's one person's turn to listen, explicitly say so: "Sarah, just listen for a moment — Mark, tell her what you meant."
 - Celebrate small wins: when one person feeds back well, say so.
 - Model dialogue yourself: check understanding, invite, summarise.
+- SPOKEN vs SHOWN: your text is spoken aloud, so never put lists or formatting in it. If structure would genuinely help (e.g. ground rules, a summary of both positions), add a new line containing exactly [[VISUAL]] followed by short markdown bullets — that section is silently shown on screen, never spoken. Refer to it naturally ("I've put both of your headlines on screen"). Use it sparingly.
 
 Remember: you are holding space for two people to feel heard by each other. Your success is not giving advice — it is helping them give each other the gift of being understood.`;
     };
@@ -320,12 +338,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
     const buildCoachGreeting = (profile) => {
       if (!profile) {
-        return "Hey, welcome. I\u2019m your conversation coach. Before we go anywhere else, here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?";
+        return "Hey, welcome \u2014 I\u2019m your conversation coach. Think of someone important to you who you\u2019d like better conversations with \u2014 the kind where you both feel heard and understood. Who comes to mind, and what gets in the way?";
       }
 
       const name = profile.name || 'friend';
 
-      return `Hi ${name}, I\u2019m really glad you\u2019re here. Here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Maybe they leave you feeling a little unseen, or you walk away wishing you\u2019d said something different. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?`;
+      return `Hi ${name}, I\u2019m really glad you\u2019re here. Think of someone important to you who you\u2019d like better conversations with \u2014 the kind where you both feel heard and understood. Who comes to mind, and what gets in the way?`;
     };
 
     const buildFacilitatorGreeting = (profile) => {
@@ -544,8 +562,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
       return { heading: '', body: '' };
     };
 
-    // The quiz is now a single unified Feel Understood flow.
-    const getQuizScreens = () => FEEL_UNDERSTOOD_SCREENS;
+    // Full flow: the unified Feel Understood questionnaire.
+    // Beta: the name screen is the only onboarding step — the user goes
+    // straight from "Try the Beta" to entering their name to the Helpline.
+    const getQuizScreens = (beta) => beta
+      ? FEEL_UNDERSTOOD_SCREENS.filter(s => s.type === 'name-input')
+      : FEEL_UNDERSTOOD_SCREENS;
 
     // ── LandingGate Component ──
     // Shown once before anything else. Lets a tester enter the stripped-down
@@ -579,7 +601,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
     // last question we drop the user straight into the Communication Helpline
     // — the reveal and path-chooser screens were removed so the conversation
     // with the AI starts as quickly as possible.
-    const ProfileQuiz = ({ onComplete }) => {
+    const ProfileQuiz = ({ onComplete, beta }) => {
       const [step, setStep] = React.useState(0);
       const [answers, setAnswers] = React.useState({ areas: {}, aspects: [] });
       const [name, setName] = React.useState('');
@@ -587,7 +609,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const [animating, setAnimating] = React.useState(false);
       const nameInputRef = React.useRef(null);
 
-      const quizScreens = getQuizScreens();
+      const quizScreens = getQuizScreens(beta);
       const screen = quizScreens[step] || quizScreens[0];
       const progress = step / (quizScreens.length - 1);
       const isLastStep = step >= quizScreens.length - 1;
@@ -639,7 +661,11 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       const handleNameSubmit = (e) => {
         e.preventDefault();
-        if (name.trim()) goNext();
+        if (!name.trim()) return;
+        // Beta: the name screen is the whole onboarding — drop straight
+        // into the Helpline conversation.
+        if (isLastStep) handleFinishWithPath('helpline');
+        else goNext();
       };
 
       const handleFinishWithPath = (pathId) => {
@@ -913,15 +939,32 @@ Remember: you are holding space for two people to feel heard by each other. Your
           silenceTimer = setTimeout(commit, SILENCE_MS);
         };
 
-        sessionRef.current = { commit };
+        const abandon = () => {
+          // Discard the utterance without firing onFinal — used when the
+          // user switches to typing or leaves the conversation mid-listen.
+          if (committed) return;
+          committed = true;
+          if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+          try { r.abort(); } catch(e) {}
+        };
+
+        sessionRef.current = { commit, abandon };
 
         r.onresult = (e) => {
+          // Rebuild the transcript from the full results list on every
+          // event instead of appending deltas. Chrome on Android sometimes
+          // re-delivers final results (resultIndex doesn't reliably
+          // advance), and appending them again duplicates words — the
+          // "text repeats itself" bug. Rebuilding from index 0 is
+          // idempotent, so re-delivery is harmless.
+          let finalNow = '';
           let interimNow = '';
-          for (let i = e.resultIndex; i < e.results.length; i++) {
+          for (let i = 0; i < e.results.length; i++) {
             const t = e.results[i][0].transcript;
-            if (e.results[i].isFinal) accumulatedFinal += t + ' ';
+            if (e.results[i].isFinal) finalNow += t + ' ';
             else interimNow += t;
           }
+          accumulatedFinal = finalNow;
           lastInterim = interimNow;
           onInterim((accumulatedFinal + ' ' + interimNow).trim());
           resetSilenceTimer();
@@ -942,7 +985,13 @@ Remember: you are holding space for two people to feel heard by each other. Your
         else { try { recognitionRef.current?.stop(); } catch(e) {} }
       };
 
-      return { start, stop, supported };
+      const abort = () => {
+        const session = sessionRef.current;
+        if (session) session.abandon();
+        else { try { recognitionRef.current?.abort(); } catch(e) {} }
+      };
+
+      return { start, stop, abort, supported };
     };
 
     // ── MediaRecorder + Whisper Fallback ──
@@ -1143,9 +1192,192 @@ Remember: you are holding space for two people to feel heard by each other. Your
         }
       };
 
+      const abort = () => {
+        // Discard the recording without transcribing or firing onFinal —
+        // used when the user switches to typing or leaves mid-listen.
+        const rec = recorderRef.current;
+        if (rec && rec.state !== 'inactive') {
+          rec.ondataavailable = null;
+          rec.onstop = () => { chunksRef.current = []; cleanup(); };
+          try { rec.stop(); } catch (e) { cleanup(); }
+        } else {
+          cleanup();
+        }
+      };
+
       const getLevel = () => levelRef.current;
 
-      return { start, stop, supported, getLevel };
+      return { start, stop, abort, supported, getLevel };
+    };
+
+    // ── Realtime Hands-Free STT (OpenAI Realtime API over WebRTC) ──
+    //
+    // The primary voice path. The browser opens a WebRTC session directly
+    // to OpenAI's Realtime API (authorized by a short-lived client secret
+    // minted by /api/realtime-session), streams mic audio continuously, and
+    // receives live transcription events over the data channel:
+    //
+    //   input_audio_buffer.speech_started                → user began talking
+    //                                                      (barge-in trigger)
+    //   conversation.item.input_audio_transcription.delta → live interim text
+    //   ...transcription.completed                        → finished turn
+    //
+    // Server-side VAD ends a turn after ~1.2s of silence (configured in
+    // api/realtime-session.js) instead of the old 2.2s client debounce, and
+    // the session stays open across turns — no tap-to-talk. Claude remains
+    // the conversational brain; only the ears changed.
+    //
+    // If anything fails (endpoint not configured, SDP rejected, WebRTC
+    // blocked, connection drops) the app falls back to the tap-to-talk
+    // pipeline above for the rest of the visit.
+    const useRealtimeSTT = () => {
+      const pcRef = React.useRef(null);
+      const dcRef = React.useRef(null);
+      const streamRef = React.useRef(null);
+      const levelCtxRef = React.useRef(null);
+      const levelAnimRef = React.useRef(null);
+      const levelRef = React.useRef(0);
+      const activeRef = React.useRef(false);
+
+      const supported = typeof window !== 'undefined'
+        && !!window.RTCPeerConnection
+        && !!navigator.mediaDevices?.getUserMedia;
+
+      const endSession = () => {
+        activeRef.current = false;
+        if (levelAnimRef.current) { cancelAnimationFrame(levelAnimRef.current); levelAnimRef.current = null; }
+        if (levelCtxRef.current) { try { levelCtxRef.current.close(); } catch (e) {} levelCtxRef.current = null; }
+        if (dcRef.current) { try { dcRef.current.close(); } catch (e) {} dcRef.current = null; }
+        if (pcRef.current) { try { pcRef.current.close(); } catch (e) {} pcRef.current = null; }
+        if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+        levelRef.current = 0;
+      };
+
+      React.useEffect(() => () => endSession(), []);
+
+      const startSession = async ({ onInterim, onTurn, onSpeechStart, onError }) => {
+        let stream;
+        try {
+          // Echo cancellation is what lets the mic stay open while TTS
+          // plays without the assistant hearing itself.
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          });
+        } catch (e) {
+          const name = e?.name || '';
+          if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+            onError('not-allowed');
+          } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+            onError('no-mic');
+          } else {
+            onError('mic-failed');
+          }
+          return false;
+        }
+        streamRef.current = stream;
+
+        try {
+          const tokenRes = await fetch('/api/realtime-session', { method: 'POST' });
+          if (!tokenRes.ok) throw new Error('mint-failed');
+          const token = await tokenRes.json();
+          if (!token.value) throw new Error('mint-failed');
+
+          const pc = new RTCPeerConnection();
+          pcRef.current = pc;
+          stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+          const dc = pc.createDataChannel('oai-events');
+          dcRef.current = dc;
+          let interim = '';
+          dc.onmessage = (e) => {
+            let msg;
+            try { msg = JSON.parse(e.data); } catch (err) { return; }
+            if (msg.type === 'input_audio_buffer.speech_started') {
+              if (onSpeechStart) onSpeechStart();
+            } else if (msg.type === 'conversation.item.input_audio_transcription.delta') {
+              interim += msg.delta || '';
+              if (interim.trim()) onInterim(interim.trim());
+            } else if (msg.type === 'conversation.item.input_audio_transcription.completed') {
+              interim = '';
+              const text = (msg.transcript || '').trim();
+              if (text) onTurn(text);
+              else onInterim('');
+            } else if (msg.type === 'error') {
+              onError(msg.error?.message || 'realtime-error');
+            }
+          };
+
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          const sdpRes = await fetch('https://api.openai.com/v1/realtime/calls', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token.value}`,
+              'Content-Type': 'application/sdp',
+            },
+            body: offer.sdp,
+          });
+          if (!sdpRes.ok) throw new Error('sdp-failed');
+          const answerSdp = await sdpRes.text();
+          await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+          await new Promise((resolve, reject) => {
+            const t = setTimeout(() => reject(new Error('open-timeout')), 10000);
+            dc.onopen = () => { clearTimeout(t); resolve(); };
+            pc.onconnectionstatechange = () => {
+              if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+                clearTimeout(t);
+                reject(new Error('connection-failed'));
+              }
+            };
+          });
+
+          // After setup, surface a dropped connection as an error so the
+          // app can fall back instead of listening to a dead session.
+          pc.onconnectionstatechange = () => {
+            if (!activeRef.current) return;
+            if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+              onError('connection-lost');
+            }
+          };
+
+          // Mic level for the visualizer — same "we can hear you"
+          // affordance as the Whisper path.
+          try {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AC();
+            levelCtxRef.current = ctx;
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 1024;
+            ctx.createMediaStreamSource(stream).connect(analyser);
+            const buf = new Uint8Array(analyser.frequencyBinCount);
+            const tick = () => {
+              if (!levelCtxRef.current) return;
+              analyser.getByteTimeDomainData(buf);
+              let sum = 0;
+              for (let i = 0; i < buf.length; i++) {
+                const v = (buf[i] - 128) / 128;
+                sum += v * v;
+              }
+              levelRef.current = Math.sqrt(sum / buf.length);
+              levelAnimRef.current = requestAnimationFrame(tick);
+            };
+            levelAnimRef.current = requestAnimationFrame(tick);
+          } catch (e) { /* level meter is best-effort */ }
+
+          activeRef.current = true;
+          return true;
+        } catch (e) {
+          endSession();
+          onError(e?.message === 'mint-failed' ? 'realtime-unavailable' : 'realtime-failed');
+          return false;
+        }
+      };
+
+      const isActive = () => activeRef.current;
+      const getLevel = () => levelRef.current;
+
+      return { supported, startSession, endSession, isActive, getLevel };
     };
 
     // ── Browser detection: which STT path to use ──
@@ -1231,7 +1463,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       }
       if (!response.ok) {
         // Transient failures — retry once. 429 = rate limit (back off a
-        // little longer), 5xx = slow/cold upstream or our 12s abort. Don't
+        // little longer), 5xx = slow/cold upstream or our 8s abort. Don't
         // retry other 4xx (bad input / auth), where a retry can't help.
         if ((response.status === 429 || response.status >= 500) && attempt === 0) {
           await new Promise(r => setTimeout(r, response.status === 429 ? 700 : 300));
@@ -1244,6 +1476,33 @@ Remember: you are holding space for two people to feel heard by each other. Your
         throw new Error(msg);
       }
       return await response.arrayBuffer();
+    };
+
+    // Fetches TTS as a streaming PCM response. Mirrors fetchTTSBuffer's
+    // retry policy — one retry on 429 (longer backoff), 5xx, or network
+    // error. Without this, a single slow upstream call (our 8s 504) stalls
+    // the sentence pipeline for its whole timeout and the phrase is lost;
+    // with it, the retry usually lands in well under a second.
+    const fetchPCMStream = async (text, attempt = 0) => {
+      let response;
+      try {
+        response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: text, voice: 'shimmer', format: 'pcm' }),
+        });
+      } catch (netErr) {
+        if (attempt === 0) {
+          await new Promise(r => setTimeout(r, 300));
+          return fetchPCMStream(text, 1);
+        }
+        throw netErr;
+      }
+      if (!response.ok && (response.status === 429 || response.status >= 500) && attempt === 0) {
+        await new Promise(r => setTimeout(r, response.status === 429 ? 700 : 300));
+        return fetchPCMStream(text, 1);
+      }
+      return response;
     };
 
     // Plays an ArrayBuffer of audio through AudioContext (primary)
@@ -1299,6 +1558,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
       });
     };
 
+    // Strip anything TTS would read aloud literally ("asterisk", "dash",
+    // "hash") or stumble over. The visual channel keeps the formatting;
+    // speech gets plain prose. Last line of defense behind the prompt.
+    const sanitizeForSpeech = (text) => text
+      .replace(/\[\[VISUAL\]\]/g, ' ')
+      .replace(/[*_#`~]/g, '')
+      .replace(/^\s*(?:[-•]|\d+[.)])\s+/gm, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
     // Splits text into sentences for chunked TTS
     const splitSentences = (text) => {
       const parts = text.match(/[^.!?]+[.!?]+[\s]*/g);
@@ -1314,8 +1583,23 @@ Remember: you are holding space for two people to feel heard by each other. Your
       return result;
     };
 
+    // Raw PCM (24kHz 16-bit signed mono LE) → AudioBuffer. Used by the
+    // gapless streaming path, where audio plays as network chunks arrive.
+    const PCM_RATE = 24000;
+    const pcmToAudioBuffer = (bytes) => {
+      const samples = bytes.byteLength >> 1;
+      const buffer = audioCtx.createBuffer(1, samples, PCM_RATE);
+      const ch = buffer.getChannelData(0);
+      const view = new DataView(bytes.buffer, bytes.byteOffset, samples * 2);
+      for (let i = 0; i < samples; i++) ch[i] = view.getInt16(i * 2, true) / 32768;
+      return buffer;
+    };
+
     const useSpeechSynthesis = () => {
       const audioRef = React.useRef(null);
+      // Sources scheduled by the gapless PCM path that haven't ended yet —
+      // cancel() must stop all of them, not just the current one.
+      const liveSourcesRef = React.useRef(new Set());
       const cancelledRef = React.useRef(false);
       // Generation counter shared across all speakStreaming sessions. When a
       // new session starts it claims the next generation; older sessions
@@ -1333,8 +1617,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const speak = async (text) => {
         cancelledRef.current = false;
         lastErrorRef.current = null;
-        const sentences = splitSentences(text);
-        const ttsPromises = sentences.map(s => fetchTTSBuffer(s.trim()));
+        const sentences = splitSentences(text).map(sanitizeForSpeech).filter(Boolean);
+        const ttsPromises = sentences.map(s => fetchTTSBuffer(s));
         for (let i = 0; i < sentences.length; i++) {
           if (cancelledRef.current) return;
           try {
@@ -1356,12 +1640,106 @@ Remember: you are holding space for two people to feel heard by each other. Your
         lastErrorRef.current = null;
         const myGen = ++streamGenRef.current;
         const isStale = () => cancelledRef.current || myGen !== streamGenRef.current;
-        const queue = [];
-        let playIndex = 0;
-        let playing = false;
         let resolveFinished;
         let doneAdding = false;
         const finished = new Promise(r => { resolveFinished = r; });
+
+        // ── Primary: gapless PCM streaming ──
+        // Each sentence is fetched as raw PCM and spliced onto the
+        // AudioContext timeline the moment bytes arrive: speech starts on
+        // the first network chunk (not after the whole file is generated),
+        // and consecutive chunks/sentences join without audible gaps.
+        if (audioCtx && audioCtx.state === 'running') {
+          const sentences = [];
+          let nextStartTime = 0;
+          let livePlaying = 0;
+          let streaming = false;
+          let streamIndex = 0;
+
+          const maybeFinish = () => {
+            if (isStale()) { resolveFinished(); return; }
+            if (doneAdding && !streaming && streamIndex >= sentences.length && livePlaying === 0) {
+              resolveFinished();
+            }
+          };
+
+          const scheduleChunk = (audioBuffer) => {
+            const src = audioCtx.createBufferSource();
+            src.buffer = audioBuffer;
+            src.connect(audioCtx.destination);
+            liveSourcesRef.current.add(src);
+            livePlaying++;
+            src.onended = () => {
+              liveSourcesRef.current.delete(src);
+              livePlaying--;
+              maybeFinish();
+            };
+            // Butt each chunk up against the end of the previous one on the
+            // context clock — this is what makes playback seamless.
+            const at = Math.max(audioCtx.currentTime + 0.03, nextStartTime);
+            src.start(at);
+            nextStartTime = at + audioBuffer.duration;
+          };
+
+          const pump = async () => {
+            if (streaming) return;
+            streaming = true;
+            while (streamIndex < sentences.length) {
+              if (isStale()) break;
+              try {
+                const res = await sentences[streamIndex];
+                if (!res.ok) throw new Error(`TTS ${res.status}`);
+                const reader = res.body.getReader();
+                let leftover = new Uint8Array(0);
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (isStale()) { try { reader.cancel(); } catch (e) {} break; }
+                  if (done) break;
+                  let bytes = value;
+                  if (leftover.length) {
+                    const joined = new Uint8Array(leftover.length + value.length);
+                    joined.set(leftover, 0);
+                    joined.set(value, leftover.length);
+                    bytes = joined;
+                  }
+                  // Only whole 16-bit samples; carry odd trailing byte over.
+                  const usable = bytes.length & ~1;
+                  leftover = bytes.subarray(usable);
+                  if (usable >= 2) scheduleChunk(pcmToAudioBuffer(bytes.subarray(0, usable)));
+                }
+              } catch (e) {
+                // One failed sentence must not silence the rest.
+                console.error('Stream TTS chunk error:', e);
+                lastErrorRef.current = e?.message || String(e);
+              }
+              streamIndex++;
+            }
+            streaming = false;
+            maybeFinish();
+          };
+
+          return {
+            addSentence: (sentence) => {
+              if (isStale()) return;
+              const clean = sanitizeForSpeech(sentence);
+              if (!clean) return;
+              // Fire the request immediately so generation of the next
+              // sentence overlaps playback of the current one.
+              sentences.push(fetchPCMStream(clean));
+              pump();
+            },
+            finish: () => {
+              doneAdding = true;
+              maybeFinish();
+              return finished;
+            },
+          };
+        }
+
+        // ── Fallback: buffered MP3 path (no running AudioContext) ──
+        const queue = [];
+        let playIndex = 0;
+        let playing = false;
 
         const tryPlay = async () => {
           if (playing) return;
@@ -1379,18 +1757,22 @@ Remember: you are holding space for two people to feel heard by each other. Your
             playIndex++;
           }
           playing = false;
-          if (doneAdding && playIndex >= queue.length) resolveFinished();
+          // A cancelled/stale session must still resolve `finished` —
+          // otherwise an interrupted sendToClaude awaits it forever.
+          if (isStale() || (doneAdding && playIndex >= queue.length)) resolveFinished();
         };
 
         const addSentence = (sentence) => {
           if (isStale()) return;
-          queue.push(fetchTTSBuffer(sentence.trim()));
+          const clean = sanitizeForSpeech(sentence);
+          if (!clean) return;
+          queue.push(fetchTTSBuffer(clean));
           tryPlay();
         };
 
         const finish = () => {
           doneAdding = true;
-          if (playIndex >= queue.length) resolveFinished();
+          if (isStale() || playIndex >= queue.length) resolveFinished();
           else tryPlay();
           return finished;
         };
@@ -1400,6 +1782,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       const cancel = () => {
         cancelledRef.current = true;
+        // Stop every source the gapless path has scheduled, not just the
+        // one currently audible — later chunks are already on the timeline.
+        for (const src of liveSourcesRef.current) {
+          try { src.stop(); } catch(e) {}
+        }
+        liveSourcesRef.current.clear();
         try {
           const ref = audioRef.current;
           if (ref && typeof ref.stop === 'function') ref.stop();       // BufferSource
@@ -1430,8 +1818,47 @@ Remember: you are holding space for two people to feel heard by each other. Your
       );
     };
 
+    // ── Visual Aid ──
+    // Renders the "shown, not spoken" channel of an assistant message — a
+    // light markdown subset (bullets, numbered lists, **bold**) displayed
+    // as a card under the spoken text. Structure for the eyes, prose for
+    // the ears.
+    const VisualAid = ({ text }) => {
+      const blocks = [];
+      let list = null;
+      const flush = () => {
+        if (list) { blocks.push({ type: 'list', items: list }); list = null; }
+      };
+      for (const raw of text.split('\n')) {
+        const line = raw.trim();
+        if (!line) { flush(); continue; }
+        const m = line.match(/^(?:[-•*]|\d+[.)])\s+(.*)$/);
+        if (m) {
+          if (!list) list = [];
+          list.push(m[1]);
+        } else {
+          flush();
+          blocks.push({ type: 'p', text: line.replace(/^#+\s*/, '') });
+        }
+      }
+      flush();
+
+      const renderInline = (s) => {
+        const parts = s.split(/\*\*(.+?)\*\*/g);
+        return parts.map((p, i) => i % 2 ? React.createElement('strong', { key: i }, p) : p);
+      };
+
+      return React.createElement('div', { className: 'visual-aid' },
+        blocks.map((b, i) => b.type === 'list'
+          ? React.createElement('ul', { key: i },
+              b.items.map((item, j) => React.createElement('li', { key: j }, renderInline(item))))
+          : React.createElement('p', { key: i }, renderInline(b.text))
+        )
+      );
+    };
+
     // ── Message Bubble ──
-    const MessageBubble = ({ role, content }) => {
+    const MessageBubble = ({ role, content, visual }) => {
       const isUser = role === 'user';
       return React.createElement('div', { className: `msg-row ${role}` },
         !isUser && React.createElement('div', { className: 'avatar' },
@@ -1439,7 +1866,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
             ),
         React.createElement('div', {
           className: `bubble ${isUser ? 'user-bubble' : 'assistant-bubble'}`
-        }, content)
+        },
+          content,
+          visual && React.createElement(VisualAid, { text: visual }),
+        )
       );
     };
 
@@ -1558,9 +1988,38 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const useRecorderFallback = React.useMemo(() => needsRecorderFallback(), []);
       const nativeSTT = useSpeechRecognition();
       const recorderSTT = useMediaRecorderSTT();
-      const { start: startRec, stop: stopRec, supported: sttSupported } =
+      const { start: startRec, stop: stopRec, abort: abortRec, supported: sttSupported } =
         useRecorderFallback ? recorderSTT : nativeSTT;
       const { speak, speakStreaming, cancel: cancelSpeak, getLastError: getTtsError } = useSpeechSynthesis();
+      const realtime = useRealtimeSTT();
+      // Hands-free realtime conversation: one tap opens a continuous
+      // session; turns are detected server-side, and the user can barge in
+      // while the assistant speaks. realtimeEnabledRef flips false after a
+      // realtime failure so the rest of the visit uses tap-to-talk instead.
+      const [handsFree, setHandsFree] = React.useState(false);
+      const handsFreeRef = React.useRef(false);
+      const realtimeEnabledRef = React.useRef(true);
+      // Mirror of voiceState for realtime event callbacks, which outlive
+      // any single render.
+      const voiceStateRef = React.useRef('idle');
+      React.useEffect(() => { voiceStateRef.current = voiceState; }, [voiceState]);
+      // AbortController for the in-flight /api/chat-stream request. Aborted
+      // when the user interrupts or starts a new turn, so a stale stream can
+      // never keep writing into the conversation underneath the new one.
+      const streamAbortRef = React.useRef(null);
+
+      // Hard-stop everything voice-related: the in-flight reply stream, TTS
+      // playback, and any open mic session (hands-free or tap-to-talk).
+      const stopVoicePipeline = () => {
+        if (handsFreeRef.current) {
+          handsFreeRef.current = false;
+          setHandsFree(false);
+        }
+        realtime.endSession();
+        streamAbortRef.current?.abort();
+        abortRec();
+        cancelSpeak();
+      };
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
       React.useEffect(() => { profileRef.current = profile; }, [profile]);
@@ -1599,19 +2058,47 @@ Remember: you are holding space for two people to feel heard by each other. Your
         const greeting = buildGreeting(quizProfile);
         startNewConversation([{ role: 'assistant', content: greeting }]);
         setStarted(true);
+
+        // The mic stays off until the user's first "Tap to talk" — the
+        // greeting speaks, then one tap opens the hands-free session.
+
+        // Speak the greeting through the gapless PCM path, sentence by
+        // sentence, so audio starts on the first network chunk instead of
+        // after the first full MP3 has been generated and downloaded.
         setVoiceState('speaking');
-        speak(greeting).then(() => {
-          setVoiceState('idle');
+        const sp = speakStreaming();
+        for (const s of splitSentences(greeting)) {
+          const t = s.trim();
+          if (t) sp.addSentence(t);
+        }
+        sp.finish().then(() => {
+          // Only step down if we're still the active speaker — the user may
+          // have barged in and already be mid-turn.
+          setVoiceState(v => v === 'speaking'
+            ? (handsFreeRef.current ? 'listening' : 'idle')
+            : v);
           const ttsErr = getTtsError();
           if (ttsErr) {
-            setError(`Voice failed: ${ttsErr}`);
-            setTimeout(() => setError(null), 10000);
+            setError(`Voice hiccup — a phrase was skipped (${ttsErr})`);
+            setTimeout(() => setError(null), 6000);
           }
         });
       };
 
       const sendToClaude = async (userText) => {
-        const updated = [...messagesRef.current, { role: 'user', content: userText }];
+        // A new turn supersedes any still-streaming previous one.
+        streamAbortRef.current?.abort();
+        const ac = new AbortController();
+        streamAbortRef.current = ac;
+
+        // In hands-free mode two user turns can arrive back-to-back (e.g. a
+        // barge-in before any assistant text streamed). Merge them so the
+        // history sent to the API keeps alternating roles.
+        const prev = messagesRef.current;
+        const last = prev[prev.length - 1];
+        const updated = last && last.role === 'user'
+          ? [...prev.slice(0, -1), { role: 'user', content: `${last.content}\n${userText}` }]
+          : [...prev, { role: 'user', content: userText }];
         setMessages(updated);
         setVoiceState('processing');
         setInterimText('');
@@ -1623,8 +2110,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
             body: JSON.stringify({
               system: buildSystemPrompt(profileRef.current),
               max_tokens: 500,
-              messages: updated.map(m => ({ role: m.role, content: m.content })),
+              // Reassemble both channels for the model so it remembers what
+              // it displayed, not just what it said. Cap the history window:
+              // sending the whole conversation makes Claude's first token
+              // slower every single turn of a long session.
+              messages: updated.slice(-24).map(m => ({
+                role: m.role,
+                content: m.visual ? `${m.content}\n[[VISUAL]]\n${m.visual}` : m.content,
+              })),
             }),
+            signal: ac.signal,
           });
 
           if (!response.ok) throw new Error('Stream request failed');
@@ -1639,6 +2134,23 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // chunk can split a "data: {...}" line in half, and parsing each
           // half would drop that delta (lost words mid-reply).
           let lineBuffer = '';
+
+          // Two-channel reply: text before [[VISUAL]] is spoken aloud; text
+          // after it is shown on screen as a visual aid, never spoken.
+          const VISUAL_MARKER = '[[VISUAL]]';
+          // Chars of fullText already handed to the TTS sentence buffer.
+          let spokenFed = 0;
+          // How much of fullText is safely speakable: everything before the
+          // marker — holding back any trailing partial marker so a chunk
+          // ending in "[[VIS" never reaches TTS mid-stream.
+          const speakableEnd = () => {
+            const idx = fullText.indexOf(VISUAL_MARKER);
+            if (idx !== -1) return idx;
+            for (let k = VISUAL_MARKER.length - 1; k > 0; k--) {
+              if (fullText.endsWith(VISUAL_MARKER.slice(0, k))) return fullText.length - k;
+            }
+            return fullText.length;
+          };
 
           while (true) {
             const { done, value } = await reader.read();
@@ -1657,21 +2169,36 @@ Remember: you are holding space for two people to feel heard by each other. Your
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
                   fullText += parsed.text;
-                  sentenceBuffer += parsed.text;
 
-                  // Update message text as it streams in
-                  setMessages([...updated, { role: 'assistant', content: fullText }]);
+                  // Split the channels for display as the reply streams in.
+                  const markerIdx = fullText.indexOf(VISUAL_MARKER);
+                  const spokenText = (markerIdx === -1 ? fullText : fullText.slice(0, markerIdx)).trim();
+                  const visualText = markerIdx === -1 ? '' : fullText.slice(markerIdx + VISUAL_MARKER.length).trim();
+                  setMessages([...updated, {
+                    role: 'assistant',
+                    content: spokenText,
+                    ...(visualText ? { visual: visualText } : {}),
+                  }]);
+
+                  // Only the spoken channel feeds the TTS sentence buffer.
+                  const end = speakableEnd();
+                  if (end > spokenFed) {
+                    sentenceBuffer += fullText.slice(spokenFed, end);
+                    spokenFed = end;
+                  }
 
                   // Aggressively fire TTS on any natural break point
                   // Priority 1: sentence endings (.!?)
                   // Priority 2: clause breaks (,;:—–) if buffer > 40 chars
                   // Priority 3: any content if buffer > 80 chars (force split at word boundary)
                   // First chunk uses lower thresholds so audio starts as
-                  // quickly as possible \u2014 subsequent chunks are looser to
-                  // keep prosody natural.
+                  // quickly as possible. Later chunks are much looser: the
+                  // PCM streaming path starts playing each sentence on its
+                  // first network chunk, so we can afford whole sentences \u2014
+                  // which sound far more natural than clause fragments.
                   const isFirstChunk = !streamSpeaker;
-                  const clauseThreshold = isFirstChunk ? 12 : 40;
-                  const forceThreshold = isFirstChunk ? 28 : 80;
+                  const clauseThreshold = isFirstChunk ? 12 : 80;
+                  const forceThreshold = isFirstChunk ? 28 : 160;
 
                   let fireChunk = null;
                   const sentenceMatch = sentenceBuffer.match(/^([\s\S]*?[.!?])[\s]?/);
@@ -1718,28 +2245,129 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Wait for all audio to finish playing
           if (streamSpeaker) {
             await streamSpeaker.finish();
+          }
+          // Interrupted turns do their own state cleanup at the point of
+          // interruption — don't fight whatever the user is doing now.
+          if (ac.signal.aborted) return;
+          if (streamSpeaker) {
             const ttsErr = getTtsError();
             if (ttsErr) {
-              setError(`Voice failed: ${ttsErr}`);
-              setTimeout(() => setError(null), 10000);
+              // Playback carried on around the failed phrase — say so,
+              // rather than announcing total failure.
+              setError(`Voice hiccup — a phrase was skipped (${ttsErr})`);
+              setTimeout(() => setError(null), 6000);
             }
           }
-          setVoiceState('idle');
+          // Hands-free: the session is still open, go straight back to
+          // listening for the next turn. Tap-to-talk: rest at idle.
+          setVoiceState(v => (v === 'speaking' || v === 'processing')
+            ? (handsFreeRef.current ? 'listening' : 'idle')
+            : v);
         } catch (err) {
+          if (ac.signal.aborted) return; // interrupted on purpose
           console.error('Error:', err);
           setError('Something went wrong. Tap to try again.');
-          setVoiceState('idle');
+          setVoiceState(v => (v === 'speaking' || v === 'processing')
+            ? (handsFreeRef.current ? 'listening' : 'idle')
+            : v);
           setTimeout(() => setError(null), 4000);
         }
       };
 
+      // ── Hands-free conversation lifecycle (realtime path) ──
+      const startHandsFree = async () => {
+        setError(null);
+        setMicBlocked(false);
+        setInterimText('');
+        setTranscribing(false);
+        handsFreeRef.current = true;
+        setHandsFree(true);
+        setVoiceState('listening');
+
+        await realtime.startSession({
+          onInterim: (t) => {
+            if (handsFreeRef.current) setInterimText(t);
+          },
+          onTurn: (text) => {
+            if (!handsFreeRef.current) return;
+            setInterimText('');
+            sendToClaude(text);
+          },
+          onSpeechStart: () => {
+            if (!handsFreeRef.current) return;
+            // Barge-in: the user started talking over the assistant — stop
+            // the reply (audio and stream) and listen. No tap needed.
+            if (voiceStateRef.current === 'speaking') {
+              streamAbortRef.current?.abort();
+              cancelSpeak();
+              setVoiceState('listening');
+            }
+          },
+          onError: (err) => {
+            const blocked = err === 'not-allowed';
+            handsFreeRef.current = false;
+            setHandsFree(false);
+            realtime.endSession();
+            if (blocked) {
+              setMicBlocked(true);
+              setError('Microphone blocked. Tap the lock/site icon in the address bar to allow it, then try again.');
+            } else if (err === 'no-mic') {
+              setError('No microphone detected on this device.');
+              setTimeout(() => setError(null), 6000);
+            } else {
+              // Anything else (endpoint missing, SDP rejected, connection
+              // lost): fall back to tap-to-talk for the rest of the visit.
+              realtimeEnabledRef.current = false;
+              setError('Hands-free voice unavailable — using tap-to-talk instead.');
+              setTimeout(() => setError(null), 6000);
+            }
+            setInterimText('');
+            setVoiceState(v => v === 'listening' ? 'idle' : v);
+          },
+        });
+      };
+
+      const endHandsFree = () => {
+        handsFreeRef.current = false;
+        setHandsFree(false);
+        realtime.endSession();
+        streamAbortRef.current?.abort();
+        cancelSpeak();
+        setInterimText('');
+        setVoiceState('idle');
+      };
+
       const handleMicClick = () => {
+        if (handsFreeRef.current) {
+          // A hands-free conversation is live.
+          if (voiceState === 'speaking') {
+            // Manual barge-in: stop the reply, keep the conversation open.
+            streamAbortRef.current?.abort();
+            cancelSpeak();
+            setVoiceState('listening');
+            return;
+          }
+          if (voiceState === 'processing') return;
+          endHandsFree();
+          return;
+        }
+
         if (voiceState === 'speaking') {
+          // Interrupt: stop both the audio AND the underlying reply stream,
+          // so a superseded turn can't keep mutating the conversation.
+          streamAbortRef.current?.abort();
           cancelSpeak();
           setVoiceState('idle');
           return;
         }
         if (voiceState === 'processing') return;
+
+        // Prefer the hands-free realtime path; fall back to tap-to-talk if
+        // it's unsupported here or already failed once this visit.
+        if (voiceState === 'idle' && realtime.supported && realtimeEnabledRef.current) {
+          startHandsFree();
+          return;
+        }
 
         if (voiceState === 'listening') {
           // Manual stop. Native SR fires onFinal synchronously; Whisper path
@@ -1802,6 +2430,14 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const handleTextSubmit = (e) => {
         e.preventDefault();
         if (!textInput.trim() || voiceState === 'processing' || voiceState === 'speaking') return;
+        if (voiceState === 'listening') {
+          // User switched to typing mid-listen. Tap-to-talk: drop the mic
+          // session so its silence timer can't fire a second, competing
+          // message. Hands-free: the session stays open — they can keep
+          // talking after this typed turn.
+          if (!handsFreeRef.current) abortRec();
+          setInterimText('');
+        }
         cancelSpeak();
         sendToClaude(textInput.trim());
         setTextInput('');
@@ -1813,7 +2449,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         const path = NEXT_STEPS.find(p => p.id === pathId);
         if (!path || !profile) return;
         if (profile.path === pathId) return;
-        cancelSpeak();
+        stopVoicePipeline();
         const nextProfile = { ...profile, mode: path.mode, goal: path.goal, path: path.id };
         setProfile(nextProfile);
         profileRef.current = nextProfile;
@@ -1827,7 +2463,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       const handleNewChat = () => {
-        cancelSpeak();
+        stopVoicePipeline();
         // Start a new conversation (profile persists, no need to redo quiz)
         if (profile) {
           const greeting = buildGreeting(profile);
@@ -1852,7 +2488,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       const handleStartOver = () => {
-        cancelSpeak();
+        stopVoicePipeline();
         setProfile(null);
         profileRef.current = null;
         saveProfile(null);
@@ -1870,7 +2506,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       const handleLoadConversation = (convo) => {
-        cancelSpeak();
+        stopVoicePipeline();
         setActiveConvoId(convo.id);
         activeConvoIdRef.current = convo.id;
         setMessages(convo.messages);
@@ -1916,15 +2552,22 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
       // ── Onboarding Quiz ──
       if (!started) {
-        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete });
+        return React.createElement(ProfileQuiz, { onComplete: handleQuizComplete, beta: isBeta });
       }
 
-      const statusLabel = {
-        idle: sttSupported ? 'Tap to speak' : 'Type below',
-        listening: 'Listening...',
-        processing: 'Thinking...',
-        speaking: 'Tap to stop',
-      }[voiceState];
+      const statusLabel = handsFree
+        ? {
+            idle: 'Tap to talk',
+            listening: 'Listening — just talk · tap to end',
+            processing: 'Thinking...',
+            speaking: 'Talk to interrupt',
+          }[voiceState]
+        : {
+            idle: (realtime.supported && realtimeEnabledRef.current) || sttSupported ? 'Tap to talk' : 'Type below',
+            listening: 'Listening...',
+            processing: 'Thinking...',
+            speaking: 'Tap to stop',
+          }[voiceState];
 
       const formatTime = (ts) => {
         const d = new Date(ts);
@@ -2287,7 +2930,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         // Messages
         React.createElement('main', { className: 'chat-area' },
           messages.map((m, i) =>
-            React.createElement(MessageBubble, { key: i, role: m.role, content: m.content })
+            React.createElement(MessageBubble, { key: i, role: m.role, content: m.content, visual: m.visual })
           ),
           // User-side "your speech is being transcribed" bubble (Whisper
           // path only). Critical for affordance: without it, the gap
@@ -2320,7 +2963,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Mic area
           React.createElement('div', { className: 'mic-area' },
             voiceState === 'listening' && React.createElement(WaveVisualizer, {
-              getLevel: useRecorderFallback ? recorderSTT.getLevel : null,
+              getLevel: handsFree
+                ? realtime.getLevel
+                : (useRecorderFallback ? recorderSTT.getLevel : null),
             }),
             React.createElement('button', {
               className: `mic-btn ${voiceState}`,
@@ -2371,7 +3016,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.1.4')
+          }, 'v2.4.2')
         )
       );
     };
