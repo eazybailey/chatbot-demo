@@ -107,8 +107,8 @@ Single-page React app rendered entirely in `index.html` (no build tooling).
 ### Key Components
 
 - **`App`** — Root. Manages conversation state, voice state machine, streaming pipeline
-- **Feel Understood onboarding** — A short questionnaire (`FEEL_UNDERSTOOD_SCREENS`) builds a profile, then offers three next-step paths (see Coaching Modes). **Beta mode skips the questionnaire**: "Try the Beta" → name input → straight into the Helpline (the system prompt gets a slim no-questionnaire profile). The greeting is spoken via the gapless PCM path and the hands-free session opens immediately, so the user can reply or barge in without tapping the mic
-- **`MessageBubble`** — Chat bubbles (user = yellow right-aligned, assistant = gray left-aligned)
+- **Feel Understood onboarding** — A short questionnaire (`FEEL_UNDERSTOOD_SCREENS`) builds a profile, then offers three next-step paths (see Coaching Modes). **Beta mode skips the questionnaire**: "Try the Beta" → name input → straight into the Helpline (the system prompt gets a slim no-questionnaire profile). The greeting is spoken via the gapless PCM path; the mic stays off until the user's first "Tap to talk", which opens the hands-free session
+- **`MessageBubble`** — Chat bubbles (user = yellow right-aligned, assistant = gray left-aligned). Assistant bubbles can carry a `visual` field, rendered by **`VisualAid`** as a card (light markdown subset: bullets, numbered lists, **bold**)
 - **`TypingIndicator`** — Animated dots during processing
 - **`WaveVisualizer`** — Animated bars during listening; reacts to live mic level on the Whisper path
 
@@ -147,6 +147,15 @@ After the Feel Understood questionnaire, the user picks one of three paths, whic
 3. **Facilitator** (`mode: facilitator`) — the AI acts as a neutral third party in a conversation between the user and another person, making sure both are heard
 
 System prompts are built by `buildCoachSystemPrompt` and `buildFacilitatorSystemPrompt`. Responses are optimized for voice: concise (2–4 sentences), warm, no markdown/bullets.
+
+### Two-Channel Replies (spoken vs shown)
+
+Assistant replies have two channels separated by a literal `[[VISUAL]]` marker:
+
+- **Spoken** (before the marker) — plain conversational prose, streamed to TTS as it arrives
+- **Shown** (after the marker) — optional markdown bullets/structure, rendered silently as a `VisualAid` card, never spoken
+
+The streaming client splits the channels live (holding back partial markers so `[[VIS` is never voiced), stores assistant messages as `{ content, visual }`, and reassembles `content + [[VISUAL]] + visual` when sending history back to Claude so the model remembers what it displayed. `sanitizeForSpeech` strips any residual markdown/bullets/markers before text reaches TTS — the "reading asterisks aloud" failure mode is fenced at both ends.
 
 ## Styling
 

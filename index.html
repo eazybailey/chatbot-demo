@@ -167,7 +167,11 @@ VOICE & STYLE GUIDELINES:
 - Ask one thoughtful follow-up question to keep the conversation going.
 - When giving feedback, balance what went well with what could improve.
 - Use the Dialogue System's own principles in YOUR conversation — model good dialogue by feeding back highlights, checking understanding, and showing genuine interest.
-- Never be preachy or condescending. The book itself says "you don't always have to be nice" — be real and direct when needed, but always respectful.`;
+- Never be preachy or condescending. The book itself says "you don't always have to be nice" — be real and direct when needed, but always respectful.
+
+SPOKEN vs SHOWN — TWO OUTPUT CHANNELS:
+Everything you write is spoken aloud by a voice engine — except an optional visual section. Formatting characters get read out loud literally ("asterisk", "dash"), which sounds robotic, so your spoken text must be plain natural speech only.
+When structure would genuinely help — a framework, a set of steps, options to compare — do NOT speak the list. Instead, after your spoken sentences, add a new line containing exactly [[VISUAL]] and put short markdown bullet points after it. That section is silently displayed on screen as a visual aid and never spoken. Refer to it naturally in your spoken text, e.g. "I've put the three roles on screen for you." Never say the marker, never describe the mechanics, and use the visual channel sparingly — only when seeing structure beats hearing it.`;
 
       if (!profile) return base;
 
@@ -322,6 +326,7 @@ VOICE & STYLE:
 - When it's one person's turn to listen, explicitly say so: "Sarah, just listen for a moment — Mark, tell her what you meant."
 - Celebrate small wins: when one person feeds back well, say so.
 - Model dialogue yourself: check understanding, invite, summarise.
+- SPOKEN vs SHOWN: your text is spoken aloud, so never put lists or formatting in it. If structure would genuinely help (e.g. ground rules, a summary of both positions), add a new line containing exactly [[VISUAL]] followed by short markdown bullets — that section is silently shown on screen, never spoken. Refer to it naturally ("I've put both of your headlines on screen"). Use it sparingly.
 
 Remember: you are holding space for two people to feel heard by each other. Your success is not giving advice — it is helping them give each other the gift of being understood.`;
     };
@@ -1526,6 +1531,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
       });
     };
 
+    // Strip anything TTS would read aloud literally ("asterisk", "dash",
+    // "hash") or stumble over. The visual channel keeps the formatting;
+    // speech gets plain prose. Last line of defense behind the prompt.
+    const sanitizeForSpeech = (text) => text
+      .replace(/\[\[VISUAL\]\]/g, ' ')
+      .replace(/[*_#`~]/g, '')
+      .replace(/^\s*(?:[-•]|\d+[.)])\s+/gm, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
     // Splits text into sentences for chunked TTS
     const splitSentences = (text) => {
       const parts = text.match(/[^.!?]+[.!?]+[\s]*/g);
@@ -1575,8 +1590,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const speak = async (text) => {
         cancelledRef.current = false;
         lastErrorRef.current = null;
-        const sentences = splitSentences(text);
-        const ttsPromises = sentences.map(s => fetchTTSBuffer(s.trim()));
+        const sentences = splitSentences(text).map(sanitizeForSpeech).filter(Boolean);
+        const ttsPromises = sentences.map(s => fetchTTSBuffer(s));
         for (let i = 0; i < sentences.length; i++) {
           if (cancelledRef.current) return;
           try {
@@ -1679,12 +1694,14 @@ Remember: you are holding space for two people to feel heard by each other. Your
           return {
             addSentence: (sentence) => {
               if (isStale()) return;
+              const clean = sanitizeForSpeech(sentence);
+              if (!clean) return;
               // Fire the request immediately so generation of the next
               // sentence overlaps playback of the current one.
               sentences.push(fetch('/api/tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: sentence.trim(), voice: 'shimmer', format: 'pcm' }),
+                body: JSON.stringify({ input: clean, voice: 'shimmer', format: 'pcm' }),
               }));
               pump();
             },
@@ -1724,7 +1741,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
         const addSentence = (sentence) => {
           if (isStale()) return;
-          queue.push(fetchTTSBuffer(sentence.trim()));
+          const clean = sanitizeForSpeech(sentence);
+          if (!clean) return;
+          queue.push(fetchTTSBuffer(clean));
           tryPlay();
         };
 
@@ -1776,8 +1795,47 @@ Remember: you are holding space for two people to feel heard by each other. Your
       );
     };
 
+    // ── Visual Aid ──
+    // Renders the "shown, not spoken" channel of an assistant message — a
+    // light markdown subset (bullets, numbered lists, **bold**) displayed
+    // as a card under the spoken text. Structure for the eyes, prose for
+    // the ears.
+    const VisualAid = ({ text }) => {
+      const blocks = [];
+      let list = null;
+      const flush = () => {
+        if (list) { blocks.push({ type: 'list', items: list }); list = null; }
+      };
+      for (const raw of text.split('\n')) {
+        const line = raw.trim();
+        if (!line) { flush(); continue; }
+        const m = line.match(/^(?:[-•*]|\d+[.)])\s+(.*)$/);
+        if (m) {
+          if (!list) list = [];
+          list.push(m[1]);
+        } else {
+          flush();
+          blocks.push({ type: 'p', text: line.replace(/^#+\s*/, '') });
+        }
+      }
+      flush();
+
+      const renderInline = (s) => {
+        const parts = s.split(/\*\*(.+?)\*\*/g);
+        return parts.map((p, i) => i % 2 ? React.createElement('strong', { key: i }, p) : p);
+      };
+
+      return React.createElement('div', { className: 'visual-aid' },
+        blocks.map((b, i) => b.type === 'list'
+          ? React.createElement('ul', { key: i },
+              b.items.map((item, j) => React.createElement('li', { key: j }, renderInline(item))))
+          : React.createElement('p', { key: i }, renderInline(b.text))
+        )
+      );
+    };
+
     // ── Message Bubble ──
-    const MessageBubble = ({ role, content }) => {
+    const MessageBubble = ({ role, content, visual }) => {
       const isUser = role === 'user';
       return React.createElement('div', { className: `msg-row ${role}` },
         !isUser && React.createElement('div', { className: 'avatar' },
@@ -1785,7 +1843,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
             ),
         React.createElement('div', {
           className: `bubble ${isUser ? 'user-bubble' : 'assistant-bubble'}`
-        }, content)
+        },
+          content,
+          visual && React.createElement(VisualAid, { text: visual }),
+        )
       );
     };
 
@@ -1975,9 +2036,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
         startNewConversation([{ role: 'assistant', content: greeting }]);
         setStarted(true);
 
-        // Open the hands-free session right away so the user can answer —
-        // or barge in on the greeting — without ever tapping the mic.
-        if (realtime.supported && realtimeEnabledRef.current) startHandsFree();
+        // The mic stays off until the user's first "Tap to talk" — the
+        // greeting speaks, then one tap opens the hands-free session.
 
         // Speak the greeting through the gapless PCM path, sentence by
         // sentence, so audio starts on the first network chunk instead of
@@ -2027,7 +2087,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
             body: JSON.stringify({
               system: buildSystemPrompt(profileRef.current),
               max_tokens: 500,
-              messages: updated.map(m => ({ role: m.role, content: m.content })),
+              // Reassemble both channels for the model so it remembers what
+              // it displayed, not just what it said.
+              messages: updated.map(m => ({
+                role: m.role,
+                content: m.visual ? `${m.content}\n[[VISUAL]]\n${m.visual}` : m.content,
+              })),
             }),
             signal: ac.signal,
           });
@@ -2044,6 +2109,23 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // chunk can split a "data: {...}" line in half, and parsing each
           // half would drop that delta (lost words mid-reply).
           let lineBuffer = '';
+
+          // Two-channel reply: text before [[VISUAL]] is spoken aloud; text
+          // after it is shown on screen as a visual aid, never spoken.
+          const VISUAL_MARKER = '[[VISUAL]]';
+          // Chars of fullText already handed to the TTS sentence buffer.
+          let spokenFed = 0;
+          // How much of fullText is safely speakable: everything before the
+          // marker — holding back any trailing partial marker so a chunk
+          // ending in "[[VIS" never reaches TTS mid-stream.
+          const speakableEnd = () => {
+            const idx = fullText.indexOf(VISUAL_MARKER);
+            if (idx !== -1) return idx;
+            for (let k = VISUAL_MARKER.length - 1; k > 0; k--) {
+              if (fullText.endsWith(VISUAL_MARKER.slice(0, k))) return fullText.length - k;
+            }
+            return fullText.length;
+          };
 
           while (true) {
             const { done, value } = await reader.read();
@@ -2062,10 +2144,23 @@ Remember: you are holding space for two people to feel heard by each other. Your
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
                   fullText += parsed.text;
-                  sentenceBuffer += parsed.text;
 
-                  // Update message text as it streams in
-                  setMessages([...updated, { role: 'assistant', content: fullText }]);
+                  // Split the channels for display as the reply streams in.
+                  const markerIdx = fullText.indexOf(VISUAL_MARKER);
+                  const spokenText = (markerIdx === -1 ? fullText : fullText.slice(0, markerIdx)).trim();
+                  const visualText = markerIdx === -1 ? '' : fullText.slice(markerIdx + VISUAL_MARKER.length).trim();
+                  setMessages([...updated, {
+                    role: 'assistant',
+                    content: spokenText,
+                    ...(visualText ? { visual: visualText } : {}),
+                  }]);
+
+                  // Only the spoken channel feeds the TTS sentence buffer.
+                  const end = speakableEnd();
+                  if (end > spokenFed) {
+                    sentenceBuffer += fullText.slice(spokenFed, end);
+                    spokenFed = end;
+                  }
 
                   // Aggressively fire TTS on any natural break point
                   // Priority 1: sentence endings (.!?)
@@ -2808,7 +2903,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         // Messages
         React.createElement('main', { className: 'chat-area' },
           messages.map((m, i) =>
-            React.createElement(MessageBubble, { key: i, role: m.role, content: m.content })
+            React.createElement(MessageBubble, { key: i, role: m.role, content: m.content, visual: m.visual })
           ),
           // User-side "your speech is being transcribed" bubble (Whisper
           // path only). Critical for affordance: without it, the gap
@@ -2894,7 +2989,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.3.0')
+          }, 'v2.4.0')
         )
       );
     };
