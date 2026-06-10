@@ -34,11 +34,13 @@ export default async function handler(req) {
     // first network chunk instead of after the whole file is generated.
     const usePCM = format === 'pcm';
 
-    // Abort a slow upstream ourselves (12s) so we return a clean 504 the
-    // client can retry, instead of hanging until the platform gateway
-    // kills the request (~25s) and produces an opaque 504.
+    // Abort a slow upstream ourselves (8s) so we return a clean 504 the
+    // client can retry quickly, instead of hanging until the platform
+    // gateway kills the request (~25s). tts-1 generates these short
+    // sentence chunks in ~1-3s, so 8s only triggers on a genuinely stuck
+    // call — and the client's retry usually lands fast.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    const timeout = setTimeout(() => controller.abort(), 8000);
     let response;
     try {
       response = await fetch('https://api.openai.com/v1/audio/speech', {

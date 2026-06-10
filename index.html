@@ -1463,7 +1463,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       }
       if (!response.ok) {
         // Transient failures — retry once. 429 = rate limit (back off a
-        // little longer), 5xx = slow/cold upstream or our 12s abort. Don't
+        // little longer), 5xx = slow/cold upstream or our 8s abort. Don't
         // retry other 4xx (bad input / auth), where a retry can't help.
         if ((response.status === 429 || response.status >= 500) && attempt === 0) {
           await new Promise(r => setTimeout(r, response.status === 429 ? 700 : 300));
@@ -1476,6 +1476,33 @@ Remember: you are holding space for two people to feel heard by each other. Your
         throw new Error(msg);
       }
       return await response.arrayBuffer();
+    };
+
+    // Fetches TTS as a streaming PCM response. Mirrors fetchTTSBuffer's
+    // retry policy — one retry on 429 (longer backoff), 5xx, or network
+    // error. Without this, a single slow upstream call (our 8s 504) stalls
+    // the sentence pipeline for its whole timeout and the phrase is lost;
+    // with it, the retry usually lands in well under a second.
+    const fetchPCMStream = async (text, attempt = 0) => {
+      let response;
+      try {
+        response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: text, voice: 'shimmer', format: 'pcm' }),
+        });
+      } catch (netErr) {
+        if (attempt === 0) {
+          await new Promise(r => setTimeout(r, 300));
+          return fetchPCMStream(text, 1);
+        }
+        throw netErr;
+      }
+      if (!response.ok && (response.status === 429 || response.status >= 500) && attempt === 0) {
+        await new Promise(r => setTimeout(r, response.status === 429 ? 700 : 300));
+        return fetchPCMStream(text, 1);
+      }
+      return response;
     };
 
     // Plays an ArrayBuffer of audio through AudioContext (primary)
@@ -1698,11 +1725,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
               if (!clean) return;
               // Fire the request immediately so generation of the next
               // sentence overlaps playback of the current one.
-              sentences.push(fetch('/api/tts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: clean, voice: 'shimmer', format: 'pcm' }),
-              }));
+              sentences.push(fetchPCMStream(clean));
               pump();
             },
             finish: () => {
@@ -2056,8 +2079,8 @@ Remember: you are holding space for two people to feel heard by each other. Your
             : v);
           const ttsErr = getTtsError();
           if (ttsErr) {
-            setError(`Voice failed: ${ttsErr}`);
-            setTimeout(() => setError(null), 10000);
+            setError(`Voice hiccup — a phrase was skipped (${ttsErr})`);
+            setTimeout(() => setError(null), 6000);
           }
         });
       };
@@ -2229,8 +2252,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
           if (streamSpeaker) {
             const ttsErr = getTtsError();
             if (ttsErr) {
-              setError(`Voice failed: ${ttsErr}`);
-              setTimeout(() => setError(null), 10000);
+              // Playback carried on around the failed phrase — say so,
+              // rather than announcing total failure.
+              setError(`Voice hiccup — a phrase was skipped (${ttsErr})`);
+              setTimeout(() => setError(null), 6000);
             }
           }
           // Hands-free: the session is still open, go straight back to
@@ -2991,7 +3016,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.4.1')
+          }, 'v2.4.2')
         )
       );
     };

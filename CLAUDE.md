@@ -87,7 +87,7 @@ Users interrupt during SPEAKING by just talking (hands-free) or tapping the mic 
 |----------|---------|---------|
 | `POST /api/chat-stream` | Edge | Primary. Streams Claude responses as simplified SSE (`data: { text }`, then `data: [DONE]`). Sent unbuffered (`X-Accel-Buffering: no`, `no-transform`) so deltas arrive as produced |
 | `POST /api/realtime-session` | Edge | Mints a short-lived (10 min) OpenAI Realtime client secret for a hands-free transcription session (server VAD, 1.2s end-of-turn). The browser then talks WebRTC directly to OpenAI |
-| `POST /api/tts` | Edge | Converts text → audio via OpenAI TTS: raw PCM stream (`format: 'pcm'`, primary) or MP3 (default). Aborts a slow upstream after 12s and returns a clean `504` so the client can retry |
+| `POST /api/tts` | Edge | Converts text → audio via OpenAI TTS: raw PCM stream (`format: 'pcm'`, primary) or MP3 (default). Aborts a slow upstream after 8s and returns a clean `504` so the client can retry |
 | `POST /api/stt` | Edge | Transcribes uploaded audio (tap-to-talk fallback path). Prefers OpenAI `gpt-4o-mini-transcribe`; falls back to Groq `whisper-large-v3-turbo` if only `GROQ_API_KEY` is set |
 | `POST /api/chat` | Node.js | Legacy non-streaming Claude call. Not actively used |
 
@@ -198,8 +198,8 @@ Key knobs and behaviors that keep the voice experience smooth (all in `index.htm
 - **End-of-turn silence (tap-to-talk)**: `SILENCE_MS = 2200` in both fallback STT paths — how long to wait through a pause before treating the user as done. Tap the mic to end immediately.
 - **Barge-in**: while the assistant speaks, `input_audio_buffer.speech_started` aborts the reply stream and playback. Relies on `echoCancellation: true` so the mic doesn't hear the assistant's own voice — verify on speakerphone-style devices.
 - **TTS model**: `tts-1` (not `tts-1-hd`) in `api/tts.js` — much faster to generate, which matters for per-sentence streaming on an edge function.
-- **TTS timeout**: `api/tts.js` aborts a slow OpenAI call after 12s → clean `504`, so the client retry fires fast instead of waiting for the platform gateway.
-- **TTS retry**: `fetchTTSBuffer` retries once on `429` (rate limit, longer backoff) or `5xx`/network errors. Other `4xx` are not retried.
+- **TTS timeout**: `api/tts.js` aborts a slow OpenAI call after 8s → clean `504`, so the client retry fires fast instead of waiting for the platform gateway.
+- **TTS retry**: `fetchTTSBuffer` (MP3 path) and `fetchPCMStream` (PCM streaming path) both retry once on `429` (rate limit, longer backoff) or `5xx`/network errors. Other `4xx` are not retried.
 - **Resilient playback**: a single failed/slow sentence never silences the rest — `speak()` and `speakStreaming()` log the error (surfaced via the "Voice failed" banner) and keep going.
 - **Unbuffered streaming**: `api/chat-stream.js` sets `X-Accel-Buffering: no` + `Cache-Control: no-transform` and primes the connection so deltas reach the browser as Claude produces them. The client also carries incomplete SSE lines across reads so chunks split mid-line don't drop words.
 
