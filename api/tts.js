@@ -20,7 +20,7 @@ export default async function handler(req) {
   }
 
   try {
-    const { input, voice } = await req.json();
+    const { input, voice, format } = await req.json();
 
     if (!input || !input.trim()) {
       return new Response(JSON.stringify({ error: 'No input text provided' }), {
@@ -28,6 +28,11 @@ export default async function handler(req) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    // 'pcm' = raw 24kHz 16-bit mono samples. Unlike mp3, PCM can be played
+    // by the client progressively as bytes arrive, so speech starts on the
+    // first network chunk instead of after the whole file is generated.
+    const usePCM = format === 'pcm';
 
     // Abort a slow upstream ourselves (12s) so we return a clean 504 the
     // client can retry, instead of hanging until the platform gateway
@@ -49,7 +54,7 @@ export default async function handler(req) {
           model: 'tts-1',
           input: input,
           voice: voice || 'shimmer',
-          response_format: 'mp3',
+          response_format: usePCM ? 'pcm' : 'mp3',
           speed: 1.04,
         }),
         signal: controller.signal,
@@ -70,7 +75,7 @@ export default async function handler(req) {
     return new Response(response.body, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': usePCM ? 'audio/pcm; rate=24000' : 'audio/mpeg',
         'Access-Control-Allow-Origin': '*',
       },
     });
