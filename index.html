@@ -338,12 +338,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
     const buildCoachGreeting = (profile) => {
       if (!profile) {
-        return "Hey, welcome. I\u2019m your conversation coach. Before we go anywhere else, here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?";
+        return "Hey, welcome \u2014 I\u2019m your conversation coach. Think of someone important to you who you\u2019d like better conversations with \u2014 the kind where you both feel heard and understood. Who comes to mind, and what gets in the way?";
       }
 
       const name = profile.name || 'friend';
 
-      return `Hi ${name}, I\u2019m really glad you\u2019re here. Here\u2019s an idea to kick us off. Think of someone important to you who you\u2019d like to have better conversations with \u2014 the kind where you both feel heard and understood. Maybe they leave you feeling a little unseen, or you walk away wishing you\u2019d said something different. Once we know what gets in the way, we can talk about ways to change the situation together. So \u2014 who comes to mind, and what do you think makes those conversations harder than they should be?`;
+      return `Hi ${name}, I\u2019m really glad you\u2019re here. Think of someone important to you who you\u2019d like better conversations with \u2014 the kind where you both feel heard and understood. Who comes to mind, and what gets in the way?`;
     };
 
     const buildFacilitatorGreeting = (profile) => {
@@ -2088,8 +2088,10 @@ Remember: you are holding space for two people to feel heard by each other. Your
               system: buildSystemPrompt(profileRef.current),
               max_tokens: 500,
               // Reassemble both channels for the model so it remembers what
-              // it displayed, not just what it said.
-              messages: updated.map(m => ({
+              // it displayed, not just what it said. Cap the history window:
+              // sending the whole conversation makes Claude's first token
+              // slower every single turn of a long session.
+              messages: updated.slice(-24).map(m => ({
                 role: m.role,
                 content: m.visual ? `${m.content}\n[[VISUAL]]\n${m.visual}` : m.content,
               })),
@@ -2989,7 +2991,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.4.0')
+          }, 'v2.4.1')
         )
       );
     };
