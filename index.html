@@ -925,12 +925,20 @@ Remember: you are holding space for two people to feel heard by each other. Your
         sessionRef.current = { commit, abandon };
 
         r.onresult = (e) => {
+          // Rebuild the transcript from the full results list on every
+          // event instead of appending deltas. Chrome on Android sometimes
+          // re-delivers final results (resultIndex doesn't reliably
+          // advance), and appending them again duplicates words — the
+          // "text repeats itself" bug. Rebuilding from index 0 is
+          // idempotent, so re-delivery is harmless.
+          let finalNow = '';
           let interimNow = '';
-          for (let i = e.resultIndex; i < e.results.length; i++) {
+          for (let i = 0; i < e.results.length; i++) {
             const t = e.results[i][0].transcript;
-            if (e.results[i].isFinal) accumulatedFinal += t + ' ';
+            if (e.results[i].isFinal) finalNow += t + ' ';
             else interimNow += t;
           }
+          accumulatedFinal = finalNow;
           lastInterim = interimNow;
           onInterim((accumulatedFinal + ' ' + interimNow).trim());
           resetSilenceTimer();
@@ -1798,16 +1806,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           setVoiceState('idle');
           return;
         }
-        if (voiceState === 'processing') {
-          // Escape hatch for a stuck or unwanted reply — but never while the
-          // user's own speech is still being transcribed, since aborting
-          // there would silently lose what they just said.
-          if (transcribing) return;
-          streamAbortRef.current?.abort();
-          cancelSpeak();
-          setVoiceState('idle');
-          return;
-        }
+        if (voiceState === 'processing') return;
 
         if (voiceState === 'listening') {
           // Manual stop. Native SR fires onFinal synchronously; Whisper path
@@ -2445,7 +2444,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.1.5')
+          }, 'v2.1.6')
         )
       );
     };
