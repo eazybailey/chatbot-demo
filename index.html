@@ -913,7 +913,16 @@ Remember: you are holding space for two people to feel heard by each other. Your
           silenceTimer = setTimeout(commit, SILENCE_MS);
         };
 
-        sessionRef.current = { commit };
+        const abandon = () => {
+          // Discard the utterance without firing onFinal — used when the
+          // user switches to typing or leaves the conversation mid-listen.
+          if (committed) return;
+          committed = true;
+          if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+          try { r.abort(); } catch(e) {}
+        };
+
+        sessionRef.current = { commit, abandon };
 
         r.onresult = (e) => {
           let interimNow = '';
@@ -942,7 +951,13 @@ Remember: you are holding space for two people to feel heard by each other. Your
         else { try { recognitionRef.current?.stop(); } catch(e) {} }
       };
 
-      return { start, stop, supported };
+      const abort = () => {
+        const session = sessionRef.current;
+        if (session) session.abandon();
+        else { try { recognitionRef.current?.abort(); } catch(e) {} }
+      };
+
+      return { start, stop, abort, supported };
     };
 
     // ── MediaRecorder + Whisper Fallback ──
@@ -1143,9 +1158,22 @@ Remember: you are holding space for two people to feel heard by each other. Your
         }
       };
 
+      const abort = () => {
+        // Discard the recording without transcribing or firing onFinal —
+        // used when the user switches to typing or leaves mid-listen.
+        const rec = recorderRef.current;
+        if (rec && rec.state !== 'inactive') {
+          rec.ondataavailable = null;
+          rec.onstop = () => { chunksRef.current = []; cleanup(); };
+          try { rec.stop(); } catch (e) { cleanup(); }
+        } else {
+          cleanup();
+        }
+      };
+
       const getLevel = () => levelRef.current;
 
-      return { start, stop, supported, getLevel };
+      return { start, stop, abort, supported, getLevel };
     };
 
     // ── Browser detection: which STT path to use ──
@@ -1379,7 +1407,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
             playIndex++;
           }
           playing = false;
-          if (doneAdding && playIndex >= queue.length) resolveFinished();
+          // A cancelled/stale session must still resolve `finished` —
+          // otherwise an interrupted sendToClaude awaits it forever.
+          if (isStale() || (doneAdding && playIndex >= queue.length)) resolveFinished();
         };
 
         const addSentence = (sentence) => {
@@ -1390,7 +1420,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
 
         const finish = () => {
           doneAdding = true;
-          if (playIndex >= queue.length) resolveFinished();
+          if (isStale() || playIndex >= queue.length) resolveFinished();
           else tryPlay();
           return finished;
         };
@@ -1558,9 +1588,21 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const useRecorderFallback = React.useMemo(() => needsRecorderFallback(), []);
       const nativeSTT = useSpeechRecognition();
       const recorderSTT = useMediaRecorderSTT();
-      const { start: startRec, stop: stopRec, supported: sttSupported } =
+      const { start: startRec, stop: stopRec, abort: abortRec, supported: sttSupported } =
         useRecorderFallback ? recorderSTT : nativeSTT;
       const { speak, speakStreaming, cancel: cancelSpeak, getLastError: getTtsError } = useSpeechSynthesis();
+      // AbortController for the in-flight /api/chat-stream request. Aborted
+      // when the user interrupts or starts a new turn, so a stale stream can
+      // never keep writing into the conversation underneath the new one.
+      const streamAbortRef = React.useRef(null);
+
+      // Hard-stop everything voice-related: the in-flight reply stream, TTS
+      // playback, and any open mic session.
+      const stopVoicePipeline = () => {
+        streamAbortRef.current?.abort();
+        abortRec();
+        cancelSpeak();
+      };
 
       React.useEffect(() => { messagesRef.current = messages; }, [messages]);
       React.useEffect(() => { profileRef.current = profile; }, [profile]);
@@ -1601,7 +1643,9 @@ Remember: you are holding space for two people to feel heard by each other. Your
         setStarted(true);
         setVoiceState('speaking');
         speak(greeting).then(() => {
-          setVoiceState('idle');
+          // Only fall back to idle if we're still the active speaker — the
+          // user may have interrupted and already started a new listen.
+          setVoiceState(v => v === 'speaking' ? 'idle' : v);
           const ttsErr = getTtsError();
           if (ttsErr) {
             setError(`Voice failed: ${ttsErr}`);
@@ -1611,6 +1655,11 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       const sendToClaude = async (userText) => {
+        // A new turn supersedes any still-streaming previous one.
+        streamAbortRef.current?.abort();
+        const ac = new AbortController();
+        streamAbortRef.current = ac;
+
         const updated = [...messagesRef.current, { role: 'user', content: userText }];
         setMessages(updated);
         setVoiceState('processing');
@@ -1625,6 +1674,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
               max_tokens: 500,
               messages: updated.map(m => ({ role: m.role, content: m.content })),
             }),
+            signal: ac.signal,
           });
 
           if (!response.ok) throw new Error('Stream request failed');
@@ -1718,28 +1768,46 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Wait for all audio to finish playing
           if (streamSpeaker) {
             await streamSpeaker.finish();
+          }
+          // Interrupted turns do their own state cleanup at the point of
+          // interruption — don't fight whatever the user is doing now.
+          if (ac.signal.aborted) return;
+          if (streamSpeaker) {
             const ttsErr = getTtsError();
             if (ttsErr) {
               setError(`Voice failed: ${ttsErr}`);
               setTimeout(() => setError(null), 10000);
             }
           }
-          setVoiceState('idle');
+          setVoiceState(v => (v === 'speaking' || v === 'processing') ? 'idle' : v);
         } catch (err) {
+          if (ac.signal.aborted) return; // interrupted on purpose
           console.error('Error:', err);
           setError('Something went wrong. Tap to try again.');
-          setVoiceState('idle');
+          setVoiceState(v => (v === 'speaking' || v === 'processing') ? 'idle' : v);
           setTimeout(() => setError(null), 4000);
         }
       };
 
       const handleMicClick = () => {
         if (voiceState === 'speaking') {
+          // Interrupt: stop both the audio AND the underlying reply stream,
+          // so a superseded turn can't keep mutating the conversation.
+          streamAbortRef.current?.abort();
           cancelSpeak();
           setVoiceState('idle');
           return;
         }
-        if (voiceState === 'processing') return;
+        if (voiceState === 'processing') {
+          // Escape hatch for a stuck or unwanted reply — but never while the
+          // user's own speech is still being transcribed, since aborting
+          // there would silently lose what they just said.
+          if (transcribing) return;
+          streamAbortRef.current?.abort();
+          cancelSpeak();
+          setVoiceState('idle');
+          return;
+        }
 
         if (voiceState === 'listening') {
           // Manual stop. Native SR fires onFinal synchronously; Whisper path
@@ -1802,6 +1870,12 @@ Remember: you are holding space for two people to feel heard by each other. Your
       const handleTextSubmit = (e) => {
         e.preventDefault();
         if (!textInput.trim() || voiceState === 'processing' || voiceState === 'speaking') return;
+        if (voiceState === 'listening') {
+          // User switched to typing mid-listen: drop the mic session so its
+          // silence timer can't fire a second, competing message later.
+          abortRec();
+          setInterimText('');
+        }
         cancelSpeak();
         sendToClaude(textInput.trim());
         setTextInput('');
@@ -1813,7 +1887,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
         const path = NEXT_STEPS.find(p => p.id === pathId);
         if (!path || !profile) return;
         if (profile.path === pathId) return;
-        cancelSpeak();
+        stopVoicePipeline();
         const nextProfile = { ...profile, mode: path.mode, goal: path.goal, path: path.id };
         setProfile(nextProfile);
         profileRef.current = nextProfile;
@@ -1827,7 +1901,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       const handleNewChat = () => {
-        cancelSpeak();
+        stopVoicePipeline();
         // Start a new conversation (profile persists, no need to redo quiz)
         if (profile) {
           const greeting = buildGreeting(profile);
@@ -1852,7 +1926,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       const handleStartOver = () => {
-        cancelSpeak();
+        stopVoicePipeline();
         setProfile(null);
         profileRef.current = null;
         saveProfile(null);
@@ -1870,7 +1944,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
       };
 
       const handleLoadConversation = (convo) => {
-        cancelSpeak();
+        stopVoicePipeline();
         setActiveConvoId(convo.id);
         activeConvoIdRef.current = convo.id;
         setMessages(convo.messages);
@@ -2371,7 +2445,7 @@ Remember: you are holding space for two people to feel heard by each other. Your
           // Version label
           React.createElement('p', {
             style: { textAlign: 'center', fontSize: '11px', color: '#555', margin: '12px 0 4px', opacity: 0.6 }
-          }, 'v2.1.4')
+          }, 'v2.1.5')
         )
       );
     };
